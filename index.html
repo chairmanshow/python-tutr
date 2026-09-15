@@ -10,6 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
+    <!-- Firebase Compat SDKs (For simple Vanilla JS integration) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --bg-base: #050505;
@@ -429,7 +433,7 @@
         <section id="support" class="tab-content">
             <div class="section-header">
                 <h1>Direct Support</h1>
-                <p>Your message goes directly to our Telegram Channel <b>@TCS_SUPPORT_TEAM</b></p>
+                <p>Your message goes directly to our Telegram Channel <b>@The_Chairman_Show_support</b></p>
             </div>
 
             <div class="support-wrapper">
@@ -516,11 +520,14 @@
                     <div style="font-size: 1.5rem; color: var(--accent-primary);"><i class="fa-brands fa-discord"></i></div>
                     <div>
                         <h3 style="font-size: 1.1rem;"># general-discussion</h3>
-                        <div class="online-count"><span class="dot" style="width:6px;height:6px;background:var(--success);animation:none;"></span> 1,204 Members Online</div>
+                        <div class="online-count"><span class="dot" style="width:6px;height:6px;background:var(--success);animation:none;"></span> Global Live Chat</div>
                     </div>
                 </div>
 
-                <div class="chat-messages" id="chatBox"></div>
+                <!-- Chat Box -->
+                <div class="chat-messages" id="chatBox">
+                    <div style="text-align:center; color:var(--warning); font-size:0.8rem; margin:10px 0;">-- Welcome to the Global Chairman Show Community! --</div>
+                </div>
 
                 <div class="chat-input-area">
                     <form class="chat-form" onsubmit="sendChatMessage(event)">
@@ -533,6 +540,7 @@
         </section>
     </main>
 
+    <!-- Code Modal -->
     <div class="modal-overlay" id="codeModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -551,9 +559,78 @@
         <p>&copy; 2026 The Chairman Show. Built by Sumit Shrivas.</p>
     </footer>
 
+    <!-- Main JS Application Script -->
     <script>
+    // Utility Function to Escape HTML
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
     // =========================================================
-    // 1. TAB SWITCHING (Fixed — event.currentTarget issue solved)
+    // 1. FIREBASE INITIALIZATION & GLOBAL CHAT
+    // =========================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3T1Yp8nFQuHb-_63bfzbd3L2r2wn-01I",
+      authDomain: "the-chairman-show-7c839.firebaseapp.com",
+      databaseURL: "https://the-chairman-show-7c839-default-rtdb.firebaseio.com",
+      projectId: "the-chairman-show-7c839",
+      storageBucket: "the-chairman-show-7c839.firebasestorage.app",
+      messagingSenderId: "667528459671",
+      appId: "1:667528459671:web:696a5aeda14ba2391fc0d2",
+      measurementId: "G-F2NFN93R5B"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const chatBox = document.getElementById('chatBox');
+
+    // Listen for new messages from Firebase in Real-Time
+    db.ref("community_chat").limitToLast(100).on("child_added", (snapshot) => {
+        const m = snapshot.val();
+        const myName = document.getElementById('chatSenderName')?.value?.trim() || '';
+        
+        // Determine if message is from self
+        const isMine = (myName !== '' && m.name === myName);
+        const letter = m.name.charAt(0).toUpperCase();
+
+        const msgElement = document.createElement("div");
+        msgElement.className = `msg-wrapper ${isMine ? 'mine' : ''}`;
+        msgElement.innerHTML = `
+            <div class="avatar">${escapeHtml(letter)}</div>
+            <div class="msg-content">
+                <div class="msg-info">
+                    <span class="msg-name">${escapeHtml(m.name)}</span>
+                    <span class="msg-time">${escapeHtml(m.time)}</span>
+                </div>
+                <div class="msg-text">${escapeHtml(m.text)}</div>
+            </div>`;
+        
+        chatBox.appendChild(msgElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // Send Message to Firebase Function
+    function sendChatMessage(e) {
+        e.preventDefault();
+        const nameInput = document.getElementById('chatSenderName');
+        const msgInput = document.getElementById('chatMessageInput');
+
+        if (!nameInput.value.trim() || !msgInput.value.trim()) return;
+
+        // Push new message to Realtime Database
+        db.ref("community_chat").push({
+            name: nameInput.value.trim(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            text: msgInput.value.trim()
+        });
+
+        // Clear input field after sending
+        msgInput.value = '';
+    }
+
+    // =========================================================
+    // 2. TAB SWITCHING
     // =========================================================
     document.querySelectorAll('.nav-item').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -566,70 +643,263 @@
     });
 
     // =========================================================
-    // 2. PROBLEMS DATA — FIXED JSON (Only 50 objects, no duplicates)
+    // 3. PROBLEMS DATA & RENDERING (All 50 Integrated)
     // =========================================================
     const problemsData = [
-      { "id":1, "title":"Two Sum", "difficulty":"Easy", "desc":"Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.", "code":"def two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []" },
-      { "id":2, "title":"Reverse a String", "difficulty":"Easy", "desc":"Write a function that reverses a string. The input string is given as a list of characters.", "code":"def reverse_string(s):\n    return s[::-1]" },
-      { "id":3, "title":"Palindrome Number", "difficulty":"Easy", "desc":"Determine whether an integer is a palindrome. An integer is a palindrome when it reads the same backward as forward.", "code":"def is_palindrome(x):\n    if x < 0: return False\n    return str(x) == str(x)[::-1]" },
-      { "id":4, "title":"FizzBuzz", "difficulty":"Easy", "desc":"Return a list of strings from 1 to n where multiples of 3 are 'Fizz', multiples of 5 are 'Buzz', and multiples of both are 'FizzBuzz'.", "code":"def fizz_buzz(n):\n    res = []\n    for i in range(1, n+1):\n        if i % 15 == 0: res.append('FizzBuzz')\n        elif i % 3 == 0: res.append('Fizz')\n        elif i % 5 == 0: res.append('Buzz')\n        else: res.append(str(i))\n    return res" },
-      { "id":5, "title":"Maximum Subarray", "difficulty":"Medium", "desc":"Given an integer array nums, find the contiguous subarray which has the largest sum and return its sum.", "code":"def max_subarray(nums):\n    max_sum = cur = nums[0]\n    for n in nums[1:]:\n        cur = max(n, cur + n)\n        max_sum = max(max_sum, cur)\n    return max_sum" },
-      { "id":6, "title":"Valid Parentheses", "difficulty":"Easy", "desc":"Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.", "code":"def is_valid(s):\n    stack = []\n    mapping = {')':'(', '}':'{', ']':'['}\n    for ch in s:\n        if ch in mapping:\n            if not stack or stack.pop() != mapping[ch]:\n                return False\n        else:\n            stack.append(ch)\n    return not stack" },
-      { "id":7, "title":"Merge Two Sorted Lists", "difficulty":"Easy", "desc":"Merge two sorted linked lists and return it as a new sorted list.", "code":"def merge_two_lists(l1, l2):\n    dummy = tail = type('Node', (), {'next':None})()\n    while l1 and l2:\n        if l1.val < l2.val:\n            tail.next, l1 = l1, l1.next\n        else:\n            tail.next, l2 = l2, l2.next\n        tail = tail.next\n    tail.next = l1 or l2\n    return dummy.next" },
-      { "id":8, "title":"Best Time to Buy and Sell Stock", "difficulty":"Easy", "desc":"Given an array prices where prices[i] is the price of a stock on day i, return the maximum profit you can achieve.", "code":"def max_profit(prices):\n    min_p, profit = float('inf'), 0\n    for p in prices:\n        min_p = min(min_p, p)\n        profit = max(profit, p - min_p)\n    return profit" },
-      { "id":9, "title":"Climbing Stairs", "difficulty":"Easy", "desc":"You are climbing a staircase. It takes n steps to reach the top. Each time you can climb 1 or 2 steps. In how many distinct ways can you climb to the top?", "code":"def climb_stairs(n):\n    a, b = 1, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a" },
-      { "id":10, "title":"Binary Search", "difficulty":"Easy", "desc":"Given a sorted array of integers and a target value, return the index of the target or -1 if not found.", "code":"def binary_search(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if nums[mid] == target: return mid\n        elif nums[mid] < target: lo = mid + 1\n        else: hi = mid - 1\n    return -1" },
-      { "id":11, "title":"Linked List Cycle", "difficulty":"Easy", "desc":"Given head, the head of a linked list, determine if the linked list has a cycle in it.", "code":"def has_cycle(head):\n    slow = fast = head\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n        if slow is fast: return True\n    return False" },
-      { "id":12, "title":"Invert Binary Tree", "difficulty":"Easy", "desc":"Given the root of a binary tree, invert the tree and return its root.", "code":"def invert_tree(root):\n    if not root: return None\n    root.left, root.right = invert_tree(root.right), invert_tree(root.left)\n    return root" },
-      { "id":13, "title":"Anagram Check", "difficulty":"Easy", "desc":"Given two strings s and t, return true if t is an anagram of s, and false otherwise.", "code":"def is_anagram(s, t):\n    return sorted(s) == sorted(t)" },
-      { "id":14, "title":"Majority Element", "difficulty":"Easy", "desc":"Given an array nums of size n, return the majority element (appears more than n/2 times).", "code":"def majority_element(nums):\n    count, cand = 0, None\n    for n in nums:\n        if count == 0: cand = n\n        count += 1 if n == cand else -1\n    return cand" },
-      { "id":15, "title":"Product of Array Except Self", "difficulty":"Medium", "desc":"Given an integer array nums, return an array answer such that answer[i] is the product of all elements except nums[i].", "code":"def product_except_self(nums):\n    n = len(nums)\n    res = [1] * n\n    left = right = 1\n    for i in range(n):\n        res[i] = left\n        left *= nums[i]\n    for i in range(n-1, -1, -1):\n        res[i] *= right\n        right *= nums[i]\n    return res" },
-      { "id":16, "title":"NumPy Array Creation", "difficulty":"Easy", "desc":"Create a NumPy array of shape (3, 4) filled with zeros, then replace the second row with ones.", "code":"import numpy as np\ndef create_array():\n    arr = np.zeros((3, 4))\n    arr[1] = 1\n    return arr" },
-      { "id":17, "title":"NumPy Mean and Std", "difficulty":"Easy", "desc":"Given a NumPy array, return a tuple (mean, standard_deviation) rounded to 2 decimal places.", "code":"import numpy as np\ndef mean_std(arr):\n    return (round(float(np.mean(arr)), 2), round(float(np.std(arr)), 2))" },
-      { "id":18, "title":"NumPy Matrix Multiplication", "difficulty":"Medium", "desc":"Given two 2D NumPy arrays A and B, return their matrix product.", "code":"import numpy as np\ndef matmul(A, B):\n    return np.matmul(A, B)" },
-      { "id":19, "title":"NumPy Boolean Masking", "difficulty":"Medium", "desc":"Given a NumPy array, return a new array containing only the elements greater than the mean of the original array.", "code":"import numpy as np\ndef above_mean(arr):\n    return arr[arr > np.mean(arr)]" },
-      { "id":20, "title":"NumPy Normalization", "difficulty":"Medium", "desc":"Normalize a NumPy array so that its values lie between 0 and 1 using min-max scaling.", "code":"import numpy as np\ndef normalize(arr):\n    return (arr - arr.min()) / (arr.max() - arr.min())" },
-      { "id":21, "title":"Pandas DataFrame Creation", "difficulty":"Easy", "desc":"Create a pandas DataFrame from a dictionary of lists with columns 'A', 'B', 'C' and 5 rows of your choice.", "code":"import pandas as pd\ndef create_df():\n    return pd.DataFrame({'A':[1,2,3,4,5], 'B':[6,7,8,9,10], 'C':[11,12,13,14,15]})" },
-      { "id":22, "title":"Pandas Filter Rows", "difficulty":"Easy", "desc":"Given a DataFrame df with column 'age', return a new DataFrame with only rows where age > 30.", "code":"import pandas as pd\ndef filter_age(df):\n    return df[df['age'] > 30]" },
-      { "id":23, "title":"Pandas Groupby Aggregation", "difficulty":"Medium", "desc":"Given a DataFrame with columns 'category' and 'value', return the mean value per category as a DataFrame.", "code":"import pandas as pd\ndef group_mean(df):\n    return df.groupby('category')['value'].mean().reset_index()" },
-      { "id":24, "title":"Pandas Handle Missing Values", "difficulty":"Medium", "desc":"Given a DataFrame, replace all NaN values in numeric columns with the column mean.", "code":"import pandas as pd\ndef fill_na_mean(df):\n    num_cols = df.select_dtypes(include='number').columns\n    df[num_cols] = df[num_cols].fillna(df[num_cols].mean())\n    return df" },
-      { "id":25, "title":"Pandas Merge DataFrames", "difficulty":"Medium", "desc":"Given two DataFrames df1 and df2 with a common column 'id', perform an inner merge.", "code":"import pandas as pd\ndef merge_dfs(df1, df2):\n    return pd.merge(df1, df2, on='id', how='inner')" },
-      { "id":26, "title":"Pandas Pivot Table", "difficulty":"Hard", "desc":"Given a DataFrame with columns 'date', 'product', and 'sales', create a pivot table with dates as rows, products as columns, and sum of sales as values.", "code":"import pandas as pd\ndef pivot_sales(df):\n    return df.pivot_table(index='date', columns='product', values='sales', aggfunc='sum')" },
-      { "id":27, "title":"Pandas Time Series Resample", "difficulty":"Hard", "desc":"Given a DataFrame with a datetime index and a 'value' column, resample the data to weekly frequency and compute the sum.", "code":"import pandas as pd\ndef weekly_sum(df):\n    return df.resample('W').sum()" },
-      { "id":28, "title":"Probability: Coin Flips", "difficulty":"Medium", "desc":"Simulate 10,000 flips of a fair coin and return the proportion of heads.", "code":"import numpy as np\ndef coin_flip_probability():\n    flips = np.random.randint(0, 2, 10000)\n    return float(flips.mean())" },
-      { "id":29, "title":"Probability: Bayes Theorem", "difficulty":"Medium", "desc":"Given P(A), P(B|A), and P(B|not A), compute P(A|B) using Bayes' theorem.", "code":"def bayes_theorem(p_a, p_b_given_a, p_b_given_not_a):\n    p_b = p_b_given_a * p_a + p_b_given_not_a * (1 - p_a)\n    return (p_b_given_a * p_a) / p_b" },
-      { "id":30, "title":"Probability: Expected Value", "difficulty":"Medium", "desc":"Given a list of outcomes and their probabilities, compute the expected value.", "code":"def expected_value(outcomes, probabilities):\n    return sum(o * p for o, p in zip(outcomes, probabilities))" },
-      { "id":31, "title":"Linear Algebra: Dot Product", "difficulty":"Easy", "desc":"Compute the dot product of two vectors without using NumPy.", "code":"def dot_product(v1, v2):\n    return sum(a * b for a, b in zip(v1, v2))" },
-      { "id":32, "title":"Linear Algebra: Matrix Transpose", "difficulty":"Easy", "desc":"Return the transpose of a given matrix represented as a list of lists.", "code":"def transpose(matrix):\n    return [list(row) for row in zip(*matrix)]" },
-      { "id":33, "title":"Linear Algebra: Determinant 2x2", "difficulty":"Easy", "desc":"Compute the determinant of a 2x2 matrix.", "code":"def det_2x2(matrix):\n    return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]" },
-      { "id":34, "title":"Linear Algebra: Matrix Inverse 2x2", "difficulty":"Medium", "desc":"Compute the inverse of a 2x2 matrix if it exists, else return None.", "code":"def inv_2x2(matrix):\n    det = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]\n    if det == 0: return None\n    return [[matrix[1][1]/det, -matrix[0][1]/det], [-matrix[1][0]/det, matrix[0][0]/det]]" },
-      { "id":35, "title":"Linear Algebra: Eigenvalues 2x2", "difficulty":"Hard", "desc":"Compute the eigenvalues of a 2x2 matrix using the characteristic equation.", "code":"import math\ndef eigenvalues_2x2(matrix):\n    a, b = matrix[0]\n    c, d = matrix[1]\n    tr, det = a + d, a * d - b * c\n    disc = tr**2 - 4 * det\n    if disc < 0: return None\n    return ((tr + math.sqrt(disc)) / 2, (tr - math.sqrt(disc)) / 2)" },
-      { "id":36, "title":"Math: Prime Check", "difficulty":"Easy", "desc":"Return True if a given integer n is prime, else False.", "code":"def is_prime(n):\n    if n < 2: return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0: return False\n    return True" },
-      { "id":37, "title":"Math: GCD and LCM", "difficulty":"Easy", "desc":"Return a tuple (GCD, LCM) of two positive integers.", "code":"import math\ndef gcd_lcm(a, b):\n    g = math.gcd(a, b)\n    return (g, a * b // g)" },
-      { "id":38, "title":"Math: Fibonacci Sequence", "difficulty":"Easy", "desc":"Return the nth Fibonacci number using iteration.", "code":"def fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a" },
-      { "id":39, "title":"Math: Factorial", "difficulty":"Easy", "desc":"Return the factorial of a non-negative integer n.", "code":"def factorial(n):\n    result = 1\n    for i in range(2, n+1):\n        result *= i\n    return result" },
-      { "id":40, "title":"Math: Sieve of Eratosthenes", "difficulty":"Medium", "desc":"Return a list of all primes up to n using the Sieve of Eratosthenes.", "code":"def sieve(n):\n    is_p = [True] * (n + 1)\n    is_p[0] = is_p[1] = False\n    for i in range(2, int(n**0.5) + 1):\n        if is_p[i]:\n            for j in range(i*i, n+1, i):\n                is_p[j] = False\n    return [i for i, v in enumerate(is_p) if v]" },
-      { "id":41, "title":"Logic: Tower of Hanoi", "difficulty":"Medium", "desc":"Return the list of moves to solve the Tower of Hanoi for n disks.", "code":"def hanoi(n, source, target, auxiliary):\n    moves = []\n    def solve(n, s, t, a):\n        if n == 1:\n            moves.append((s, t))\n            return\n        solve(n-1, s, a, t)\n        moves.append((s, t))\n        solve(n-1, a, t, s)\n    solve(n, source, target, auxiliary)\n    return moves" },
-      { "id":42, "title":"Logic: N-Queens Count", "difficulty":"Hard", "desc":"Return the number of distinct solutions to the n-queens puzzle.", "code":"def n_queens(n):\n    def backtrack(row, cols, diag1, diag2):\n        if row == n: return 1\n        count = 0\n        for col in range(n):\n            if col in cols or (row-col) in diag1 or (row+col) in diag2:\n                continue\n            cols.add(col); diag1.add(row-col); diag2.add(row+col)\n            count += backtrack(row+1, cols, diag1, diag2)\n            cols.remove(col); diag1.remove(row-col); diag2.remove(row+col)\n        return count\n    return backtrack(0, set(), set(), set())" },
-      { "id":43, "title":"Logic: Sudoku Validator", "difficulty":"Hard", "desc":"Determine if a 9x9 Sudoku board is valid.", "code":"def is_valid_sudoku(board):\n    rows = [set() for _ in range(9)]\n    cols = [set() for _ in range(9)]\n    boxes = [set() for _ in range(9)]\n    for r in range(9):\n        for c in range(9):\n            v = board[r][c]\n            if v == '.': continue\n            b = (r//3)*3 + c//3\n            if v in rows[r] or v in cols[c] or v in boxes[b]:\n                return False\n            rows[r].add(v); cols[c].add(v); boxes[b].add(v)\n    return True" },
-      { "id":44, "title":"Data Science: Confusion Matrix Metrics", "difficulty":"Medium", "desc":"Given true labels and predicted labels, return accuracy, precision, recall, and F1 score.", "code":"def metrics(y_true, y_pred):\n    tp = sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 1)\n    tn = sum(1 for t, p in zip(y_true, y_pred) if t == 0 and p == 0)\n    fp = sum(1 for t, p in zip(y_true, y_pred) if t == 0 and p == 1)\n    fn = sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 0)\n    acc = (tp + tn) / len(y_true)\n    prec = tp / (tp + fp) if (tp + fp) else 0\n    rec = tp / (tp + fn) if (tp + fn) else 0\n    f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0\n    return acc, prec, rec, f1" },
-      { "id":45, "title":"Data Science: K-Means Step", "difficulty":"Hard", "desc":"Given data points and initial centroids, perform one iteration of K-Means assignment and centroid update.", "code":"import numpy as np\ndef kmeans_step(X, centroids):\n    X = np.array(X)\n    centroids = np.array(centroids)\n    dists = np.linalg.norm(X[:, None] - centroids[None], axis=2)\n    labels = np.argmin(dists, axis=1)\n    new_centroids = np.array([X[labels == k].mean(axis=0) if np.any(labels == k) else centroids[k] for k in range(len(centroids))])\n    return labels, new_centroids" },
-      { "id":46, "title":"Data Science: Linear Regression Coefficients", "difficulty":"Medium", "desc":"Given X and y, compute the ordinary least squares coefficients using the normal equation.", "code":"import numpy as np\ndef ols_coefficients(X, y):\n    X = np.array(X); y = np.array(y)\n    X_b = np.c_[np.ones(len(X)), X]\n    return np.linalg.inv(X_b.T @ X_b) @ X_b.T @ y" },
-      { "id":47, "title":"Data Science: Correlation Matrix", "difficulty":"Medium", "desc":"Given a pandas DataFrame, return the correlation matrix.", "code":"import pandas as pd\ndef corr_matrix(df):\n    return df.corr()" },
-      { "id":48, "title":"Data Science: Train-Test Split", "difficulty":"Medium", "desc":"Implement a simple train-test split function without using sklearn.", "code":"import numpy as np\ndef train_test_split(X, y, test_size=0.2):\n    n = len(X)\n    idx = np.random.permutation(n)\n    split = int(n * (1 - test_size))\n    tr, te = idx[:split], idx[split:]\n    return X[tr], X[te], y[tr], y[te]" },
-      { "id":49, "title":"Data Science: One-Hot Encoding", "difficulty":"Medium", "desc":"Convert a list of categorical labels into a one-hot encoded NumPy array.", "code":"import numpy as np\ndef one_hot(labels):\n    labels = np.array(labels)\n    n = len(np.unique(labels))\n    return np.eye(n)[labels]" },
-      { "id":50, "title":"Data Science: Gradient Descent Step", "difficulty":"Hard", "desc":"Perform one step of gradient descent for linear regression given weights, bias, learning rate, and data.", "code":"import numpy as np\ndef gradient_descent_step(X, y, w, b, lr):\n    X = np.array(X); y = np.array(y)\n    y_pred = X @ w + b\n    error = y_pred - y\n    dw = (2 / len(X)) * (X.T @ error)\n    db = (2 / len(X)) * np.sum(error)\n    return w - lr * dw, b - lr * db" }
+      {
+        "id": 1, "title": "Two Sum", "difficulty": "Easy",
+        "desc": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+        "code": "def two_sum(nums, target):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 2, "title": "Reverse a String", "difficulty": "Easy",
+        "desc": "Write a function that reverses a string. The input string is given as a list of characters.",
+        "code": "def reverse_string(s):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 3, "title": "Palindrome Number", "difficulty": "Easy",
+        "desc": "Determine whether an integer is a palindrome. An integer is a palindrome when it reads the same backward as forward.",
+        "code": "def is_palindrome(x):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 4, "title": "FizzBuzz", "difficulty": "Easy",
+        "desc": "Return a list of strings from 1 to n where multiples of 3 are 'Fizz', multiples of 5 are 'Buzz', and multiples of both are 'FizzBuzz'.",
+        "code": "def fizz_buzz(n):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 5, "title": "Maximum Subarray", "difficulty": "Medium",
+        "desc": "Given an integer array nums, find the contiguous subarray which has the largest sum and return its sum.",
+        "code": "def max_subarray(nums):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 6, "title": "Valid Parentheses", "difficulty": "Easy",
+        "desc": "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+        "code": "def is_valid(s):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 7, "title": "Merge Two Sorted Lists", "difficulty": "Easy",
+        "desc": "Merge two sorted linked lists and return it as a new sorted list.",
+        "code": "def merge_two_lists(l1, l2):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 8, "title": "Best Time to Buy and Sell Stock", "difficulty": "Easy",
+        "desc": "Given an array prices where prices[i] is the price of a stock on day i, return the maximum profit you can achieve.",
+        "code": "def max_profit(prices):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 9, "title": "Climbing Stairs", "difficulty": "Easy",
+        "desc": "You are climbing a staircase. It takes n steps to reach the top. Each time you can climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
+        "code": "def climb_stairs(n):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 10, "title": "Binary Search", "difficulty": "Easy",
+        "desc": "Given a sorted array of integers and a target value, return the index of the target or -1 if not found.",
+        "code": "def binary_search(nums, target):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 11, "title": "Linked List Cycle", "difficulty": "Easy",
+        "desc": "Given head, the head of a linked list, determine if the linked list has a cycle in it.",
+        "code": "def has_cycle(head):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 12, "title": "Invert Binary Tree", "difficulty": "Easy",
+        "desc": "Given the root of a binary tree, invert the tree and return its root.",
+        "code": "def invert_tree(root):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 13, "title": "Anagram Check", "difficulty": "Easy",
+        "desc": "Given two strings s and t, return true if t is an anagram of s, and false otherwise.",
+        "code": "def is_anagram(s, t):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 14, "title": "Majority Element", "difficulty": "Easy",
+        "desc": "Given an array nums of size n, return the majority element (appears more than n/2 times).",
+        "code": "def majority_element(nums):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 15, "title": "Product of Array Except Self", "difficulty": "Medium",
+        "desc": "Given an integer array nums, return an array answer such that answer[i] is the product of all elements except nums[i].",
+        "code": "def product_except_self(nums):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 16, "title": "NumPy Array Creation", "difficulty": "Easy",
+        "desc": "Create a NumPy array of shape (3, 4) filled with zeros, then replace the second row with ones.",
+        "code": "import numpy as np\ndef create_array():\n    # Your code here\n    pass"
+      },
+      {
+        "id": 17, "title": "NumPy Mean and Std", "difficulty": "Easy",
+        "desc": "Given a NumPy array, return a tuple (mean, standard_deviation) rounded to 2 decimal places.",
+        "code": "import numpy as np\ndef mean_std(arr):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 18, "title": "NumPy Matrix Multiplication", "difficulty": "Medium",
+        "desc": "Given two 2D NumPy arrays A and B, return their matrix product.",
+        "code": "import numpy as np\ndef matmul(A, B):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 19, "title": "NumPy Boolean Masking", "difficulty": "Medium",
+        "desc": "Given a NumPy array, return a new array containing only the elements greater than the mean of the original array.",
+        "code": "import numpy as np\ndef above_mean(arr):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 20, "title": "NumPy Normalization", "difficulty": "Medium",
+        "desc": "Normalize a NumPy array so that its values lie between 0 and 1 using min-max scaling.",
+        "code": "import numpy as np\ndef normalize(arr):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 21, "title": "Pandas DataFrame Creation", "difficulty": "Easy",
+        "desc": "Create a pandas DataFrame from a dictionary of lists with columns 'A', 'B', 'C' and 5 rows of your choice.",
+        "code": "import pandas as pd\ndef create_df():\n    # Your code here\n    pass"
+      },
+      {
+        "id": 22, "title": "Pandas Filter Rows", "difficulty": "Easy",
+        "desc": "Given a DataFrame df with column 'age', return a new DataFrame with only rows where age > 30.",
+        "code": "import pandas as pd\ndef filter_age(df):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 23, "title": "Pandas Groupby Aggregation", "difficulty": "Medium",
+        "desc": "Given a DataFrame with columns 'category' and 'value', return the mean value per category as a DataFrame.",
+        "code": "import pandas as pd\ndef group_mean(df):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 24, "title": "Pandas Handle Missing Values", "difficulty": "Medium",
+        "desc": "Given a DataFrame, replace all NaN values in numeric columns with the column mean.",
+        "code": "import pandas as pd\ndef fill_na_mean(df):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 25, "title": "Pandas Merge DataFrames", "difficulty": "Medium",
+        "desc": "Given two DataFrames df1 and df2 with a common column 'id', perform an inner merge.",
+        "code": "import pandas as pd\ndef merge_dfs(df1, df2):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 26, "title": "Pandas Pivot Table", "difficulty": "Hard",
+        "desc": "Given a DataFrame with columns 'date', 'product', and 'sales', create a pivot table with dates as rows, products as columns, and sum of sales as values.",
+        "code": "import pandas as pd\ndef pivot_sales(df):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 27, "title": "Pandas Time Series Resample", "difficulty": "Hard",
+        "desc": "Given a DataFrame with a datetime index and a 'value' column, resample the data to weekly frequency and compute the sum.",
+        "code": "import pandas as pd\ndef weekly_sum(df):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 28, "title": "Probability: Coin Flips", "difficulty": "Medium",
+        "desc": "Simulate 10,000 flips of a fair coin and return the proportion of heads.",
+        "code": "import numpy as np\ndef coin_flip_probability():\n    # Your code here\n    pass"
+      },
+      {
+        "id": 29, "title": "Probability: Bayes Theorem", "difficulty": "Medium",
+        "desc": "Given P(A), P(B|A), and P(B|not A), compute P(A|B) using Bayes' theorem.",
+        "code": "def bayes_theorem(p_a, p_b_given_a, p_b_given_not_a):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 30, "title": "Probability: Expected Value", "difficulty": "Medium",
+        "desc": "Given a list of outcomes and their probabilities, compute the expected value.",
+        "code": "def expected_value(outcomes, probabilities):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 31, "title": "Linear Algebra: Dot Product", "difficulty": "Easy",
+        "desc": "Compute the dot product of two vectors without using NumPy.",
+        "code": "def dot_product(v1, v2):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 32, "title": "Linear Algebra: Matrix Transpose", "difficulty": "Easy",
+        "desc": "Return the transpose of a given matrix represented as a list of lists.",
+        "code": "def transpose(matrix):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 33, "title": "Linear Algebra: Determinant 2x2", "difficulty": "Easy",
+        "desc": "Compute the determinant of a 2x2 matrix.",
+        "code": "def det_2x2(matrix):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 34, "title": "Linear Algebra: Matrix Inverse 2x2", "difficulty": "Medium",
+        "desc": "Compute the inverse of a 2x2 matrix if it exists, else return None.",
+        "code": "def inv_2x2(matrix):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 35, "title": "Linear Algebra: Eigenvalues 2x2", "difficulty": "Hard",
+        "desc": "Compute the eigenvalues of a 2x2 matrix using the characteristic equation.",
+        "code": "import math\ndef eigenvalues_2x2(matrix):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 36, "title": "Math: Prime Check", "difficulty": "Easy",
+        "desc": "Return True if a given integer n is prime, else False.",
+        "code": "def is_prime(n):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 37, "title": "Math: GCD and LCM", "difficulty": "Easy",
+        "desc": "Return a tuple (GCD, LCM) of two positive integers.",
+        "code": "import math\ndef gcd_lcm(a, b):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 38, "title": "Math: Fibonacci Sequence", "difficulty": "Easy",
+        "desc": "Return the nth Fibonacci number using iteration.",
+        "code": "def fibonacci(n):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 39, "title": "Math: Factorial", "difficulty": "Easy",
+        "desc": "Return the factorial of a non-negative integer n.",
+        "code": "def factorial(n):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 40, "title": "Math: Sieve of Eratosthenes", "difficulty": "Medium",
+        "desc": "Return a list of all primes up to n using the Sieve of Eratosthenes.",
+        "code": "def sieve(n):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 41, "title": "Logic: Tower of Hanoi", "difficulty": "Medium",
+        "desc": "Return the list of moves to solve the Tower of Hanoi for n disks.",
+        "code": "def hanoi(n, source, target, auxiliary):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 42, "title": "Logic: N-Queens Count", "difficulty": "Hard",
+        "desc": "Return the number of distinct solutions to the n-queens puzzle.",
+        "code": "def n_queens(n):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 43, "title": "Logic: Sudoku Validator", "difficulty": "Hard",
+        "desc": "Determine if a 9x9 Sudoku board is valid.",
+        "code": "def is_valid_sudoku(board):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 44, "title": "Data Science: Confusion Matrix Metrics", "difficulty": "Medium",
+        "desc": "Given true labels and predicted labels, return accuracy, precision, recall, and F1 score.",
+        "code": "def metrics(y_true, y_pred):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 45, "title": "Data Science: K-Means Step", "difficulty": "Hard",
+        "desc": "Given data points and initial centroids, perform one iteration of K-Means assignment and centroid update.",
+        "code": "import numpy as np\ndef kmeans_step(X, centroids):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 46, "title": "Data Science: Linear Regression Coefficients", "difficulty": "Medium",
+        "desc": "Given X and y, compute the ordinary least squares coefficients using the normal equation.",
+        "code": "import numpy as np\ndef ols_coefficients(X, y):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 47, "title": "Data Science: Correlation Matrix", "difficulty": "Medium",
+        "desc": "Given a pandas DataFrame, return the correlation matrix.",
+        "code": "import pandas as pd\ndef corr_matrix(df):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 48, "title": "Data Science: Train-Test Split", "difficulty": "Medium",
+        "desc": "Implement a simple train-test split function without using sklearn.",
+        "code": "import numpy as np\ndef train_test_split(X, y, test_size=0.2):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 49, "title": "Data Science: One-Hot Encoding", "difficulty": "Medium",
+        "desc": "Convert a list of categorical labels into a one-hot encoded NumPy array.",
+        "code": "import numpy as np\ndef one_hot(labels):\n    # Your code here\n    pass"
+      },
+      {
+        "id": 50, "title": "Data Science: Gradient Descent Step", "difficulty": "Hard",
+        "desc": "Perform one step of gradient descent for linear regression given weights, bias, learning rate, and data.",
+        "code": "import numpy as np\ndef gradient_descent_step(X, y, w, b, lr):\n    # Your code here\n    pass"
+      }
     ];
 
-    // =========================================================
-    // 3. RENDER PROBLEMS
-    // =========================================================
     let currentFilter = 'all';
     let currentSearch = '';
-
-    function escapeHtml(str) {
-        return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    }
 
     function renderProblems() {
         const container = document.getElementById('problemsContainer');
@@ -690,7 +960,7 @@
     }
 
     // =========================================================
-    // 4. MODAL
+    // 4. MODAL CONTROL
     // =========================================================
     const modal = document.getElementById('codeModal');
     function openModal(title, code) {
@@ -707,13 +977,9 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     // =========================================================
-       // =========================================================
-    // 5. TELEGRAM — PROXY VIA CLOUDFLARE WORKER (FIXED)
+    // 5. TELEGRAM SUPPORT — CLOUDFLARE PROXY
     // =========================================================
-    
-    // ⚠️ अपना actual Worker URL यहाँ paste करो (quotes ज़रूरी हैं!)
-    // Format: https://tcs-telegram-proxy.YOUR-SUBDOMAIN.workers.dev
-    const PROXY_URL = "http://tcs-telegram-proxy.sumitshrivas24.workers.dev/";
+    const PROXY_URL = "https://tcs-telegram-proxy.sumitshrivas24.workers.dev/";
 
     async function handleSupportSubmit(e) {
         e.preventDefault();
@@ -728,14 +994,6 @@
         statusBox.style.display = 'block';
         statusBox.innerHTML = '';
 
-        // Proxy URL set है या नहीं check करो
-        if (PROXY_URL.includes("YOUR-SUBDOMAIN")) {
-            statusBox.innerHTML = '<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Admin: PROXY_URL को अपने Cloudflare Worker URL से replace करें।</span>';
-            btn.innerHTML = '<span>Send Message</span> <i class="fa-solid fa-paper-plane"></i>';
-            btn.disabled = false;
-            return;
-        }
-
         try {
             const response = await fetch(PROXY_URL, {
                 method: 'POST',
@@ -746,7 +1004,7 @@
             const data = await response.json();
 
             if (response.ok && data.ok) {
-                statusBox.innerHTML = '<span style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Message sent to @TCS_SUPPORT_TEAM successfully!</span>';
+                statusBox.innerHTML = '<span style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Message sent to Telegram successfully!</span>';
                 document.getElementById('supportForm').reset();
             } else {
                 throw new Error(data.description || data.error || 'Failed to send');
@@ -762,76 +1020,10 @@
     }
 
     // =========================================================
-    // 6. COMMUNITY CHAT (LOCALSTORAGE)
-    // =========================================================
-    const chatBox = document.getElementById('chatBox');
-    const defaultChat = [
-        { name: "System", time: "00:00", text: "Welcome to The Chairman Show Community! Rules: Be respectful.", isSystem: true },
-        { name: "Sumit (Admin)", time: "10:00", text: "Hello guys! Drop your project links here for review.", isMine: false }
-    ];
-
-    function loadChat() {
-        let msgs;
-        try {
-            msgs = JSON.parse(localStorage.getItem('tcs_chat')) || defaultChat;
-        } catch { msgs = defaultChat; }
-
-        chatBox.innerHTML = '';
-        const myName = document.getElementById('chatSenderName')?.value?.trim() || '';
-
-        msgs.forEach(m => {
-            if (m.isSystem) {
-                chatBox.innerHTML += `<div style="text-align:center; color:var(--warning); font-size:0.8rem; margin:10px 0;">-- ${escapeHtml(m.text)} --</div>`;
-                return;
-            }
-            const isMine = (myName && m.name === myName) || m.isMine;
-            const letter = m.name.charAt(0).toUpperCase();
-
-            chatBox.innerHTML += `
-                <div class="msg-wrapper ${isMine ? 'mine' : ''}">
-                    <div class="avatar">${escapeHtml(letter)}</div>
-                    <div class="msg-content">
-                        <div class="msg-info">
-                            <span class="msg-name">${escapeHtml(m.name)}</span>
-                            <span class="msg-time">${escapeHtml(m.time)}</span>
-                        </div>
-                        <div class="msg-text">${escapeHtml(m.text)}</div>
-                    </div>
-                </div>`;
-        });
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function sendChatMessage(e) {
-        e.preventDefault();
-        const nameInput = document.getElementById('chatSenderName');
-        const msgInput = document.getElementById('chatMessageInput');
-
-        if (!nameInput.value.trim() || !msgInput.value.trim()) return;
-
-        let msgs;
-        try {
-            msgs = JSON.parse(localStorage.getItem('tcs_chat')) || defaultChat;
-        } catch { msgs = defaultChat; }
-
-        msgs.push({
-            name: nameInput.value.trim(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            text: msgInput.value.trim()
-        });
-
-        if (msgs.length > 50) msgs.shift();
-        localStorage.setItem('tcs_chat', JSON.stringify(msgs));
-        msgInput.value = '';
-        loadChat();
-    }
-
-    // =========================================================
-    // 7. INIT
+    // INIT CALL
     // =========================================================
     window.addEventListener('load', () => {
         renderProblems();
-        loadChat();
     });
     </script>
 </body>
