@@ -5,63 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Chairman Show | Advanced Learning & Community Hub</title>
 
-    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
-        /* ==========================================================================
-           GLOBAL VARIABLES & RESET
-           ========================================================================== */
         :root {
-            /* Color Palette */
             --bg-base: #050505;
             --bg-surface: #111111;
             --bg-surface-light: #1a1a1a;
             --bg-glass: rgba(255, 255, 255, 0.03);
-            
             --accent-primary: #3b82f6;
             --accent-glow: rgba(59, 130, 246, 0.5);
             --accent-secondary: #8b5cf6;
-            
             --text-primary: #ffffff;
             --text-secondary: #a1a1aa;
             --text-muted: #52525b;
-            
             --border-color: rgba(255, 255, 255, 0.1);
             --border-hover: rgba(255, 255, 255, 0.2);
-            
-            /* Status Colors */
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
-
-            /* Typography */
             --font-sans: 'Inter', sans-serif;
             --font-mono: 'Fira Code', monospace;
-            
-            /* Spacing & Radii */
             --radius-sm: 6px;
             --radius-md: 12px;
             --radius-lg: 20px;
             --radius-full: 9999px;
-            
             --transition-fast: 0.2s ease;
             --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
             background-color: var(--bg-base);
             color: var(--text-primary);
@@ -73,109 +50,58 @@
             overflow-x: hidden;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-base); }
         ::-webkit-scrollbar-thumb { background: var(--bg-surface-light); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
 
-        /* Background Effects */
         .bg-glow {
-            position: fixed;
-            top: -20%;
-            left: -10%;
-            width: 50vw;
-            height: 50vw;
+            position: fixed; top: -20%; left: -10%;
+            width: 50vw; height: 50vw;
             background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%);
-            border-radius: 50%;
-            z-index: -1;
-            pointer-events: none;
+            border-radius: 50%; z-index: -1; pointer-events: none;
         }
         .bg-glow-2 {
-            position: fixed;
-            bottom: -20%;
-            right: -10%;
-            width: 60vw;
-            height: 60vw;
+            position: fixed; bottom: -20%; right: -10%;
+            width: 60vw; height: 60vw;
             background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0) 70%);
-            border-radius: 50%;
-            z-index: -1;
-            pointer-events: none;
+            border-radius: 50%; z-index: -1; pointer-events: none;
         }
 
-        /* ==========================================================================
-           HEADER & NAVIGATION
-           ========================================================================== */
         header {
-            position: fixed;
-            top: 0;
-            width: 100%;
+            position: fixed; top: 0; width: 100%;
             background: rgba(5, 5, 5, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             z-index: 1000;
         }
-
         .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
+            max-width: 1400px; margin: 0 auto;
             padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
         }
-
         .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            letter-spacing: -0.5px;
+            font-size: 1.5rem; font-weight: 800;
+            color: var(--text-primary); text-decoration: none;
+            display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;
         }
-
-        .logo i {
-            color: var(--accent-primary);
-            font-size: 1.8rem;
-            filter: drop-shadow(0 0 8px var(--accent-glow));
-        }
-
+        .logo i { color: var(--accent-primary); font-size: 1.8rem; filter: drop-shadow(0 0 8px var(--accent-glow)); }
         .logo span {
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-
-        .nav-links {
-            display: flex;
-            gap: 0.5rem;
-            list-style: none;
-        }
-
+        .nav-links { display: flex; gap: 0.5rem; list-style: none; }
         .nav-item {
-            padding: 0.6rem 1.2rem;
-            background: transparent;
-            border: 1px solid transparent;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            font-weight: 500;
-            border-radius: var(--radius-full);
-            cursor: pointer;
+            padding: 0.6rem 1.2rem; background: transparent;
+            border: 1px solid transparent; color: var(--text-secondary);
+            font-size: 0.95rem; font-weight: 500;
+            border-radius: var(--radius-full); cursor: pointer;
             transition: var(--transition-normal);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex; align-items: center; gap: 8px;
+            font-family: inherit;
         }
-
-        .nav-item:hover {
-            color: var(--text-primary);
-            background: var(--bg-glass);
-            border-color: var(--border-color);
-        }
-
+        .nav-item:hover { color: var(--text-primary); background: var(--bg-glass); border-color: var(--border-color); }
         .nav-item.active {
             background: rgba(59, 130, 246, 0.1);
             color: var(--accent-primary);
@@ -183,116 +109,50 @@
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
         }
 
-        /* ==========================================================================
-           MAIN LAYOUT
-           ========================================================================== */
         main {
-            flex: 1;
-            max-width: 1400px;
-            width: 100%;
-            margin: 100px auto 40px auto;
-            padding: 0 2rem;
+            flex: 1; max-width: 1400px; width: 100%;
+            margin: 100px auto 40px auto; padding: 0 2rem;
         }
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: var(--transition-normal); }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); animation: fadeInUP 0.4s ease forwards; }
+        @keyframes fadeInUP { to { opacity: 1; transform: translateY(0); } }
 
-        .tab-content {
-            display: none;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: var(--transition-normal);
-        }
+        .section-header { margin-bottom: 2rem; text-align: center; }
+        .section-header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .section-header p { color: var(--text-secondary); font-size: 1.1rem; }
 
-        .tab-content.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-            animation: fadeInUP 0.4s ease forwards;
-        }
-
-        @keyframes fadeInUP {
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .section-header {
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .section-header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-        
-        .section-header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        /* ==========================================================================
-           FEATURE 1: PRACTICE PROBLEMS
-           ========================================================================== */
         .controls-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-surface);
-            padding: 1rem 1.5rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-            margin-bottom: 2rem;
-            gap: 1rem;
-            flex-wrap: wrap;
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-surface); padding: 1rem 1.5rem;
+            border-radius: var(--radius-md); border: 1px solid var(--border-color);
+            margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;
         }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-
+        .search-box { flex: 1; min-width: 250px; position: relative; }
         .search-box i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
+            position: absolute; left: 1rem; top: 50%;
+            transform: translateY(-50%); color: var(--text-secondary);
         }
-
         .search-box input {
-            width: 100%;
-            background: var(--bg-base);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
+            width: 100%; background: var(--bg-base);
+            border: 1px solid var(--border-color); color: var(--text-primary);
             padding: 0.8rem 1rem 0.8rem 2.5rem;
-            border-radius: var(--radius-full);
-            outline: none;
-            transition: var(--transition-fast);
+            border-radius: var(--radius-full); outline: none;
+            transition: var(--transition-fast); font-family: inherit;
         }
-
         .search-box input:focus {
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-
-        .filters {
-            display: flex;
-            gap: 0.5rem;
-        }
-
+        .filters { display: flex; gap: 0.5rem; }
         .filter-btn {
-            background: var(--bg-base);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-full);
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: var(--transition-fast);
+            background: var(--bg-base); border: 1px solid var(--border-color);
+            color: var(--text-secondary); padding: 0.5rem 1rem;
+            border-radius: var(--radius-full); cursor: pointer;
+            font-size: 0.9rem; transition: var(--transition-fast);
+            font-family: inherit;
         }
-
         .filter-btn:hover, .filter-btn.active {
-            background: var(--text-primary);
-            color: var(--bg-base);
+            background: var(--text-primary); color: var(--bg-base);
             border-color: var(--text-primary);
         }
 
@@ -301,497 +161,277 @@
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 1.5rem;
         }
-
         .problem-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 1.5rem;
             transition: var(--transition-normal);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow: hidden;
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
         }
-
         .problem-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--border-hover);
+            transform: translateY(-5px); border-color: var(--border-hover);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
         .problem-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 3px;
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 3px;
             background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: var(--transition-fast);
+            opacity: 0; transition: var(--transition-fast);
         }
-        
         .problem-card:hover::before { opacity: 1; }
-
-        .prob-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
+        .prob-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
         .prob-desc {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-            flex: 1;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            color: var(--text-secondary); font-size: 0.95rem;
+            margin-bottom: 1.5rem; flex: 1;
+            display: -webkit-box; -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical; overflow: hidden;
         }
-
         .prob-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 1rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid var(--border-color); padding-top: 1rem;
         }
-
         .badge {
-            padding: 0.3rem 0.8rem;
-            border-radius: var(--radius-full);
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            padding: 0.3rem 0.8rem; border-radius: var(--radius-full);
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.5px; text-transform: uppercase;
         }
         .badge.easy { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
         .badge.medium { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
         .badge.hard { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
-
         .btn-view {
-            background: var(--accent-primary);
-            color: #fff;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--transition-fast);
+            background: var(--accent-primary); color: #fff; border: none;
+            padding: 0.5rem 1rem; border-radius: var(--radius-sm);
+            cursor: pointer; font-weight: 500; transition: var(--transition-fast);
+            font-family: inherit;
         }
+        .btn-view:hover { background: #2563eb; box-shadow: 0 0 15px var(--accent-glow); }
 
-        .btn-view:hover {
-            background: #2563eb;
-            box-shadow: 0 0 15px var(--accent-glow);
-        }
-
-        /* Modal for Code */
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            z-index: 2000; display: none; justify-content: center;
+            align-items: center; opacity: 0; transition: opacity 0.3s;
         }
         .modal-overlay.show { display: flex; opacity: 1; }
-
         .modal-content {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transform: scale(0.95);
-            transition: transform 0.3s;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); width: 90%; max-width: 800px;
+            max-height: 90vh; display: flex; flex-direction: column;
+            overflow: hidden; transform: scale(0.95); transition: transform 0.3s;
         }
         .modal-overlay.show .modal-content { transform: scale(1); }
-
         .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 1.5rem; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
             background: var(--bg-surface-light);
         }
-
-        .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-            background: var(--bg-base);
-        }
-
+        .modal-body { padding: 1.5rem; overflow-y: auto; background: var(--bg-base); }
         .close-modal {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
+            background: transparent; border: none; color: var(--text-secondary);
+            font-size: 1.5rem; cursor: pointer;
         }
         .close-modal:hover { color: var(--text-primary); }
-
         .code-block {
-            background: #0d1117;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 1.5rem;
-            position: relative;
+            background: #0d1117; border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm); padding: 1.5rem; position: relative;
         }
-        .code-block pre { font-family: var(--font-mono); color: #e5e5e5; font-size: 0.95rem; overflow-x: auto; }
-        .code-block .keyword { color: #ff7b72; }
-        .code-block .string { color: #a5d6ff; }
-        .code-block .function { color: #d2a8ff; }
-        .code-block .comment { color: #8b949e; font-style: italic; }
+        .code-block pre { font-family: var(--font-mono); color: #e5e5e5; font-size: 0.95rem; overflow-x: auto; white-space: pre-wrap; }
 
-        /* ==========================================================================
-           FEATURE 2: SUPPORT CHAT (TELEGRAM)
-           ========================================================================== */
-        .support-wrapper {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
+        .support-wrapper { max-width: 600px; margin: 0 auto; }
         .support-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 2.5rem;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 2.5rem;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
-
-        .form-floating {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
+        .form-floating { position: relative; margin-bottom: 1.5rem; }
         .form-control {
-            width: 100%;
-            background: var(--bg-base);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 1rem;
-            border-radius: var(--radius-sm);
-            font-size: 1rem;
-            outline: none;
-            transition: var(--transition-fast);
+            width: 100%; background: var(--bg-base);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            padding: 1rem; border-radius: var(--radius-sm);
+            font-size: 1rem; outline: none; transition: var(--transition-fast);
+            font-family: inherit;
         }
-        
-        .form-control:focus {
-            border-color: var(--accent-primary);
-            background: #000;
-        }
-
+        .form-control:focus { border-color: var(--accent-primary); background: #000; }
         .form-floating label {
-            position: absolute;
-            left: 1rem;
-            top: 1rem;
-            color: var(--text-secondary);
-            transition: 0.2s ease all;
+            position: absolute; left: 1rem; top: 1rem;
+            color: var(--text-secondary); transition: 0.2s ease all;
             pointer-events: none;
         }
-
         .form-control:focus ~ label,
         .form-control:not(:placeholder-shown) ~ label {
-            top: -0.6rem;
-            left: 0.8rem;
-            font-size: 0.8rem;
-            background: var(--bg-surface);
-            padding: 0 0.4rem;
+            top: -0.6rem; left: 0.8rem; font-size: 0.8rem;
+            background: var(--bg-surface); padding: 0 0.4rem;
             color: var(--accent-primary);
         }
-
         .btn-submit {
-            width: 100%;
-            padding: 1rem;
+            width: 100%; padding: 1rem;
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: #fff;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
+            color: #fff; border: none; border-radius: var(--radius-sm);
+            font-size: 1.1rem; font-weight: 600; cursor: pointer;
             transition: var(--transition-normal);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            font-family: inherit;
         }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3); }
+        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
 
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
-        }
-
-        /* ==========================================================================
-           FEATURE 3: YOUTUBE LIVE
-           ========================================================================== */
         .live-grid {
-            display: grid;
-            grid-template-columns: 2.5fr 1fr;
-            gap: 2rem;
-            align-items: start;
+            display: grid; grid-template-columns: 2.5fr 1fr;
+            gap: 2rem; align-items: start;
         }
-
-        @media(max-width: 992px) {
-            .live-grid { grid-template-columns: 1fr; }
-        }
-
+        @media(max-width: 992px) { .live-grid { grid-template-columns: 1fr; } }
         .player-wrapper {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); overflow: hidden;
         }
-
-        .ratio-16x9 {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-        }
-
+        .ratio-16x9 { position: relative; width: 100%; padding-top: 56.25%; }
         .ratio-16x9 iframe {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            border: none;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; border: none;
         }
-
-        .player-info {
-            padding: 1.5rem;
-        }
-
+        .player-info { padding: 1.5rem; }
         .live-badge-anim {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            padding: 0.4rem 0.8rem;
-            border-radius: var(--radius-sm);
-            font-weight: 700;
-            font-size: 0.85rem;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(239, 68, 68, 0.1); color: var(--danger);
+            padding: 0.4rem 0.8rem; border-radius: var(--radius-sm);
+            font-weight: 700; font-size: 0.85rem;
             border: 1px solid rgba(239, 68, 68, 0.2);
             margin-bottom: 1rem;
         }
-        
         .dot {
-            width: 8px; height: 8px;
-            background: var(--danger);
-            border-radius: 50%;
-            animation: blink 1s infinite alternate;
+            width: 8px; height: 8px; background: var(--danger);
+            border-radius: 50%; animation: blink 1s infinite alternate;
         }
-
         @keyframes blink { from { opacity: 0.3; } to { opacity: 1; box-shadow: 0 0 8px var(--danger); } }
-
         .schedule-panel {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 1.5rem;
         }
-
-        .schedule-item {
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border-color);
-        }
+        .schedule-item { padding: 1rem 0; border-bottom: 1px solid var(--border-color); }
         .schedule-item:last-child { border-bottom: none; }
-        
-        .sch-date { color: var(--accent-primary); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem;}
-        .sch-title { font-weight: 500; font-size: 1rem;}
+        .sch-date { color: var(--accent-primary); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem; }
+        .sch-title { font-weight: 500; font-size: 1rem; }
 
-        /* ==========================================================================
-           FEATURE 4: COMMUNITY CHAT
-           ========================================================================== */
         .chat-container {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            height: 70vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); height: 70vh;
+            display: flex; flex-direction: column; overflow: hidden;
         }
-
         .chat-header {
-            padding: 1rem 1.5rem;
-            background: var(--bg-surface-light);
+            padding: 1rem 1.5rem; background: var(--bg-surface-light);
             border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            display: flex; align-items: center; gap: 1rem;
         }
-
         .online-count {
-            color: var(--success);
-            font-size: 0.85rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            color: var(--success); font-size: 0.85rem;
+            font-weight: 500; display: flex; align-items: center; gap: 5px;
         }
-
         .chat-messages {
-            flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
+            flex: 1; padding: 1.5rem; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 1.2rem;
             background: var(--bg-base);
         }
-
-        .msg-wrapper {
-            display: flex;
-            gap: 1rem;
-            max-width: 80%;
-        }
-
-        .msg-wrapper.mine {
-            margin-left: auto;
-            flex-direction: row-reverse;
-        }
-
+        .msg-wrapper { display: flex; gap: 1rem; max-width: 80%; }
+        .msg-wrapper.mine { margin-left: auto; flex-direction: row-reverse; }
         .avatar {
-            width: 40px; height: 40px;
-            border-radius: 50%;
+            width: 40px; height: 40px; border-radius: 50%;
             background: linear-gradient(135deg, var(--accent-primary), #1e3a8a);
             display: flex; justify-content: center; align-items: center;
-            font-weight: bold; font-size: 1.2rem;
-            flex-shrink: 0;
+            font-weight: bold; font-size: 1.2rem; flex-shrink: 0;
         }
         .msg-wrapper.mine .avatar { background: linear-gradient(135deg, var(--success), #064e3b); }
-
         .msg-content {
-            background: var(--bg-surface);
-            padding: 1rem;
+            background: var(--bg-surface); padding: 1rem;
             border-radius: 0 16px 16px 16px;
             border: 1px solid var(--border-color);
         }
-        
         .msg-wrapper.mine .msg-content {
             border-radius: 16px 0 16px 16px;
             background: rgba(59, 130, 246, 0.1);
             border-color: rgba(59, 130, 246, 0.2);
         }
-
-        .msg-info { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.8rem; }
+        .msg-info { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.8rem; gap: 12px; }
         .msg-name { font-weight: 700; color: var(--accent-secondary); }
         .msg-wrapper.mine .msg-name { color: var(--accent-primary); }
         .msg-time { color: var(--text-muted); }
-
         .chat-input-area {
-            padding: 1.5rem;
-            background: var(--bg-surface-light);
+            padding: 1.5rem; background: var(--bg-surface-light);
             border-top: 1px solid var(--border-color);
         }
-
         .chat-form {
-            display: flex;
-            gap: 1rem;
-            background: var(--bg-base);
-            border: 1px solid var(--border-color);
-            padding: 0.5rem;
+            display: flex; gap: 1rem; background: var(--bg-base);
+            border: 1px solid var(--border-color); padding: 0.5rem;
             border-radius: var(--radius-full);
         }
-
         .chat-form input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-primary);
-            padding: 0.5rem 1rem;
-            outline: none;
-            font-size: 1rem;
+            flex: 1; background: transparent; border: none;
+            color: var(--text-primary); padding: 0.5rem 1rem;
+            outline: none; font-size: 1rem; font-family: inherit;
         }
-
         .btn-send {
-            background: var(--accent-primary);
-            color: white;
-            border: none;
-            width: 45px; height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: var(--transition-fast);
+            background: var(--accent-primary); color: white; border: none;
+            width: 45px; height: 45px; border-radius: 50%;
+            cursor: pointer; transition: var(--transition-fast);
             display: flex; justify-content: center; align-items: center;
         }
         .btn-send:hover { transform: scale(1.05); background: var(--accent-secondary); }
 
-        /* ==========================================================================
-           FOOTER
-           ========================================================================== */
         footer {
-            background: var(--bg-surface);
-            border-top: 1px solid var(--border-color);
-            padding: 2rem;
-            text-align: center;
-            color: var(--text-secondary);
-            margin-top: auto;
+            background: var(--bg-surface); border-top: 1px solid var(--border-color);
+            padding: 2rem; text-align: center;
+            color: var(--text-secondary); margin-top: auto;
         }
     </style>
 </head>
 <body>
-    <!-- Background Effects -->
     <div class="bg-glow"></div>
     <div class="bg-glow-2"></div>
 
-    <!-- Navigation -->
     <header>
         <div class="nav-container">
             <a href="#" class="logo">
-                <i class="fa-solid fa-graduation-cap"></i> 
+                <i class="fa-solid fa-graduation-cap"></i>
                 The Chairman <span>Show</span>
             </a>
             <ul class="nav-links">
-                <li><button class="nav-item active" onclick="switchTab('practice')"><i class="fa-solid fa-laptop-code"></i> Practice</button></li>
-                <li><button class="nav-item" onclick="switchTab('support')"><i class="fa-brands fa-telegram"></i> Support</button></li>
-                <li><button class="nav-item" onclick="switchTab('live')"><i class="fa-brands fa-youtube"></i> Live</button></li>
-                <li><button class="nav-item" onclick="switchTab('community')"><i class="fa-solid fa-earth-americas"></i> Community</button></li>
+                <li><button class="nav-item active" data-tab="practice"><i class="fa-solid fa-laptop-code"></i> Practice</button></li>
+                <li><button class="nav-item" data-tab="support"><i class="fa-brands fa-telegram"></i> Support</button></li>
+                <li><button class="nav-item" data-tab="live"><i class="fa-brands fa-youtube"></i> Live</button></li>
+                <li><button class="nav-item" data-tab="community"><i class="fa-solid fa-earth-americas"></i> Community</button></li>
             </ul>
         </div>
     </header>
 
     <main>
-        <!-- 1. PRACTICE SECTION -->
         <section id="practice" class="tab-content active">
             <div class="section-header">
                 <h1>DSA & Coding Practice</h1>
                 <p>Master your skills with curated problems and solutions.</p>
             </div>
-            
+
             <div class="controls-bar">
                 <div class="search-box">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" id="searchInput" placeholder="Search problems..." onkeyup="filterProblems()">
                 </div>
                 <div class="filters">
-                    <button class="filter-btn active" onclick="filterDifficulty('all')">All</button>
-                    <button class="filter-btn" onclick="filterDifficulty('Easy')">Easy</button>
-                    <button class="filter-btn" onclick="filterDifficulty('Medium')">Medium</button>
-                    <button class="filter-btn" onclick="filterDifficulty('Hard')">Hard</button>
+                    <button class="filter-btn active" data-diff="all">All</button>
+                    <button class="filter-btn" data-diff="Easy">Easy</button>
+                    <button class="filter-btn" data-diff="Medium">Medium</button>
+                    <button class="filter-btn" data-diff="Hard">Hard</button>
                 </div>
             </div>
 
-            <div class="problems-grid" id="problemsContainer">
-                <!-- Problems will be injected here via JavaScript -->
-            </div>
+            <div class="problems-grid" id="problemsContainer"></div>
         </section>
 
-        <!-- 2. SUPPORT SECTION -->
         <section id="support" class="tab-content">
             <div class="section-header">
                 <h1>Direct Support</h1>
                 <p>Your message goes directly to our Telegram Channel <b>@TCS_SUPPORT_TEAM</b></p>
             </div>
-            
+
             <div class="support-wrapper">
                 <div class="support-card">
                     <form id="supportForm" onsubmit="handleSupportSubmit(event)">
@@ -816,7 +456,6 @@
             </div>
         </section>
 
-        <!-- 3. YOUTUBE LIVE SECTION -->
         <section id="live" class="tab-content">
             <div class="section-header">
                 <h1>Live Masterclass</h1>
@@ -826,10 +465,9 @@
             <div class="live-grid">
                 <div class="player-wrapper">
                     <div class="ratio-16x9">
-                        <!-- YouTube Embed -->
-                        <iframe 
-                            src="https://www.youtube.com/embed/live_stream?channel=THE_CHAIRMAN_SHOW" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        <iframe
+                            src="https://www.youtube.com/embed/live_stream?channel=THE_CHAIRMAN_SHOW"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen>
                         </iframe>
                     </div>
@@ -839,14 +477,14 @@
                         </div>
                         <h2>Learn Advanced AI & Data Science (IIT Jodhpur Special)</h2>
                         <p style="color: var(--text-secondary); margin-top: 8px;">In this live podcast, we discuss roadmap, coding tips, and university life.</p>
-                        
-                        <a href="https://www.youtube.com/@THE_CHAIRMAN_SHOW?sub_confirmation=1" target="_blank" 
+
+                        <a href="https://www.youtube.com/@THE_CHAIRMAN_SHOW?sub_confirmation=1" target="_blank"
                            style="display: inline-block; margin-top: 1rem; background: #ff0000; color: #fff; padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); text-decoration: none; font-weight: 600;">
                            <i class="fa-brands fa-youtube"></i> Subscribe to Channel
                         </a>
                     </div>
                 </div>
-                
+
                 <div class="schedule-panel">
                     <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
                         <i class="fa-regular fa-calendar-check"></i> Upcoming Streams
@@ -867,7 +505,6 @@
             </div>
         </section>
 
-        <!-- 4. COMMUNITY CHAT -->
         <section id="community" class="tab-content">
             <div class="section-header">
                 <h1>Open Community</h1>
@@ -882,10 +519,8 @@
                         <div class="online-count"><span class="dot" style="width:6px;height:6px;background:var(--success);animation:none;"></span> 1,204 Members Online</div>
                     </div>
                 </div>
-                
-                <div class="chat-messages" id="chatBox">
-                    <!-- Chat messages injected by JS -->
-                </div>
+
+                <div class="chat-messages" id="chatBox"></div>
 
                 <div class="chat-input-area">
                     <form class="chat-form" onsubmit="sendChatMessage(event)">
@@ -898,7 +533,6 @@
         </section>
     </main>
 
-    <!-- Modal for Code Solution -->
     <div class="modal-overlay" id="codeModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -917,648 +551,331 @@
         <p>&copy; 2026 The Chairman Show. Built by Sumit Shrivas.</p>
     </footer>
 
-    <!-- ==========================================================================
-         JAVASCRIPT LOGIC
-         ========================================================================== -->
     <script>
-        // ---------------------------------------------------------
-        // 1. TAB SWITCHING LOGIC
-        // ---------------------------------------------------------
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            
+    // =========================================================
+    // 1. TAB SWITCHING (Fixed — event.currentTarget issue solved)
+    // =========================================================
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            this.classList.add('active');
+        });
+    });
+
+    // =========================================================
+    // 2. PROBLEMS DATA — FIXED JSON (Only 50 objects, no duplicates)
+    // =========================================================
+    const problemsData = [
+      { "id":1, "title":"Two Sum", "difficulty":"Easy", "desc":"Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.", "code":"def two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []" },
+      { "id":2, "title":"Reverse a String", "difficulty":"Easy", "desc":"Write a function that reverses a string. The input string is given as a list of characters.", "code":"def reverse_string(s):\n    return s[::-1]" },
+      { "id":3, "title":"Palindrome Number", "difficulty":"Easy", "desc":"Determine whether an integer is a palindrome. An integer is a palindrome when it reads the same backward as forward.", "code":"def is_palindrome(x):\n    if x < 0: return False\n    return str(x) == str(x)[::-1]" },
+      { "id":4, "title":"FizzBuzz", "difficulty":"Easy", "desc":"Return a list of strings from 1 to n where multiples of 3 are 'Fizz', multiples of 5 are 'Buzz', and multiples of both are 'FizzBuzz'.", "code":"def fizz_buzz(n):\n    res = []\n    for i in range(1, n+1):\n        if i % 15 == 0: res.append('FizzBuzz')\n        elif i % 3 == 0: res.append('Fizz')\n        elif i % 5 == 0: res.append('Buzz')\n        else: res.append(str(i))\n    return res" },
+      { "id":5, "title":"Maximum Subarray", "difficulty":"Medium", "desc":"Given an integer array nums, find the contiguous subarray which has the largest sum and return its sum.", "code":"def max_subarray(nums):\n    max_sum = cur = nums[0]\n    for n in nums[1:]:\n        cur = max(n, cur + n)\n        max_sum = max(max_sum, cur)\n    return max_sum" },
+      { "id":6, "title":"Valid Parentheses", "difficulty":"Easy", "desc":"Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.", "code":"def is_valid(s):\n    stack = []\n    mapping = {')':'(', '}':'{', ']':'['}\n    for ch in s:\n        if ch in mapping:\n            if not stack or stack.pop() != mapping[ch]:\n                return False\n        else:\n            stack.append(ch)\n    return not stack" },
+      { "id":7, "title":"Merge Two Sorted Lists", "difficulty":"Easy", "desc":"Merge two sorted linked lists and return it as a new sorted list.", "code":"def merge_two_lists(l1, l2):\n    dummy = tail = type('Node', (), {'next':None})()\n    while l1 and l2:\n        if l1.val < l2.val:\n            tail.next, l1 = l1, l1.next\n        else:\n            tail.next, l2 = l2, l2.next\n        tail = tail.next\n    tail.next = l1 or l2\n    return dummy.next" },
+      { "id":8, "title":"Best Time to Buy and Sell Stock", "difficulty":"Easy", "desc":"Given an array prices where prices[i] is the price of a stock on day i, return the maximum profit you can achieve.", "code":"def max_profit(prices):\n    min_p, profit = float('inf'), 0\n    for p in prices:\n        min_p = min(min_p, p)\n        profit = max(profit, p - min_p)\n    return profit" },
+      { "id":9, "title":"Climbing Stairs", "difficulty":"Easy", "desc":"You are climbing a staircase. It takes n steps to reach the top. Each time you can climb 1 or 2 steps. In how many distinct ways can you climb to the top?", "code":"def climb_stairs(n):\n    a, b = 1, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a" },
+      { "id":10, "title":"Binary Search", "difficulty":"Easy", "desc":"Given a sorted array of integers and a target value, return the index of the target or -1 if not found.", "code":"def binary_search(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if nums[mid] == target: return mid\n        elif nums[mid] < target: lo = mid + 1\n        else: hi = mid - 1\n    return -1" },
+      { "id":11, "title":"Linked List Cycle", "difficulty":"Easy", "desc":"Given head, the head of a linked list, determine if the linked list has a cycle in it.", "code":"def has_cycle(head):\n    slow = fast = head\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n        if slow is fast: return True\n    return False" },
+      { "id":12, "title":"Invert Binary Tree", "difficulty":"Easy", "desc":"Given the root of a binary tree, invert the tree and return its root.", "code":"def invert_tree(root):\n    if not root: return None\n    root.left, root.right = invert_tree(root.right), invert_tree(root.left)\n    return root" },
+      { "id":13, "title":"Anagram Check", "difficulty":"Easy", "desc":"Given two strings s and t, return true if t is an anagram of s, and false otherwise.", "code":"def is_anagram(s, t):\n    return sorted(s) == sorted(t)" },
+      { "id":14, "title":"Majority Element", "difficulty":"Easy", "desc":"Given an array nums of size n, return the majority element (appears more than n/2 times).", "code":"def majority_element(nums):\n    count, cand = 0, None\n    for n in nums:\n        if count == 0: cand = n\n        count += 1 if n == cand else -1\n    return cand" },
+      { "id":15, "title":"Product of Array Except Self", "difficulty":"Medium", "desc":"Given an integer array nums, return an array answer such that answer[i] is the product of all elements except nums[i].", "code":"def product_except_self(nums):\n    n = len(nums)\n    res = [1] * n\n    left = right = 1\n    for i in range(n):\n        res[i] = left\n        left *= nums[i]\n    for i in range(n-1, -1, -1):\n        res[i] *= right\n        right *= nums[i]\n    return res" },
+      { "id":16, "title":"NumPy Array Creation", "difficulty":"Easy", "desc":"Create a NumPy array of shape (3, 4) filled with zeros, then replace the second row with ones.", "code":"import numpy as np\ndef create_array():\n    arr = np.zeros((3, 4))\n    arr[1] = 1\n    return arr" },
+      { "id":17, "title":"NumPy Mean and Std", "difficulty":"Easy", "desc":"Given a NumPy array, return a tuple (mean, standard_deviation) rounded to 2 decimal places.", "code":"import numpy as np\ndef mean_std(arr):\n    return (round(float(np.mean(arr)), 2), round(float(np.std(arr)), 2))" },
+      { "id":18, "title":"NumPy Matrix Multiplication", "difficulty":"Medium", "desc":"Given two 2D NumPy arrays A and B, return their matrix product.", "code":"import numpy as np\ndef matmul(A, B):\n    return np.matmul(A, B)" },
+      { "id":19, "title":"NumPy Boolean Masking", "difficulty":"Medium", "desc":"Given a NumPy array, return a new array containing only the elements greater than the mean of the original array.", "code":"import numpy as np\ndef above_mean(arr):\n    return arr[arr > np.mean(arr)]" },
+      { "id":20, "title":"NumPy Normalization", "difficulty":"Medium", "desc":"Normalize a NumPy array so that its values lie between 0 and 1 using min-max scaling.", "code":"import numpy as np\ndef normalize(arr):\n    return (arr - arr.min()) / (arr.max() - arr.min())" },
+      { "id":21, "title":"Pandas DataFrame Creation", "difficulty":"Easy", "desc":"Create a pandas DataFrame from a dictionary of lists with columns 'A', 'B', 'C' and 5 rows of your choice.", "code":"import pandas as pd\ndef create_df():\n    return pd.DataFrame({'A':[1,2,3,4,5], 'B':[6,7,8,9,10], 'C':[11,12,13,14,15]})" },
+      { "id":22, "title":"Pandas Filter Rows", "difficulty":"Easy", "desc":"Given a DataFrame df with column 'age', return a new DataFrame with only rows where age > 30.", "code":"import pandas as pd\ndef filter_age(df):\n    return df[df['age'] > 30]" },
+      { "id":23, "title":"Pandas Groupby Aggregation", "difficulty":"Medium", "desc":"Given a DataFrame with columns 'category' and 'value', return the mean value per category as a DataFrame.", "code":"import pandas as pd\ndef group_mean(df):\n    return df.groupby('category')['value'].mean().reset_index()" },
+      { "id":24, "title":"Pandas Handle Missing Values", "difficulty":"Medium", "desc":"Given a DataFrame, replace all NaN values in numeric columns with the column mean.", "code":"import pandas as pd\ndef fill_na_mean(df):\n    num_cols = df.select_dtypes(include='number').columns\n    df[num_cols] = df[num_cols].fillna(df[num_cols].mean())\n    return df" },
+      { "id":25, "title":"Pandas Merge DataFrames", "difficulty":"Medium", "desc":"Given two DataFrames df1 and df2 with a common column 'id', perform an inner merge.", "code":"import pandas as pd\ndef merge_dfs(df1, df2):\n    return pd.merge(df1, df2, on='id', how='inner')" },
+      { "id":26, "title":"Pandas Pivot Table", "difficulty":"Hard", "desc":"Given a DataFrame with columns 'date', 'product', and 'sales', create a pivot table with dates as rows, products as columns, and sum of sales as values.", "code":"import pandas as pd\ndef pivot_sales(df):\n    return df.pivot_table(index='date', columns='product', values='sales', aggfunc='sum')" },
+      { "id":27, "title":"Pandas Time Series Resample", "difficulty":"Hard", "desc":"Given a DataFrame with a datetime index and a 'value' column, resample the data to weekly frequency and compute the sum.", "code":"import pandas as pd\ndef weekly_sum(df):\n    return df.resample('W').sum()" },
+      { "id":28, "title":"Probability: Coin Flips", "difficulty":"Medium", "desc":"Simulate 10,000 flips of a fair coin and return the proportion of heads.", "code":"import numpy as np\ndef coin_flip_probability():\n    flips = np.random.randint(0, 2, 10000)\n    return float(flips.mean())" },
+      { "id":29, "title":"Probability: Bayes Theorem", "difficulty":"Medium", "desc":"Given P(A), P(B|A), and P(B|not A), compute P(A|B) using Bayes' theorem.", "code":"def bayes_theorem(p_a, p_b_given_a, p_b_given_not_a):\n    p_b = p_b_given_a * p_a + p_b_given_not_a * (1 - p_a)\n    return (p_b_given_a * p_a) / p_b" },
+      { "id":30, "title":"Probability: Expected Value", "difficulty":"Medium", "desc":"Given a list of outcomes and their probabilities, compute the expected value.", "code":"def expected_value(outcomes, probabilities):\n    return sum(o * p for o, p in zip(outcomes, probabilities))" },
+      { "id":31, "title":"Linear Algebra: Dot Product", "difficulty":"Easy", "desc":"Compute the dot product of two vectors without using NumPy.", "code":"def dot_product(v1, v2):\n    return sum(a * b for a, b in zip(v1, v2))" },
+      { "id":32, "title":"Linear Algebra: Matrix Transpose", "difficulty":"Easy", "desc":"Return the transpose of a given matrix represented as a list of lists.", "code":"def transpose(matrix):\n    return [list(row) for row in zip(*matrix)]" },
+      { "id":33, "title":"Linear Algebra: Determinant 2x2", "difficulty":"Easy", "desc":"Compute the determinant of a 2x2 matrix.", "code":"def det_2x2(matrix):\n    return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]" },
+      { "id":34, "title":"Linear Algebra: Matrix Inverse 2x2", "difficulty":"Medium", "desc":"Compute the inverse of a 2x2 matrix if it exists, else return None.", "code":"def inv_2x2(matrix):\n    det = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]\n    if det == 0: return None\n    return [[matrix[1][1]/det, -matrix[0][1]/det], [-matrix[1][0]/det, matrix[0][0]/det]]" },
+      { "id":35, "title":"Linear Algebra: Eigenvalues 2x2", "difficulty":"Hard", "desc":"Compute the eigenvalues of a 2x2 matrix using the characteristic equation.", "code":"import math\ndef eigenvalues_2x2(matrix):\n    a, b = matrix[0]\n    c, d = matrix[1]\n    tr, det = a + d, a * d - b * c\n    disc = tr**2 - 4 * det\n    if disc < 0: return None\n    return ((tr + math.sqrt(disc)) / 2, (tr - math.sqrt(disc)) / 2)" },
+      { "id":36, "title":"Math: Prime Check", "difficulty":"Easy", "desc":"Return True if a given integer n is prime, else False.", "code":"def is_prime(n):\n    if n < 2: return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0: return False\n    return True" },
+      { "id":37, "title":"Math: GCD and LCM", "difficulty":"Easy", "desc":"Return a tuple (GCD, LCM) of two positive integers.", "code":"import math\ndef gcd_lcm(a, b):\n    g = math.gcd(a, b)\n    return (g, a * b // g)" },
+      { "id":38, "title":"Math: Fibonacci Sequence", "difficulty":"Easy", "desc":"Return the nth Fibonacci number using iteration.", "code":"def fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a" },
+      { "id":39, "title":"Math: Factorial", "difficulty":"Easy", "desc":"Return the factorial of a non-negative integer n.", "code":"def factorial(n):\n    result = 1\n    for i in range(2, n+1):\n        result *= i\n    return result" },
+      { "id":40, "title":"Math: Sieve of Eratosthenes", "difficulty":"Medium", "desc":"Return a list of all primes up to n using the Sieve of Eratosthenes.", "code":"def sieve(n):\n    is_p = [True] * (n + 1)\n    is_p[0] = is_p[1] = False\n    for i in range(2, int(n**0.5) + 1):\n        if is_p[i]:\n            for j in range(i*i, n+1, i):\n                is_p[j] = False\n    return [i for i, v in enumerate(is_p) if v]" },
+      { "id":41, "title":"Logic: Tower of Hanoi", "difficulty":"Medium", "desc":"Return the list of moves to solve the Tower of Hanoi for n disks.", "code":"def hanoi(n, source, target, auxiliary):\n    moves = []\n    def solve(n, s, t, a):\n        if n == 1:\n            moves.append((s, t))\n            return\n        solve(n-1, s, a, t)\n        moves.append((s, t))\n        solve(n-1, a, t, s)\n    solve(n, source, target, auxiliary)\n    return moves" },
+      { "id":42, "title":"Logic: N-Queens Count", "difficulty":"Hard", "desc":"Return the number of distinct solutions to the n-queens puzzle.", "code":"def n_queens(n):\n    def backtrack(row, cols, diag1, diag2):\n        if row == n: return 1\n        count = 0\n        for col in range(n):\n            if col in cols or (row-col) in diag1 or (row+col) in diag2:\n                continue\n            cols.add(col); diag1.add(row-col); diag2.add(row+col)\n            count += backtrack(row+1, cols, diag1, diag2)\n            cols.remove(col); diag1.remove(row-col); diag2.remove(row+col)\n        return count\n    return backtrack(0, set(), set(), set())" },
+      { "id":43, "title":"Logic: Sudoku Validator", "difficulty":"Hard", "desc":"Determine if a 9x9 Sudoku board is valid.", "code":"def is_valid_sudoku(board):\n    rows = [set() for _ in range(9)]\n    cols = [set() for _ in range(9)]\n    boxes = [set() for _ in range(9)]\n    for r in range(9):\n        for c in range(9):\n            v = board[r][c]\n            if v == '.': continue\n            b = (r//3)*3 + c//3\n            if v in rows[r] or v in cols[c] or v in boxes[b]:\n                return False\n            rows[r].add(v); cols[c].add(v); boxes[b].add(v)\n    return True" },
+      { "id":44, "title":"Data Science: Confusion Matrix Metrics", "difficulty":"Medium", "desc":"Given true labels and predicted labels, return accuracy, precision, recall, and F1 score.", "code":"def metrics(y_true, y_pred):\n    tp = sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 1)\n    tn = sum(1 for t, p in zip(y_true, y_pred) if t == 0 and p == 0)\n    fp = sum(1 for t, p in zip(y_true, y_pred) if t == 0 and p == 1)\n    fn = sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 0)\n    acc = (tp + tn) / len(y_true)\n    prec = tp / (tp + fp) if (tp + fp) else 0\n    rec = tp / (tp + fn) if (tp + fn) else 0\n    f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0\n    return acc, prec, rec, f1" },
+      { "id":45, "title":"Data Science: K-Means Step", "difficulty":"Hard", "desc":"Given data points and initial centroids, perform one iteration of K-Means assignment and centroid update.", "code":"import numpy as np\ndef kmeans_step(X, centroids):\n    X = np.array(X)\n    centroids = np.array(centroids)\n    dists = np.linalg.norm(X[:, None] - centroids[None], axis=2)\n    labels = np.argmin(dists, axis=1)\n    new_centroids = np.array([X[labels == k].mean(axis=0) if np.any(labels == k) else centroids[k] for k in range(len(centroids))])\n    return labels, new_centroids" },
+      { "id":46, "title":"Data Science: Linear Regression Coefficients", "difficulty":"Medium", "desc":"Given X and y, compute the ordinary least squares coefficients using the normal equation.", "code":"import numpy as np\ndef ols_coefficients(X, y):\n    X = np.array(X); y = np.array(y)\n    X_b = np.c_[np.ones(len(X)), X]\n    return np.linalg.inv(X_b.T @ X_b) @ X_b.T @ y" },
+      { "id":47, "title":"Data Science: Correlation Matrix", "difficulty":"Medium", "desc":"Given a pandas DataFrame, return the correlation matrix.", "code":"import pandas as pd\ndef corr_matrix(df):\n    return df.corr()" },
+      { "id":48, "title":"Data Science: Train-Test Split", "difficulty":"Medium", "desc":"Implement a simple train-test split function without using sklearn.", "code":"import numpy as np\ndef train_test_split(X, y, test_size=0.2):\n    n = len(X)\n    idx = np.random.permutation(n)\n    split = int(n * (1 - test_size))\n    tr, te = idx[:split], idx[split:]\n    return X[tr], X[te], y[tr], y[te]" },
+      { "id":49, "title":"Data Science: One-Hot Encoding", "difficulty":"Medium", "desc":"Convert a list of categorical labels into a one-hot encoded NumPy array.", "code":"import numpy as np\ndef one_hot(labels):\n    labels = np.array(labels)\n    n = len(np.unique(labels))\n    return np.eye(n)[labels]" },
+      { "id":50, "title":"Data Science: Gradient Descent Step", "difficulty":"Hard", "desc":"Perform one step of gradient descent for linear regression given weights, bias, learning rate, and data.", "code":"import numpy as np\ndef gradient_descent_step(X, y, w, b, lr):\n    X = np.array(X); y = np.array(y)\n    y_pred = X @ w + b\n    error = y_pred - y\n    dw = (2 / len(X)) * (X.T @ error)\n    db = (2 / len(X)) * np.sum(error)\n    return w - lr * dw, b - lr * db" }
+    ];
+
+    // =========================================================
+    // 3. RENDER PROBLEMS
+    // =========================================================
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    function renderProblems() {
+        const container = document.getElementById('problemsContainer');
+        container.innerHTML = '';
+        let count = 0;
+
+        problemsData.forEach(prob => {
+            if (currentFilter !== 'all' && prob.difficulty !== currentFilter) return;
+            if (currentSearch && !prob.title.toLowerCase().includes(currentSearch.toLowerCase())) return;
+            count++;
+
+            const card = document.createElement('div');
+            card.className = 'problem-card';
+            card.innerHTML = `
+                <div style="flex: 1;">
+                    <div class="prob-title">${escapeHtml(prob.title)}</div>
+                    <p class="prob-desc">${escapeHtml(prob.desc)}</p>
+                </div>
+                <div class="prob-meta">
+                    <span class="badge ${prob.difficulty.toLowerCase()}">${prob.difficulty}</span>
+                    <button class="btn-view" data-id="${prob.id}">
+                        <i class="fa-solid fa-code"></i> View Code
+                    </button>
+                </div>`;
+            container.appendChild(card);
+        });
+
+        if (count === 0) {
+            container.innerHTML = `<p style="color:var(--text-secondary); text-align:center; grid-column: 1/-1; padding: 2rem;">No problems found.</p>`;
         }
 
-        // ---------------------------------------------------------
-        // 2. PRACTICE PROBLEMS DATA (JSON ARRAY)
-        // ** Yaha par aap 1000 problems add kar sakte ho jisse file 5000 lines ki ho jayegi **
-        // ---------------------------------------------------------
-        const problemsData = 
-  {
-    "id": 1,
-    "title": "Two Sum",
-    "difficulty": "Easy",
-    "desc": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-    "code": "<pre><code>def two_sum(nums, target):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 2,
-    "title": "Reverse a String",
-    "difficulty": "Easy",
-    "desc": "Write a function that reverses a string. The input string is given as a list of characters.",
-    "code": "<pre><code>def reverse_string(s):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 3,
-    "title": "Palindrome Number",
-    "difficulty": "Easy",
-    "desc": "Determine whether an integer is a palindrome. An integer is a palindrome when it reads the same backward as forward.",
-    "code": "<pre><code>def is_palindrome(x):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 4,
-    "title": "FizzBuzz",
-    "difficulty": "Easy",
-    "desc": "Return a list of strings from 1 to n where multiples of 3 are 'Fizz', multiples of 5 are 'Buzz', and multiples of both are 'FizzBuzz'.",
-    "code": "<pre><code>def fizz_buzz(n):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 5,
-    "title": "Maximum Subarray",
-    "difficulty": "Medium",
-    "desc": "Given an integer array nums, find the contiguous subarray which has the largest sum and return its sum.",
-    "code": "<pre><code>def max_subarray(nums):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 6,
-    "title": "Valid Parentheses",
-    "difficulty": "Easy",
-    "desc": "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-    "code": "<pre><code>def is_valid(s):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 7,
-    "title": "Merge Two Sorted Lists",
-    "difficulty": "Easy",
-    "desc": "Merge two sorted linked lists and return it as a new sorted list.",
-    "code": "<pre><code>def merge_two_lists(l1, l2):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 8,
-    "title": "Best Time to Buy and Sell Stock",
-    "difficulty": "Easy",
-    "desc": "Given an array prices where prices[i] is the price of a stock on day i, return the maximum profit you can achieve.",
-    "code": "<pre><code>def max_profit(prices):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 9,
-    "title": "Climbing Stairs",
-    "difficulty": "Easy",
-    "desc": "You are climbing a staircase. It takes n steps to reach the top. Each time you can climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
-    "code": "<pre><code>def climb_stairs(n):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 10,
-    "title": "Binary Search",
-    "difficulty": "Easy",
-    "desc": "Given a sorted array of integers and a target value, return the index of the target or -1 if not found.",
-    "code": "<pre><code>def binary_search(nums, target):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 11,
-    "title": "Linked List Cycle",
-    "difficulty": "Easy",
-    "desc": "Given head, the head of a linked list, determine if the linked list has a cycle in it.",
-    "code": "<pre><code>def has_cycle(head):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 12,
-    "title": "Invert Binary Tree",
-    "difficulty": "Easy",
-    "desc": "Given the root of a binary tree, invert the tree and return its root.",
-    "code": "<pre><code>def invert_tree(root):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 13,
-    "title": "Anagram Check",
-    "difficulty": "Easy",
-    "desc": "Given two strings s and t, return true if t is an anagram of s, and false otherwise.",
-    "code": "<pre><code>def is_anagram(s, t):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 14,
-    "title": "Majority Element",
-    "difficulty": "Easy",
-    "desc": "Given an array nums of size n, return the majority element (appears more than n/2 times).",
-    "code": "<pre><code>def majority_element(nums):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 15,
-    "title": "Product of Array Except Self",
-    "difficulty": "Medium",
-    "desc": "Given an integer array nums, return an array answer such that answer[i] is the product of all elements except nums[i].",
-    "code": "<pre><code>def product_except_self(nums):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 16,
-    "title": "NumPy Array Creation",
-    "difficulty": "Easy",
-    "desc": "Create a NumPy array of shape (3, 4) filled with zeros, then replace the second row with ones.",
-    "code": "<pre><code>import numpy as np\ndef create_array():\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 17,
-    "title": "NumPy Mean and Std",
-    "difficulty": "Easy",
-    "desc": "Given a NumPy array, return a tuple (mean, standard_deviation) rounded to 2 decimal places.",
-    "code": "<pre><code>import numpy as np\ndef mean_std(arr):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 18,
-    "title": "NumPy Matrix Multiplication",
-    "difficulty": "Medium",
-    "desc": "Given two 2D NumPy arrays A and B, return their matrix product.",
-    "code": "<pre><code>import numpy as np\ndef matmul(A, B):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 19,
-    "title": "NumPy Boolean Masking",
-    "difficulty": "Medium",
-    "desc": "Given a NumPy array, return a new array containing only the elements greater than the mean of the original array.",
-    "code": "<pre><code>import numpy as np\ndef above_mean(arr):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 20,
-    "title": "NumPy Normalization",
-    "difficulty": "Medium",
-    "desc": "Normalize a NumPy array so that its values lie between 0 and 1 using min-max scaling.",
-    "code": "<pre><code>import numpy as np\ndef normalize(arr):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 21,
-    "title": "Pandas DataFrame Creation",
-    "difficulty": "Easy",
-    "desc": "Create a pandas DataFrame from a dictionary of lists with columns 'A', 'B', 'C' and 5 rows of your choice.",
-    "code": "<pre><code>import pandas as pd\ndef create_df():\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 22,
-    "title": "Pandas Filter Rows",
-    "difficulty": "Easy",
-    "desc": "Given a DataFrame df with column 'age', return a new DataFrame with only rows where age > 30.",
-    "code": "<pre><code>import pandas as pd\ndef filter_age(df):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 23,
-    "title": "Pandas Groupby Aggregation",
-    "difficulty": "Medium",
-    "desc": "Given a DataFrame with columns 'category' and 'value', return the mean value per category as a DataFrame.",
-    "code": "<pre><code>import pandas as pd\ndef group_mean(df):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 24,
-    "title": "Pandas Handle Missing Values",
-    "difficulty": "Medium",
-    "desc": "Given a DataFrame, replace all NaN values in numeric columns with the column mean.",
-    "code": "<pre><code>import pandas as pd\ndef fill_na_mean(df):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 25,
-    "title": "Pandas Merge DataFrames",
-    "difficulty": "Medium",
-    "desc": "Given two DataFrames df1 and df2 with a common column 'id', perform an inner merge.",
-    "code": "<pre><code>import pandas as pd\ndef merge_dfs(df1, df2):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 26,
-    "title": "Pandas Pivot Table",
-    "difficulty": "Hard",
-    "desc": "Given a DataFrame with columns 'date', 'product', and 'sales', create a pivot table with dates as rows, products as columns, and sum of sales as values.",
-    "code": "<pre><code>import pandas as pd\ndef pivot_sales(df):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 27,
-    "title": "Pandas Time Series Resample",
-    "difficulty": "Hard",
-    "desc": "Given a DataFrame with a datetime index and a 'value' column, resample the data to weekly frequency and compute the sum.",
-    "code": "<pre><code>import pandas as pd\ndef weekly_sum(df):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 28,
-    "title": "Probability: Coin Flips",
-    "difficulty": "Medium",
-    "desc": "Simulate 10,000 flips of a fair coin and return the proportion of heads.",
-    "code": "<pre><code>import numpy as np\ndef coin_flip_probability():\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 29,
-    "title": "Probability: Bayes Theorem",
-    "difficulty": "Medium",
-    "desc": "Given P(A), P(B|A), and P(B|not A), compute P(A|B) using Bayes' theorem.",
-    "code": "<pre><code>def bayes_theorem(p_a, p_b_given_a, p_b_given_not_a):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 30,
-    "title": "Probability: Expected Value",
-    "difficulty": "Medium",
-    "desc": "Given a list of outcomes and their probabilities, compute the expected value.",
-    "code": "<pre><code>def expected_value(outcomes, probabilities):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 31,
-    "title": "Linear Algebra: Dot Product",
-    "difficulty": "Easy",
-    "desc": "Compute the dot product of two vectors without using NumPy.",
-    "code": "<pre><code>def dot_product(v1, v2):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 32,
-    "title": "Linear Algebra: Matrix Transpose",
-    "difficulty": "Easy",
-    "desc": "Return the transpose of a given matrix represented as a list of lists.",
-    "code": "<pre><code>def transpose(matrix):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 33,
-    "title": "Linear Algebra: Determinant 2x2",
-    "difficulty": "Easy",
-    "desc": "Compute the determinant of a 2x2 matrix.",
-    "code": "<pre><code>def det_2x2(matrix):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 34,
-    "title": "Linear Algebra: Matrix Inverse 2x2",
-    "difficulty": "Medium",
-    "desc": "Compute the inverse of a 2x2 matrix if it exists, else return None.",
-    "code": "<pre><code>def inv_2x2(matrix):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 35,
-    "title": "Linear Algebra: Eigenvalues 2x2",
-    "difficulty": "Hard",
-    "desc": "Compute the eigenvalues of a 2x2 matrix using the characteristic equation.",
-    "code": "<pre><code>import math\ndef eigenvalues_2x2(matrix):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 36,
-    "title": "Math: Prime Check",
-    "difficulty": "Easy",
-    "desc": "Return True if a given integer n is prime, else False.",
-    "code": "<pre><code>def is_prime(n):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 37,
-    "title": "Math: GCD and LCM",
-    "difficulty": "Easy",
-    "desc": "Return a tuple (GCD, LCM) of two positive integers.",
-    "code": "<pre><code>import math\ndef gcd_lcm(a, b):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 38,
-    "title": "Math: Fibonacci Sequence",
-    "difficulty": "Easy",
-    "desc": "Return the nth Fibonacci number using iteration.",
-    "code": "<pre><code>def fibonacci(n):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 39,
-    "title": "Math: Factorial",
-    "difficulty": "Easy",
-    "desc": "Return the factorial of a non-negative integer n.",
-    "code": "<pre><code>def factorial(n):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 40,
-    "title": "Math: Sieve of Eratosthenes",
-    "difficulty": "Medium",
-    "desc": "Return a list of all primes up to n using the Sieve of Eratosthenes.",
-    "code": "<pre><code>def sieve(n):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 41,
-    "title": "Logic: Tower of Hanoi",
-    "difficulty": "Medium",
-    "desc": "Return the list of moves to solve the Tower of Hanoi for n disks.",
-    "code": "<pre><code>def hanoi(n, source, target, auxiliary):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 42,
-    "title": "Logic: N-Queens Count",
-    "difficulty": "Hard",
-    "desc": "Return the number of distinct solutions to the n-queens puzzle.",
-    "code": "<pre><code>def n_queens(n):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 43,
-    "title": "Logic: Sudoku Validator",
-    "difficulty": "Hard",
-    "desc": "Determine if a 9x9 Sudoku board is valid.",
-    "code": "<pre><code>def is_valid_sudoku(board):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 44,
-    "title": "Data Science: Confusion Matrix Metrics",
-    "difficulty": "Medium",
-    "desc": "Given true labels and predicted labels, return accuracy, precision, recall, and F1 score.",
-    "code": "<pre><code>def metrics(y_true, y_pred):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 45,
-    "title": "Data Science: K-Means Step",
-    "difficulty": "Hard",
-    "desc": "Given data points and initial centroids, perform one iteration of K-Means assignment and centroid update.",
-    "code": "<pre><code>import numpy as np\ndef kmeans_step(X, centroids):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 46,
-    "title": "Data Science: Linear Regression Coefficients",
-    "difficulty": "Medium",
-    "desc": "Given X and y, compute the ordinary least squares coefficients using the normal equation.",
-    "code": "<pre><code>import numpy as np\ndef ols_coefficients(X, y):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 47,
-    "title": "Data Science: Correlation Matrix",
-    "difficulty": "Medium",
-    "desc": "Given a pandas DataFrame, return the correlation matrix.",
-    "code": "<pre><code>import pandas as pd\ndef corr_matrix(df):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 48,
-    "title": "Data Science: Train-Test Split",
-    "difficulty": "Medium",
-    "desc": "Implement a simple train-test split function without using sklearn.",
-    "code": "<pre><code>import numpy as np\ndef train_test_split(X, y, test_size=0.2):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 49,
-    "title": "Data Science: One-Hot Encoding",
-    "difficulty": "Medium",
-    "desc": "Convert a list of categorical labels into a one-hot encoded NumPy array.",
-    "code": "<pre><code>import numpy as np\ndef one_hot(labels):\n    # Your code here\n    pass</code></pre>"
-  },
-  {
-    "id": 50,
-    "title": "Data Science: Gradient Descent Step",
-    "difficulty": "Hard",
-    "desc": "Perform one step of gradient descent for linear regression given weights, bias, learning rate, and data.",
-    "code": "<pre><code>import numpy as np\ndef gradient_descent_step(X, y, w, b, lr):\n    # Your code here\n    pass</code></pre>"
-  }
-
-            {
-                id: 1,
-                title: "Two Sum",
-                difficulty: "Easy",
-                desc: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-                code: `<span class="keyword">def</span> <span class="function">twoSum</span>(nums, target):
-    seen = {}
-    <span class="keyword">for</span> i, num <span class="keyword">in</span> enumerate(nums):
-        diff = target - num
-        <span class="keyword">if</span> diff <span class="keyword">in</span> seen:
-            <span class="keyword">return</span> [seen[diff], i]
-        seen[num] = i
-    <span class="keyword">return</span> []`
-            },
-            {
-                id: 2,
-                title: "Reverse Linked List",
-                difficulty: "Easy",
-                desc: "Given the head of a singly linked list, reverse the list, and return the reversed list.",
-                code: `<span class="keyword">class</span> <span class="function">ListNode</span>:
-    <span class="keyword">def</span> __init__(self, val=0, next=None):
-        self.val = val
-        self.next = next
-
-<span class="keyword">def</span> <span class="function">reverseList</span>(head):
-    prev = None
-    curr = head
-    <span class="keyword">while</span> curr:
-        next_temp = curr.next
-        curr.next = prev
-        prev = curr
-        curr = next_temp
-    <span class="keyword">return</span> prev`
-            },
-            {
-                id: 3,
-                title: "Longest Substring",
-                difficulty: "Medium",
-                desc: "Find the length of the longest substring without repeating characters.",
-                code: `<span class="keyword">def</span> <span class="function">lengthOfLongestSubstring</span>(s: str) -> int:
-    char_set = set()
-    left = 0
-    max_len = 0
-    
-    <span class="keyword">for</span> right <span class="keyword">in</span> range(len(s)):
-        <span class="keyword">while</span> s[right] <span class="keyword">in</span> char_set:
-            char_set.remove(s[left])
-            left += 1
-        char_set.add(s[right])
-        max_len = max(max_len, right - left + 1)
-        
-    <span class="keyword">return</span> max_len`
-            },
-            {
-                id: 4,
-                title: "Merge K Sorted Lists",
-                difficulty: "Hard",
-                desc: "You are given an array of k linked-lists, each linked-list is sorted in ascending order. Merge all into one.",
-                code: `<span class="keyword">import</span> heapq
-
-<span class="keyword">def</span> <span class="function">mergeKLists</span>(lists):
-    hq = []
-    <span class="keyword">for</span> i, l <span class="keyword">in</span> enumerate(lists):
-        <span class="keyword">if</span> l:
-            heapq.heappush(hq, (l.val, i, l))
-            
-    dummy = ListNode(0)
-    curr = dummy
-    
-    <span class="keyword">while</span> hq:
-        val, i, node = heapq.heappop(hq)
-        curr.next = node
-        curr = curr.next
-        <span class="keyword">if</span> node.next:
-            heapq.heappush(hq, (node.next.val, i, node.next))
-            
-    <span class="keyword">return</span> dummy.next`
-            },
-            {
-                id: 5,
-                title: "Valid Parentheses",
-                difficulty: "Easy",
-                desc: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-                code: `<span class="keyword">def</span> <span class="function">isValid</span>(s: str) -> bool:
-    stack = []
-    mapping = {")": "(", "}": "{", "]": "["}
-    
-    <span class="keyword">for</span> char <span class="keyword">in</span> s:
-        <span class="keyword">if</span> char <span class="keyword">in</span> mapping:
-            top_element = stack.pop() <span class="keyword">if</span> stack <span class="keyword">else</span> '#'
-            <span class="keyword">if</span> mapping[char] != top_element:
-                <span class="keyword">return False</span>
-        <span class="keyword">else</span>:
-            stack.append(char)
-            
-    <span class="keyword">return not</span> stack`
-            }
-            // ... (Aap yaha aur objects add karke file size arbitrarily bada kar sakte ho) ...
-        ];
-
-        let currentFilter = 'all';
-
-        function renderProblems(searchQuery = '') {
-            const container = document.getElementById('problemsContainer');
-            container.innerHTML = '';
-
-            problemsData.forEach(prob => {
-                // Apply Filters
-                if (currentFilter !== 'all' && prob.difficulty !== currentFilter) return;
-                if (searchQuery && !prob.title.toLowerCase().includes(searchQuery.toLowerCase())) return;
-
-                const card = document.createElement('div');
-                card.className = 'problem-card';
-                card.innerHTML = `
-                    <div style="flex: 1;">
-                        <div class="prob-title">${prob.id}. ${prob.title}</div>
-                        <p class="prob-desc">${prob.desc}</p>
-                    </div>
-                    <div class="prob-meta">
-                        <span class="badge ${prob.difficulty.toLowerCase()}">${prob.difficulty}</span>
-                        <button class="btn-view" onclick="openModal('${prob.title}', \`${prob.code.replace(/`/g, '\\`')}\`)">
-                            <i class="fa-solid fa-code"></i> View Code
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
+        container.querySelectorAll('.btn-view').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.dataset.id);
+                const prob = problemsData.find(p => p.id === id);
+                if (prob) openModal(prob.title, prob.code);
             });
-        }
+        });
+    }
 
-        function filterDifficulty(diff) {
-            currentFilter = diff;
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            renderProblems(document.getElementById('searchInput').value);
-        }
-
-        function filterProblems() {
-            renderProblems(document.getElementById('searchInput').value);
-        }
-
-        // Modal Logic
-        const modal = document.getElementById('codeModal');
-        function openModal(title, code) {
-            document.getElementById('modalTitle').innerText = title + " - Solution";
-            document.getElementById('modalCode').innerHTML = code;
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeModal() {
-            modal.classList.remove('show');
-            document.body.style.overflow = 'auto';
-        }
-
-        // ---------------------------------------------------------
-        // 3. TELEGRAM BOT INTEGRATION
-        // ---------------------------------------------------------
-        const TG_BOT_TOKEN = "8566671161:AAGFDyD3CGnF3QenNJp6KnR_Nsf80fzBrXo"; // Update this
-        const TG_CHAT_ID = "@TCS_SUPPORT_TEAM"; // Ensure bot is admin in this channel
-
-        async function handleSupportSubmit(e) {
-            e.preventDefault();
-            const btn = document.getElementById('spBtn');
-            const statusBox = document.getElementById('spStatus');
-            const name = document.getElementById('spName').value;
-            const email = document.getElementById('spEmail').value;
-            const msg = document.getElementById('spMsg').value;
-
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-            btn.disabled = true;
-            statusBox.style.display = 'block';
-
-            const textMessage = `🔔 *New Alert: The Chairman Show*\n\n👤 *Name:* ${name}\n📧 *Email:* ${email}\n💬 *Message:* ${msg}`;
-
-            try {
-                // If Token is dummy, simulate success to avoid console errors breaking UI for demo
-                if(TG_BOT_TOKEN === "YOUR_BOT_TOKEN_HERE") throw new Error("Token not set");
-
-                const response = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: TG_CHAT_ID,
-                        text: textMessage,
-                        parse_mode: 'Markdown'
-                    })
-                });
-
-                if(response.ok) {
-                    statusBox.innerHTML = '<span style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Sent successfully to @TCS_SUPPORT_TEAM!</span>';
-                    document.getElementById('supportForm').reset();
-                } else {
-                    throw new Error('API Error');
-                }
-            } catch(err) {
-                // Fallback UI for demonstration
-                statusBox.innerHTML = '<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Simulated Success (Set real Bot Token in JS to actual send)</span>';
-                document.getElementById('supportForm').reset();
-            } finally {
-                btn.innerHTML = '<span>Send Message</span> <i class="fa-solid fa-paper-plane"></i>';
-                btn.disabled = false;
-                setTimeout(() => { statusBox.style.display = 'none'; }, 5000);
-            }
-        }
-
-        // ---------------------------------------------------------
-        // 4. COMMUNITY CHAT (LOCAL STORAGE BASED)
-        // ---------------------------------------------------------
-        const chatBox = document.getElementById('chatBox');
-        const defaultChat = [
-            { name: "System", time: "00:00", text: "Welcome to The Chairman Show Community! Rules: Be respectful.", isSystem: true },
-            { name: "Sumit (Admin)", time: "10:00", text: "Hello guys! Drop your project links here for review.", isMine: false }
-        ];
-
-        function loadChat() {
-            const msgs = JSON.parse(localStorage.getItem('tcs_chat')) || defaultChat;
-            chatBox.innerHTML = '';
-            
-            msgs.forEach(m => {
-                if(m.isSystem) {
-                    chatBox.innerHTML += `<div style="text-align:center; color:var(--warning); font-size:0.8rem; margin:10px 0;">-- ${m.text} --</div>`;
-                    return;
-                }
-
-                const myName = document.getElementById('chatSenderName').value || 'Me';
-                const isMine = m.name === myName || m.isMine;
-                const letter = m.name.charAt(0).toUpperCase();
-                
-                chatBox.innerHTML += `
-                    <div class="msg-wrapper ${isMine ? 'mine' : ''}">
-                        <div class="avatar">${letter}</div>
-                        <div class="msg-content">
-                            <div class="msg-info">
-                                <span class="msg-name">${m.name}</span>
-                                <span class="msg-time">${m.time}</span>
-                            </div>
-                            <div class="msg-text">${m.text}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function sendChatMessage(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('chatSenderName');
-            const msgInput = document.getElementById('chatMessageInput');
-            
-            if(!nameInput.value || !msgInput.value) return;
-
-            const msgs = JSON.parse(localStorage.getItem('tcs_chat')) || defaultChat;
-            msgs.push({
-                name: nameInput.value.trim(),
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                text: msgInput.value.trim(),
-                isMine: true
-            });
-            
-            // Keep only last 50 messages to prevent localstorage overflow
-            if(msgs.length > 50) msgs.shift();
-
-            localStorage.setItem('tcs_chat', JSON.stringify(msgs));
-            msgInput.value = '';
-            loadChat();
-        }
-
-        // Initialize App
-        window.onload = () => {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentFilter = this.dataset.diff;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
             renderProblems();
-            loadChat();
-        };
+        });
+    });
+
+    document.getElementById('searchInput').addEventListener('input', function() {
+        currentSearch = this.value;
+        renderProblems();
+    });
+
+    function filterProblems() {
+        currentSearch = document.getElementById('searchInput').value;
+        renderProblems();
+    }
+
+    // =========================================================
+    // 4. MODAL
+    // =========================================================
+    const modal = document.getElementById('codeModal');
+    function openModal(title, code) {
+        document.getElementById('modalTitle').textContent = title + " - Solution";
+        document.getElementById('modalCode').textContent = code;
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+    }
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // =========================================================
+    // 5. TELEGRAM — PROXY VIA CLOUDFLARE WORKER (FIX)
+    // =========================================================
+    /*
+       ⚠️ IMPORTANT: Telegram Bot API को browser से direct call मत करो।
+       
+       STEP 1: Cloudflare Worker बनाओ (Free):
+       -------------------------------------------------
+       जाओ https://workers.cloudflare.com → Create Worker
+       
+       ये code paste करो:
+       
+       export default {
+         async fetch(request, env) {
+           if (request.method === 'OPTIONS') {
+             return new Response(null, { headers: corsHeaders() });
+           }
+           const { name, email, msg } = await request.json();
+           const text = `🔔 *New Alert: The Chairman Show*\n\n👤 *Name:* ${name}\n📧 *Email:* ${email}\n💬 *Message:* ${msg}`;
+           const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+               chat_id: env.CHAT_ID,
+               text,
+               parse_mode: 'Markdown'
+             })
+           });
+           const data = await res.json();
+           return new Response(JSON.stringify(data), {
+             headers: { 'Content-Type': 'application/json', ...corsHeaders() }
+           });
+         }
+       };
+       function corsHeaders() {
+         return {
+           'Access-Control-Allow-Origin': '*',
+           'Access-Control-Allow-Methods': 'POST, OPTIONS',
+           'Access-Control-Allow-Headers': 'Content-Type'
+         };
+       }
+       
+       STEP 2: Worker Settings → Variables में add करो (Encrypt):
+         BOT_TOKEN = 8566671161:AAGFDyD3CGnF3QenNJp6KnR_Nsf80fzBrXo
+         CHAT_ID   = @TCS_SUPPORT_TEAM
+       
+       ⚠️ Bot को @TCS_SUPPORT_TEAM channel में Admin बनाना ज़रूरी है!
+       
+       STEP 3: नीचे अपना Worker URL paste करो 👇
+    */
+    const PROXY_URL = https://dash.cloudflare.com/58bfe3cf3448d16af01394afc7e8bec8/workers/services/view/tcs-telegram-proxy/production/settings;
+
+    async function handleSupportSubmit(e) {
+        e.preventDefault();
+        const btn = document.getElementById('spBtn');
+        const statusBox = document.getElementById('spStatus');
+        const name = document.getElementById('spName').value.trim();
+        const email = document.getElementById('spEmail').value.trim();
+        const msg = document.getElementById('spMsg').value.trim();
+
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+        statusBox.style.display = 'block';
+        statusBox.innerHTML = '';
+
+        // Validation: proxy set है या नहीं
+        if (PROXY_URL.includes("YOUR-WORKER-NAME")) {
+            statusBox.innerHTML = '<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Admin: PROXY_URL को अपने Cloudflare Worker URL से replace करें।</span>';
+            btn.innerHTML = '<span>Send Message</span> <i class="fa-solid fa-paper-plane"></i>';
+            btn.disabled = false;
+            return;
+        }
+
+        try {
+            const response = await fetch(PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, msg })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.ok) {
+                statusBox.innerHTML = '<span style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Message sent to @TCS_SUPPORT_TEAM successfully!</span>';
+                document.getElementById('supportForm').reset();
+            } else {
+                throw new Error(data.description || 'Failed to send');
+            }
+        } catch (err) {
+            console.error(err);
+            statusBox.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-circle-xmark"></i> Error: ${escapeHtml(err.message)}</span>`;
+        } finally {
+            btn.innerHTML = '<span>Send Message</span> <i class="fa-solid fa-paper-plane"></i>';
+            btn.disabled = false;
+            setTimeout(() => { statusBox.style.display = 'none'; }, 6000);
+        }
+    }
+
+    // =========================================================
+    // 6. COMMUNITY CHAT (LOCALSTORAGE)
+    // =========================================================
+    const chatBox = document.getElementById('chatBox');
+    const defaultChat = [
+        { name: "System", time: "00:00", text: "Welcome to The Chairman Show Community! Rules: Be respectful.", isSystem: true },
+        { name: "Sumit (Admin)", time: "10:00", text: "Hello guys! Drop your project links here for review.", isMine: false }
+    ];
+
+    function loadChat() {
+        let msgs;
+        try {
+            msgs = JSON.parse(localStorage.getItem('tcs_chat')) || defaultChat;
+        } catch { msgs = defaultChat; }
+
+        chatBox.innerHTML = '';
+        const myName = document.getElementById('chatSenderName')?.value?.trim() || '';
+
+        msgs.forEach(m => {
+            if (m.isSystem) {
+                chatBox.innerHTML += `<div style="text-align:center; color:var(--warning); font-size:0.8rem; margin:10px 0;">-- ${escapeHtml(m.text)} --</div>`;
+                return;
+            }
+            const isMine = (myName && m.name === myName) || m.isMine;
+            const letter = m.name.charAt(0).toUpperCase();
+
+            chatBox.innerHTML += `
+                <div class="msg-wrapper ${isMine ? 'mine' : ''}">
+                    <div class="avatar">${escapeHtml(letter)}</div>
+                    <div class="msg-content">
+                        <div class="msg-info">
+                            <span class="msg-name">${escapeHtml(m.name)}</span>
+                            <span class="msg-time">${escapeHtml(m.time)}</span>
+                        </div>
+                        <div class="msg-text">${escapeHtml(m.text)}</div>
+                    </div>
+                </div>`;
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendChatMessage(e) {
+        e.preventDefault();
+        const nameInput = document.getElementById('chatSenderName');
+        const msgInput = document.getElementById('chatMessageInput');
+
+        if (!nameInput.value.trim() || !msgInput.value.trim()) return;
+
+        let msgs;
+        try {
+            msgs = JSON.parse(localStorage.getItem('tcs_chat')) || defaultChat;
+        } catch { msgs = defaultChat; }
+
+        msgs.push({
+            name: nameInput.value.trim(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            text: msgInput.value.trim()
+        });
+
+        if (msgs.length > 50) msgs.shift();
+        localStorage.setItem('tcs_chat', JSON.stringify(msgs));
+        msgInput.value = '';
+        loadChat();
+    }
+
+    // =========================================================
+    // 7. INIT
+    // =========================================================
+    window.addEventListener('load', () => {
+        renderProblems();
+        loadChat();
+    });
     </script>
 </body>
 </html>
