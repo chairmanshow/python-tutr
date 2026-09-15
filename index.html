@@ -707,56 +707,13 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     // =========================================================
-    // 5. TELEGRAM — PROXY VIA CLOUDFLARE WORKER (FIX)
+       // =========================================================
+    // 5. TELEGRAM — PROXY VIA CLOUDFLARE WORKER (FIXED)
     // =========================================================
-    /*
-       ⚠️ IMPORTANT: Telegram Bot API को browser से direct call मत करो।
-       
-       STEP 1: Cloudflare Worker बनाओ (Free):
-       -------------------------------------------------
-       जाओ https://workers.cloudflare.com → Create Worker
-       
-       ये code paste करो:
-       
-       export default {
-         async fetch(request, env) {
-           if (request.method === 'OPTIONS') {
-             return new Response(null, { headers: corsHeaders() });
-           }
-           const { name, email, msg } = await request.json();
-           const text = `🔔 *New Alert: The Chairman Show*\n\n👤 *Name:* ${name}\n📧 *Email:* ${email}\n💬 *Message:* ${msg}`;
-           const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({
-               chat_id: env.CHAT_ID,
-               text,
-               parse_mode: 'Markdown'
-             })
-           });
-           const data = await res.json();
-           return new Response(JSON.stringify(data), {
-             headers: { 'Content-Type': 'application/json', ...corsHeaders() }
-           });
-         }
-       };
-       function corsHeaders() {
-         return {
-           'Access-Control-Allow-Origin': '*',
-           'Access-Control-Allow-Methods': 'POST, OPTIONS',
-           'Access-Control-Allow-Headers': 'Content-Type'
-         };
-       }
-       
-       STEP 2: Worker Settings → Variables में add करो (Encrypt):
-         BOT_TOKEN = 8566671161:AAGFDyD3CGnF3QenNJp6KnR_Nsf80fzBrXo
-         CHAT_ID   = @TCS_SUPPORT_TEAM
-       
-       ⚠️ Bot को @TCS_SUPPORT_TEAM channel में Admin बनाना ज़रूरी है!
-       
-       STEP 3: नीचे अपना Worker URL paste करो 👇
-    */
-    const PROXY_URL = https://dash.cloudflare.com/58bfe3cf3448d16af01394afc7e8bec8/workers/services/view/tcs-telegram-proxy/production/settings;
+    
+    // ⚠️ अपना actual Worker URL यहाँ paste करो (quotes ज़रूरी हैं!)
+    // Format: https://tcs-telegram-proxy.YOUR-SUBDOMAIN.workers.dev
+    const PROXY_URL = http://tcs-telegram-proxy.sumitshrivas24.workers.dev/;
 
     async function handleSupportSubmit(e) {
         e.preventDefault();
@@ -771,8 +728,8 @@
         statusBox.style.display = 'block';
         statusBox.innerHTML = '';
 
-        // Validation: proxy set है या नहीं
-        if (PROXY_URL.includes("YOUR-WORKER-NAME")) {
+        // Proxy URL set है या नहीं check करो
+        if (PROXY_URL.includes("YOUR-SUBDOMAIN")) {
             statusBox.innerHTML = '<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Admin: PROXY_URL को अपने Cloudflare Worker URL से replace करें।</span>';
             btn.innerHTML = '<span>Send Message</span> <i class="fa-solid fa-paper-plane"></i>';
             btn.disabled = false;
@@ -792,10 +749,10 @@
                 statusBox.innerHTML = '<span style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Message sent to @TCS_SUPPORT_TEAM successfully!</span>';
                 document.getElementById('supportForm').reset();
             } else {
-                throw new Error(data.description || 'Failed to send');
+                throw new Error(data.description || data.error || 'Failed to send');
             }
         } catch (err) {
-            console.error(err);
+            console.error("Telegram send error:", err);
             statusBox.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-circle-xmark"></i> Error: ${escapeHtml(err.message)}</span>`;
         } finally {
             btn.innerHTML = '<span>Send Message</span> <i class="fa-solid fa-paper-plane"></i>';
