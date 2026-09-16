@@ -21,9 +21,9 @@ const storage = firebase.storage();
 
 // ⚠️ CHANGE THESE:
 const CONFIG = {
-  UPI_ID: "yourname@upi",           // तुम्हारा UPI ID
-  TELEGRAM_PROXY: "https://your-worker.workers.dev/",  // तुम्हारा Cloudflare Worker
-  ADMIN_EMAIL: "youremail@gmail.com"  // तुम्हारा email (admin access के लिए)
+  UPI_ID: "yourname@upi",
+  TELEGRAM_PROXY: "https://tcs-telegram-proxy.sumitshrivas24.workers.dev",  // ⬅️ ये
+  ADMIN_EMAIL: "youremail@gmail.com"
 };
 
 let currentUser = null;
