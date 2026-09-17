@@ -168,12 +168,28 @@ $('signOutBtn').addEventListener('click', () => {
   if (confirm('Sign out?')) auth.signOut();
 });
 
+// ═══ FALLBACK: 3 sec me login screen dikha do ═══
+const authTimeout = setTimeout(() => {
+  if (!currentUser) {
+    const loader = $('bootLoader');
+    if (loader) loader.classList.add('hide');
+    $('loginScreen').style.display = 'flex';
+    $('loginScreen').classList.remove('hide');
+  }
+}, 3000);
+
 auth.onAuthStateChanged(async (user) => {
+  clearTimeout(authTimeout);
   if (user) {
     currentUser = user;
-    await ensureUserProfile(user);
-    showApp();
-    initApp();
+    try {
+      await ensureUserProfile(user);
+      showApp();
+      initApp();
+    } catch (err) {
+      console.error('Profile load error:', err);
+      toast('warn', 'Profile load failed', 'Please refresh');
+    }
   } else {
     currentUser = null;
     showLogin();
@@ -713,16 +729,21 @@ async function loadStats() {
   if ($('miniRating')) $('miniRating').textContent = userProfile?.rating ? userProfile.rating.toFixed(1) : '—';
 }
 
-/* ─────────────── SECTION 12: BACK TO TOP + SCROLL ─────────────── */
-window.addEventListener('scroll', () => {
-  const h = document.documentElement;
-  const scrolled = (h.scrollTop / ((h.scrollHeight - h.clientHeight) || 1)) * 100;
-  if ($('scrollProgress')) $('scrollProgress').style.width = scrolled + '%';
-  if ($('backToTop')) $('backToTop').classList.toggle('show', h.scrollTop > 400);
+// ═══ BOOT LOADER — always hide after max 3 seconds ═══
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const loader = $('bootLoader');
+    if (loader) loader.classList.add('hide');
+  }, 2000);
 });
-if ($('backToTop')) {
-  $('backToTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-}
+
+// Safety: agar 5 sec me bhi kuch load na ho to force hide
+setTimeout(() => {
+  const loader = $('bootLoader');
+  if (loader && !loader.classList.contains('hide')) {
+    loader.classList.add('hide');
+  }
+}, 5000);
 
 /* ─────────────── SECTION 13: INIT APP ─────────────── */
 function initApp() {
