@@ -75,13 +75,14 @@
       </a>
 
       <ul class="nav-links">
-        <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> <span class="nav-text">Home</span></button></li>
-        <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
-        <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Experts</span></button></li>
-        <li><button class="nav-item" data-tab="community"><i class="fa-solid fa-earth-americas"></i> <span class="nav-text">Community</span><span class="nav-badge" id="navBadge" style="display:none;">0</span></button></li>
-        <li><button class="nav-item" data-tab="subscription"><i class="fa-solid fa-crown"></i> <span class="nav-text">Premium</span></button></li>
-        <li><button class="nav-item" data-tab="support"><i class="fa-brands fa-telegram"></i> <span class="nav-text">Support</span></button></li>
-      </ul>
+  <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> <span class="nav-text">Home</span></button></li>
+  <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
+  <li><button class="nav-item" data-tab="expertDashboard" id="navExpertDashboard" style="display:none;"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Expert Panel</span></button></li>
+  <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-users"></i> <span class="nav-text">Experts</span></button></li>
+  <li><button class="nav-item" data-tab="community"><i class="fa-solid fa-earth-americas"></i> <span class="nav-text">Community</span><span class="nav-badge" id="navBadge" style="display:none;">0</span></button></li>
+  <li><button class="nav-item" data-tab="subscription"><i class="fa-solid fa-crown"></i> <span class="nav-text">Premium</span></button></li>
+  <li><button class="nav-item" data-tab="support"><i class="fa-brands fa-telegram"></i> <span class="nav-text">Support</span></button></li>
+</ul>
 
       <div class="user-menu">
         <button class="user-avatar-btn" id="userMenuBtn">
@@ -192,18 +193,116 @@
         <div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No doubts yet</h4><p>Click "Ask New Doubt" to get started</p></div>
       </div>
     </section>
+<!-- ═══════════════ EXPERT DASHBOARD TAB ═══════════════ -->
+<section id="expertDashboard" class="tab-content">
+  <div class="section-header">
+    <h1>Expert Dashboard</h1>
+    <p>Answer student doubts and earn money</p>
+  </div>
 
-    <!-- ═══════════════ EXPERTS TAB ═══════════════ -->
-    <section id="experts" class="tab-content">
-      <div class="section-header">
-        <h1>Find an Expert</h1>
-        <p>Choose from verified experts across all levels</p>
+  <!-- Stats Row -->
+  <div class="expert-stats-row">
+    <div class="expert-stat-card">
+      <i class="fa-solid fa-inbox" style="color:#3b82f6"></i>
+      <div>
+        <div class="es-num" id="esOpenCount">0</div>
+        <div class="es-lbl">Open Doubts</div>
+      </div>
+    </div>
+    <div class="expert-stat-card">
+      <i class="fa-solid fa-circle-check" style="color:#10b981"></i>
+      <div>
+        <div class="es-num" id="esAnsweredCount">0</div>
+        <div class="es-lbl">Answered</div>
+      </div>
+    </div>
+    <div class="expert-stat-card">
+      <i class="fa-solid fa-star" style="color:#f59e0b"></i>
+      <div>
+        <div class="es-num" id="esRating">—</div>
+        <div class="es-lbl">Your Rating</div>
+      </div>
+    </div>
+    <div class="expert-stat-card">
+      <i class="fa-solid fa-indian-rupee-sign" style="color:#7c3aed"></i>
+      <div>
+        <div class="es-num" id="esEarnings">₹0</div>
+        <div class="es-lbl">Earnings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="doubts-toolbar">
+    <div class="filter-chips" id="expertDoubtFilters">
+      <button class="chip active" data-status="open">Open</button>
+      <button class="chip" data-status="answered">My Answers</button>
+      <button class="chip" data-status="all">All</button>
+    </div>
+  </div>
+
+  <!-- Doubts List -->
+  <div class="expert-doubts-list" id="expertDoubtsList">
+    <div class="empty-state">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <p>Loading doubts…</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ANSWER MODAL ═══════════════ -->
+<div class="modal-overlay" id="answerDoubtModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-pen"></i> Answer Doubt</h3>
+      <button class="close-modal" onclick="closeModal('answerDoubtModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <!-- Original Question -->
+      <div class="original-doubt" id="originalDoubt">
+        <div class="od-header">
+          <span class="doubt-subject" id="odSubject">Subject</span>
+          <span class="doubt-status" id="odStatus">open</span>
+        </div>
+        <div class="od-question" id="odQuestion">Question here…</div>
+        <div id="odImage"></div>
+        <div class="od-meta" id="odMeta"></div>
       </div>
 
-      <div class="expert-sections" id="expertSections">
-        <!-- 4 sections dynamically rendered -->
+      <div class="form-group">
+        <label>Your Answer</label>
+        <textarea id="answerText" rows="8" placeholder="Explain step by step..." style="font-family: var(--font-mono); font-size: .88rem;"></textarea>
       </div>
-    </section>
+
+      <div class="form-group">
+        <label>Attach Image (optional — solution photo)</label>
+        <input type="file" id="answerImage" accept="image/*">
+        <div id="answerImagePreview"></div>
+      </div>
+
+      <button class="btn-primary" id="submitAnswerBtn" style="width:100%">
+        <i class="fa-solid fa-paper-plane"></i> Submit Answer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DOUBT DETAILS (Student View) ═══════════════ -->
+<div class="modal-overlay" id="doubtDetailsModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-circle-question"></i> Doubt Details</h3>
+      <button class="close-modal" onclick="closeModal('doubtDetailsModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="doubtDetailsBody">
+      <!-- Content injected by JS -->
+    </div>
+  </div>
+</div>
 
     <!-- ═══════════════ COMMUNITY TAB ═══════════════ -->
     <section id="community" class="tab-content">
