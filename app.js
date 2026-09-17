@@ -198,8 +198,8 @@ function switchToTab(tabId) {
 
   if (tabId === 'doubts') loadDoubts();
   if (tabId === 'experts') loadExperts();
+  if (tabId === 'expertDashboard') loadExpertDashboard();  // ⬅️ ये नई line
   if (tabId === 'subscription') loadPlans();
-  if (tabId === 'community') { /* chat init */ }
 }
 window.switchToTab = switchToTab;
 
@@ -628,4 +628,314 @@ window.addEventListener('load', () => {
 window.openImageViewer = function(url) {
   $('viewerImage').src = url;
   openModal('imageViewerModal');
+};
+/* ══════════════════════════════════════════════════════════════
+   SECTION 15: EXPERT DASHBOARD + ANSWER SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+let currentAnswerDoubtId = null;
+let expertDoubtFilter = 'open';
+
+// ═══ Show/Hide Expert Panel based on role ═══
+function updateExpertPanelVisibility() {
+  const isExpert = userProfile?.role === 'expert' || userProfile?.role === 'admin';
+  const btn = $('navExpertDashboard');
+  if (btn) btn.style.display = isExpert ? 'flex' : 'none';
+}
+
+// Call this after user profile loads
+const _origUpdateUserUI = updateUserUI;
+window.updateUserUI = function() {
+  _origUpdateUserUI();
+  updateExpertPanelVisibility();
+};
+
+// ═══ Load Expert Dashboard ═══
+async function loadExpertDashboard() {
+  if (userProfile?.role !== 'expert' && userProfile?.role !== 'admin') {
+    toast('warn', 'Access denied', 'Only experts can access this panel.');
+    switchToTab('home');
+    return;
+  }
+
+  // Load stats
+  try {
+    const snap = await db.collection('doubts').limit(500).get();
+    let openCount = 0, answeredCount = 0;
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.status === 'open') openCount++;
+      if (data.answeredBy === currentUser.uid) answeredCount++;
+    });
+    $('esOpenCount').textContent = openCount;
+    $('esAnsweredCount').textContent = answeredCount;
+    $('esRating').textContent = userProfile.rating ? userProfile.rating.toFixed(1) : '—';
+    $('esEarnings').textContent = '₹' + (userProfile.earnings || 0);
+  } catch (err) {
+    console.warn('Stats failed:', err);
+  }
+
+  // Load doubts
+  loadExpertDoubts();
+}
+
+async function loadExpertDoubts() {
+  const list = $('expertDoubtsList');
+  list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
+
+  try {
+    let q = db.collection('doubts');
+
+    if (expertDoubtFilter === 'open') {
+      q = q.where('status', '==', 'open');
+    } else if (expertDoubtFilter === 'answered') {
+      q = q.where('answeredBy', '==', currentUser.uid);
+    }
+    // 'all' → no filter
+
+    const snap = await q.limit(50).get();
+    const doubts = [];
+    snap.forEach(d => doubts.push({ id: d.id, ...d.data() }));
+
+    // Sort by date client-side (avoid needing index)
+    doubts.sort((a, b) => {
+      const ta = a.createdAt?.toDate?.()?.getTime() || 0;
+      const tb = b.createdAt?.toDate?.()?.getTime() || 0;
+      return tb - ta;
+    });
+
+    if (!doubts.length) {
+      list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No doubts found</h4><p>Check back later!</p></div>';
+      return;
+    }
+
+    list.innerHTML = doubts.map(d => expertDoubtCardHtml(d)).join('');
+
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Error loading</h4><p>' + escapeHtml(err.message) + '</p></div>';
+  }
+}
+
+function expertDoubtCardHtml(d) {
+  const avatar = d.userPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.userName || 'Student')}&background=2563eb&color=fff`;
+  const when = d.createdAt?.toDate?.() ? formatTime(d.createdAt.toDate().getTime()) : 'Just now';
+  const isAnswered = d.status === 'answered';
+  const isMine = d.answeredBy === currentUser.uid;
+
+  return `
+    <div class="expert-doubt-card">
+      <div class="doubt-header">
+        <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject || 'General')}</span>
+        <span class="doubt-status ${d.status}">${d.status}</span>
+      </div>
+
+      <div class="student-info">
+        <img src="${escapeHtml(avatar)}" alt="">
+        <span>${escapeHtml(d.userName || 'Student')}</span>
+        <span style="margin-left:auto;font-size:.72rem;color:var(--text-muted)">${when}</span>
+      </div>
+
+      <div class="edc-question">${escapeHtml(d.question || '')}</div>
+
+      ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-bottom:.7rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+
+      <div class="edc-actions">
+        ${!isAnswered ? `
+          <button class="primary" onclick="openAnswerModal('${d.id}')">
+            <i class="fa-solid fa-pen"></i> Answer
+          </button>
+        ` : isMine ? `
+          <button disabled style="cursor:default">
+            <i class="fa-solid fa-check" style="color:var(--success)"></i> You answered this
+          </button>
+        ` : `
+          <button disabled style="cursor:default;opacity:.6">
+            <i class="fa-solid fa-check"></i> Already answered
+          </button>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+// ═══ Open Answer Modal ═══
+window.openAnswerModal = async function(doubtId) {
+  try {
+    const doc = await db.collection('doubts').doc(doubtId).get();
+    if (!doc.exists) { toast('warn', 'Doubt not found'); return; }
+    const d = doc.data();
+
+    currentAnswerDoubtId = doubtId;
+    $('odSubject').textContent = d.subject || 'General';
+    $('odStatus').textContent = d.status;
+    $('odStatus').className = 'doubt-status ' + d.status;
+    $('odQuestion').textContent = d.question || '';
+    $('odImage').innerHTML = d.imageUrl
+      ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">`
+      : '';
+    $('odMeta').innerHTML = `
+      <span><i class="fa-regular fa-user"></i> ${escapeHtml(d.userName || 'Student')}</span>
+      <span><i class="fa-solid fa-graduation-cap"></i> ${escapeHtml(d.class || 'N/A')}</span>
+      <span><i class="fa-regular fa-clock"></i> ${d.createdAt?.toDate?.() ? formatTime(d.createdAt.toDate().getTime()) : 'Just now'}</span>
+    `;
+
+    $('answerText').value = '';
+    $('answerImage').value = '';
+    $('answerImagePreview').innerHTML = '';
+
+    openModal('answerDoubtModal');
+  } catch (err) {
+    toast('warn', 'Error', err.message);
+  }
+};
+
+// Answer image preview
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'answerImage') {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      $('answerImagePreview').innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;">`;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// ═══ Submit Answer ═══
+document.addEventListener('click', async (e) => {
+  if (e.target.closest('#submitAnswerBtn')) {
+    const btn = $('submitAnswerBtn');
+    const text = $('answerText').value.trim();
+    const imageFile = $('answerImage').files[0];
+
+    if (!text) { toast('warn', 'Please write an answer'); return; }
+    if (!currentAnswerDoubtId) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+
+    try {
+      let imageUrl = '';
+      if (imageFile) {
+        const ref = storage.ref(`answers/${currentUser.uid}/${Date.now()}_${imageFile.name}`);
+        await ref.put(imageFile);
+        imageUrl = await ref.getDownloadURL();
+      }
+
+      // Add answer to subcollection
+      await db.collection('doubts').doc(currentAnswerDoubtId)
+        .collection('answers').add({
+          expertId: currentUser.uid,
+          expertName: userProfile.name,
+          expertPhoto: userProfile.photoURL || '',
+          expertTitle: userProfile.title || 'Subject Expert',
+          text: text,
+          imageUrl: imageUrl,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          helpful: 0
+        });
+
+      // Update doubt doc
+      await db.collection('doubts').doc(currentAnswerDoubtId).update({
+        status: 'answered',
+        answeredBy: currentUser.uid,
+        answeredByName: userProfile.name,
+        answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+        answerCount: firebase.firestore.FieldValue.increment(1)
+      });
+
+      // Update expert's answered count
+      await db.collection('users').doc(currentUser.uid).update({
+        doubtsSolved: firebase.firestore.FieldValue.increment(1),
+        earnings: firebase.firestore.FieldValue.increment(10) // ₹10 per answer (customize)
+      });
+
+      // Notify via Telegram
+      notifyTelegram(
+        `✅ Doubt Answered!\n` +
+        `Expert: ${userProfile.name}\n` +
+        `Doubt ID: ${currentAnswerDoubtId}\n` +
+        `Answer preview: ${text.slice(0, 150)}...`
+      );
+
+      toast('success', 'Answer submitted!', '+₹10 added to your earnings');
+      closeModal('answerDoubtModal');
+      loadExpertDoubts();
+
+    } catch (err) {
+      console.error(err);
+      toast('warn', 'Failed', err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Answer';
+    }
+  }
+});
+
+// ═══ Filter chips for expert dashboard ═══
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest('#expertDoubtFilters .chip');
+  if (chip) {
+    $$('#expertDoubtFilters .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    expertDoubtFilter = chip.dataset.status;
+    loadExpertDoubts();
+  }
+});
+
+// ═══ View Doubt Details (Student side) ═══
+window.viewDoubt = async function(id) {
+  try {
+    const doc = await db.collection('doubts').doc(id).get();
+    if (!doc.exists) return;
+    const d = doc.data();
+
+    // Load answers
+    const answersSnap = await db.collection('doubts').doc(id).collection('answers')
+      .orderBy('createdAt', 'asc').get();
+
+    const answersHtml = answersSnap.empty
+      ? '<div class="empty-state" style="padding:2rem 1rem"><i class="fa-solid fa-hourglass-half"></i><h4>Waiting for expert</h4><p>Your doubt is visible to experts. You\'ll be notified when answered.</p></div>'
+      : answersSnap.docs.map(ansDoc => {
+          const a = ansDoc.data();
+          const when = a.createdAt?.toDate?.() ? formatTime(a.createdAt.toDate().getTime()) : 'Just now';
+          const avatar = a.expertPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.expertName)}&background=7c3aed&color=fff`;
+          return `
+            <div class="answer-card">
+              <div class="expert-header">
+                <img src="${escapeHtml(avatar)}" alt="">
+                <div>
+                  <div class="name">${escapeHtml(a.expertName)}</div>
+                  <div class="title">${escapeHtml(a.expertTitle || 'Subject Expert')} • ${when}</div>
+                </div>
+              </div>
+              <div class="answer-text">${escapeHtml(a.text)}</div>
+              ${a.imageUrl ? `<img class="answer-img" src="${escapeHtml(a.imageUrl)}" onclick="openImageViewer('${escapeHtml(a.imageUrl)}')">` : ''}
+            </div>
+          `;
+        }).join('');
+
+    $('doubtDetailsBody').innerHTML = `
+      <div class="original-doubt">
+        <div class="od-header">
+          <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject)}</span>
+          <span class="doubt-status ${d.status}">${d.status}</span>
+        </div>
+        <div class="od-question">${escapeHtml(d.question)}</div>
+        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+      </div>
+      <h4 style="margin-bottom:.8rem;display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-comments" style="color:var(--accent-primary)"></i>
+        Expert Answers (${answersSnap.size})
+      </h4>
+      ${answersHtml}
+    `;
+
+    openModal('doubtDetailsModal');
+  } catch (err) {
+    console.error(err);
+    toast('warn', 'Error', err.message);
+  }
 };
