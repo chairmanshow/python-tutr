@@ -492,5 +492,27 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="app.js"></script>
+     <script>
+  // ═══ FALLBACK: Agar 5 sec me boot loader na hate, to force remove ═══
+  setTimeout(function() {
+    var loader = document.getElementById('bootLoader');
+    if (loader) {
+      loader.style.display = 'none';
+      loader.classList.add('hide');
+    }
+    var loginScreen = document.getElementById('loginScreen');
+    if (loginScreen && !currentUser) {
+      loginScreen.style.display = 'flex';
+      loginScreen.classList.remove('hide');
+    }
+  }, 5000);
+
+  // ═══ Catch JS errors ═══
+  window.addEventListener('error', function(e) {
+    console.error('JS Error:', e.message);
+    var loader = document.getElementById('bootLoader');
+    if (loader) loader.classList.add('hide');
+  });
+</script>
 </body>
 </html>
