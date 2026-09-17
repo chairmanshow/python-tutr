@@ -21,9 +21,9 @@ const rtdb = firebase.database();
 
 // ⚠️ CHANGE THESE:
 const CONFIG = {
-  UPI_ID: "yourname@upi",                                          // ⬅️ अपना UPI ID
+  UPI_ID: "Please Mail on overactingofficial7@gmail.com to access platform",                                          // ⬅️ अपना UPI ID
   TELEGRAM_PROXY: "https://tcs-telegram-proxy.sumitshrivas24.workers.dev",
-  ADMIN_EMAIL: "youremail@gmail.com"                                // ⬅️ अपना email
+  ADMIN_EMAIL: "overactingofficial7@gmail.com"                                // ⬅️ अपना email
 };
 
 // ⚠️ IMGBB API KEY (100% FREE image hosting)
