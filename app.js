@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   THE CHAIRMAN SHOW — Full Platform Logic
+   THE CHAIRMAN SHOW — Full Platform Logic (Fixed Version)
    ══════════════════════════════════════════════════════════════ */
 
 /* ─────────────── SECTION 1: CONFIG ─────────────── */
@@ -17,16 +17,13 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const rtdb = firebase.database();
-// Storage हटा दिया — अब ImgBB use करेंगे
 
-// ⚠️ CHANGE THESE:
 const CONFIG = {
-  UPI_ID: "Please Mail on overactingofficial7@gmail.com to access platform",                                          // ⬅️ अपना UPI ID
+  UPI_ID: "Please Mail on overactingofficial7@gmail.com to access platform",
   TELEGRAM_PROXY: "https://tcs-telegram-proxy.sumitshrivas24.workers.dev",
-  ADMIN_EMAIL: "overactingofficial7@gmail.com"                                // ⬅️ अपना email
+  ADMIN_EMAIL: "overactingofficial7@gmail.com"
 };
 
-// ⚠️ IMGBB API KEY (100% FREE image hosting)
 const IMGBB_KEY = '42eeb26299ccd04102779f92f5db31cf';
 
 let currentUser = null;
@@ -58,27 +55,28 @@ function toast(type, title, sub) {
   setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 300); }, 4000);
 }
 
-function closeModal(id) { $(id).classList.remove('show'); document.body.style.overflow = ''; }
-function openModal(id) { $(id).classList.add('show'); document.body.style.overflow = 'hidden'; }
+window.closeModal = function(id) {
+  const el = $(id);
+  if (el) el.classList.remove('show');
+  document.body.style.overflow = '';
+};
+window.openModal = function(id) {
+  const el = $(id);
+  if (el) el.classList.add('show');
+  document.body.style.overflow = 'hidden';
+};
 
 function formatTime(ts) {
+  if (!ts) return 'Just now';
   return new Date(ts).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-function debounce(fn, wait) {
-  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
-}
-
 /* ══════════════════════════════════════════════════════════════
-   IMAGE UPLOAD SYSTEM — ImgBB (100% Free, No Payment)
+   IMAGE UPLOAD — ImgBB
    ══════════════════════════════════════════════════════════════ */
-
-// Compress image to reduce size (fast upload)
 async function compressImage(file, maxWidth = 1200, quality = 0.8) {
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) {
-      return reject(new Error('Not an image file'));
-    }
+    if (!file || !file.type.startsWith('image/')) return reject(new Error('Not an image file'));
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -98,8 +96,7 @@ async function compressImage(file, maxWidth = 1200, quality = 0.8) {
             if (!blob) return reject(new Error('Compression failed'));
             resolve(new File([blob], 'image.jpg', { type: 'image/jpeg' }));
           },
-          'image/jpeg',
-          quality
+          'image/jpeg', quality
         );
       };
       img.onerror = () => reject(new Error('Image load failed'));
@@ -110,7 +107,6 @@ async function compressImage(file, maxWidth = 1200, quality = 0.8) {
   });
 }
 
-// File → Base64
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -120,9 +116,9 @@ function fileToBase64(file) {
   });
 }
 
-// Main upload function — returns image URL
 async function uploadToImgBB(file) {
   if (!file) return '';
+  if (file.size > 10 * 1024 * 1024) throw new Error('Image too large (max 10MB)');
   try {
     const compressed = await compressImage(file, 1200, 0.8);
     const base64 = await fileToBase64(compressed);
@@ -135,13 +131,8 @@ async function uploadToImgBB(file) {
       method: 'POST',
       body: formData
     });
-
     const data = await res.json();
-
-    if (!data.success) {
-      throw new Error(data.error?.message || 'Upload failed');
-    }
-
+    if (!data.success) throw new Error(data.error?.message || 'Upload failed');
     console.log('✅ Uploaded to ImgBB:', data.data.url);
     return data.data.url;
   } catch (err) {
@@ -165,10 +156,14 @@ $('googleSignInBtn').addEventListener('click', async () => {
 });
 
 $('signOutBtn').addEventListener('click', () => {
-  if (confirm('Sign out?')) auth.signOut();
+  if (confirm('Sign out?')) {
+    userProfile = null;
+    userDoubts = [];
+    currentUser = null;
+    auth.signOut();
+  }
 });
 
-// ═══ FALLBACK: 3 sec me login screen dikha do ═══
 const authTimeout = setTimeout(() => {
   if (!currentUser) {
     const loader = $('bootLoader');
@@ -192,6 +187,7 @@ auth.onAuthStateChanged(async (user) => {
     }
   } else {
     currentUser = null;
+    userProfile = null;
     showLogin();
   }
 });
@@ -200,6 +196,7 @@ function showApp() {
   $('loginScreen').classList.add('hide');
   $('app').style.display = 'block';
   setTimeout(() => $('loginScreen').style.display = 'none', 500);
+  $('bootLoader').classList.add('hide');
 }
 function showLogin() {
   $('loginScreen').style.display = 'flex';
@@ -218,10 +215,10 @@ async function ensureUserProfile(user) {
       email: user.email,
       name: user.displayName || 'User',
       photoURL: user.photoURL || '',
-      role: 'student',               // student | expert | admin
+      role: 'student',
       class: '',
       bio: '',
-      subscription: 'free',          // free | basic | premium
+      subscription: 'free',
       subscriptionExpiry: null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       doubtsAsked: 0,
@@ -234,14 +231,18 @@ async function ensureUserProfile(user) {
     userProfile = profile;
   } else {
     userProfile = snap.data();
+    // Ensure defaults for older profiles
+    userProfile.subscription = userProfile.subscription || 'free';
+    userProfile.role = userProfile.role || 'student';
   }
   updateUserUI();
 }
 
 function updateUserUI() {
+  if (!userProfile) return;
   const name = userProfile.name || 'User';
   const avatar = userProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff`;
-  
+
   if ($('navUserName')) $('navUserName').textContent = name.split(' ')[0];
   if ($('navUserAvatar')) $('navUserAvatar').src = avatar;
   if ($('ddUserName')) $('ddUserName').textContent = name;
@@ -253,20 +254,20 @@ function updateUserUI() {
   if ($('profileDisplayName')) $('profileDisplayName').value = name;
   if ($('profileClass')) $('profileClass').value = userProfile.class || '';
   if ($('profileBio')) $('profileBio').value = userProfile.bio || '';
-  
+
   const subEl = $('subStatus');
   if (subEl) {
-    if (userProfile.subscription === 'free') {
+    const sub = userProfile.subscription || 'free';
+    if (sub === 'free') {
       subEl.innerHTML = '<i class="fa-solid fa-circle-info"></i> Free plan — upgrade for unlimited doubts';
     } else {
-      subEl.innerHTML = `<i class="fa-solid fa-crown" style="color:var(--warning)"></i> ${userProfile.subscription.toUpperCase()} plan active`;
+      subEl.innerHTML = `<i class="fa-solid fa-crown" style="color:var(--warning)"></i> ${sub.toUpperCase()} plan active`;
     }
   }
-  
+
   updateExpertPanelVisibility();
 }
 
-// User dropdown
 $('userMenuBtn').addEventListener('click', (e) => {
   e.stopPropagation();
   $('userDropdown').classList.toggle('show');
@@ -277,7 +278,6 @@ document.addEventListener('click', () => {
 });
 $('userDropdown').addEventListener('click', (e) => e.stopPropagation());
 
-// Save profile
 $('saveProfileBtn').addEventListener('click', async () => {
   const updates = {
     name: $('profileDisplayName').value.trim() || userProfile.name,
@@ -370,6 +370,7 @@ async function loadExperts() {
     container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Could not load experts</h4><p>' + escapeHtml(err.message) + '</p></div>';
   }
 }
+window.loadExperts = loadExperts;
 
 function expertCardHtml(e) {
   const avatar = e.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name || 'Expert')}&background=2563eb&color=fff`;
@@ -394,13 +395,12 @@ function expertCardHtml(e) {
       </div>
     </div>`;
 }
-window.expertCardHtml = expertCardHtml;
 
 window.becomeExpert = function(sectionId) {
   const section = EXPERT_SECTIONS.find(s => s.id === sectionId);
   if (!section) return;
   if (!confirm(`Apply as an expert for "${section.title}"?\n\nYou'll need to fill a short form and wait for verification.`)) return;
-  
+
   db.collection('experts').doc(currentUser.uid).set({
     uid: currentUser.uid,
     name: userProfile.name,
@@ -429,6 +429,20 @@ window.requestDoubt = function(expertId) {
   setTimeout(() => openModal('newDoubtModal'), 300);
 };
 
+// "Become an Expert" from user dropdown
+const becomeExpertBtn = $('becomeExpertBtn');
+if (becomeExpertBtn) {
+  becomeExpertBtn.addEventListener('click', () => {
+    if (userProfile?.role === 'expert') {
+      toast('info', 'You are already an expert!');
+      switchToTab('expertDashboard');
+      return;
+    }
+    switchToTab('experts');
+    toast('info', 'Pick a section', 'Click "Become one" under the section you want to teach.');
+  });
+}
+
 /* ─────────────── SECTION 7: DOUBTS ─────────────── */
 let doubtFilter = 'all';
 let userDoubts = [];
@@ -437,14 +451,27 @@ async function loadDoubts() {
   const grid = $('doubtsGrid');
   if (!grid) return;
   grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
-  
+
   try {
-    let q = db.collection('doubts').where('userId', '==', currentUser.uid);
-    if (doubtFilter !== 'all') q = q.where('status', '==', doubtFilter);
-    const snap = await q.orderBy('createdAt', 'desc').limit(50).get();
-    
+    const snap = await db.collection('doubts')
+      .where('userId', '==', currentUser.uid)
+      .limit(100)
+      .get();
+
     userDoubts = [];
     snap.forEach(d => userDoubts.push({ id: d.id, ...d.data() }));
+
+    // Sort by createdAt desc (client-side, no index needed)
+    userDoubts.sort((a, b) => {
+      const ta = a.createdAt?.toDate?.()?.getTime() || 0;
+      const tb = b.createdAt?.toDate?.()?.getTime() || 0;
+      return tb - ta;
+    });
+
+    // Filter client-side
+    if (doubtFilter !== 'all') {
+      userDoubts = userDoubts.filter(d => d.status === doubtFilter);
+    }
 
     if (!userDoubts.length) {
       grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No doubts yet</h4><p>Click "Ask New Doubt" to get started</p></div>';
@@ -459,7 +486,7 @@ async function loadDoubts() {
         </div>
         <div class="doubt-question">${escapeHtml(d.question)}</div>
         <div class="doubt-meta">
-          <span><i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.() || Date.now())}</span>
+          <span><i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.()?.getTime())}</span>
           ${d.answerCount ? `<span><i class="fa-solid fa-comments"></i> ${d.answerCount} answers</span>` : ''}
         </div>
       </div>
@@ -480,10 +507,12 @@ $$('#doubtFilters .chip').forEach(chip => {
   });
 });
 
-$('newDoubtBtn').addEventListener('click', () => {
-  if (userProfile.subscription === 'free') {
-    db.collection('doubts').where('userId', '==', currentUser.uid).get().then(snap => {
-      const today = new Date(); today.setHours(0,0,0,0);
+$('newDoubtBtn').addEventListener('click', async () => {
+  const sub = userProfile.subscription || 'free';
+  if (sub === 'free') {
+    try {
+      const snap = await db.collection('doubts').where('userId', '==', currentUser.uid).get();
+      const today = new Date(); today.setHours(0, 0, 0, 0);
       const todayCount = snap.docs.filter(d => {
         const ts = d.data().createdAt?.toDate?.();
         return ts && ts >= today;
@@ -493,14 +522,13 @@ $('newDoubtBtn').addEventListener('click', () => {
         switchToTab('subscription');
         return;
       }
-      openModal('newDoubtModal');
-    });
-  } else {
-    openModal('newDoubtModal');
+    } catch (err) {
+      console.warn('Limit check failed:', err);
+    }
   }
+  openModal('newDoubtModal');
 });
 
-// Doubt image preview
 $('doubtImage')?.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -511,7 +539,6 @@ $('doubtImage')?.addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// ═══ POST DOUBT — with ImgBB upload ═══
 $('postDoubtBtn').addEventListener('click', async () => {
   const subject = $('doubtSubject').value;
   const doubtClass = $('doubtClass').value;
@@ -526,24 +553,18 @@ $('postDoubtBtn').addEventListener('click', async () => {
 
   try {
     let imageUrl = '';
-
-    // Upload image to ImgBB (if selected)
     if (imageFile) {
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading image…';
       imageUrl = await uploadToImgBB(imageFile);
     }
 
-    // Save to Firestore
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting…';
-    
+
     await db.collection('doubts').add({
       userId: currentUser.uid,
       userName: userProfile.name,
       userPhoto: userProfile.photoURL || '',
-      subject, 
-      class: doubtClass, 
-      question,
-      imageUrl,
+      subject, class: doubtClass, question, imageUrl,
       status: 'open',
       answerCount: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -553,7 +574,7 @@ $('postDoubtBtn').addEventListener('click', async () => {
       doubtsAsked: firebase.firestore.FieldValue.increment(1)
     }).catch(() => {});
 
-    notifyTelegram(`🆕 New Doubt!\nStudent: ${userProfile.name}\nSubject: ${subject}\nClass: ${doubtClass}\n\n${question.slice(0,200)}`);
+    notifyTelegram(`🆕 New Doubt!\nStudent: ${userProfile.name}\nSubject: ${subject}\nClass: ${doubtClass}\n\n${question.slice(0, 200)}`);
 
     toast('success', 'Doubt posted!', 'An expert will answer soon.');
     closeModal('newDoubtModal');
@@ -624,7 +645,6 @@ $('proofUpload').addEventListener('change', (e) => {
   reader.readAsDataURL(proofFile);
 });
 
-// ═══ SUBMIT PAYMENT — with ImgBB upload ═══
 $('submitPaymentBtn').addEventListener('click', async () => {
   if (!proofFile || !selectedPlan) return;
   const btn = $('submitPaymentBtn');
@@ -632,7 +652,6 @@ $('submitPaymentBtn').addEventListener('click', async () => {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading…';
 
   try {
-    // Upload screenshot to ImgBB
     const url = await uploadToImgBB(proofFile);
 
     await db.collection('payments').add({
@@ -709,19 +728,27 @@ $('supportForm').addEventListener('submit', async (e) => {
 /* ─────────────── SECTION 11: STATS ─────────────── */
 async function loadStats() {
   try {
-    const [doubtsSnap, expertsSnap, usersSnap] = await Promise.all([
-      db.collection('doubts').limit(1000).get(),
-      db.collection('experts').where('verified', '==', true).limit(1000).get(),
-      db.collection('users').limit(1000).get()
+    const [doubtsCount, expertsCount, usersCount] = await Promise.all([
+      db.collection('doubts').count().get(),
+      db.collection('experts').where('verified', '==', true).count().get(),
+      db.collection('users').count().get()
     ]);
-    if ($('statDoubts')) $('statDoubts').textContent = doubtsSnap.size;
-    if ($('statExperts')) $('statExperts').textContent = expertsSnap.size;
-    if ($('statStudents')) $('statStudents').textContent = usersSnap.size;
-  } catch (err) { 
+    if ($('statDoubts')) $('statDoubts').textContent = doubtsCount.data().count;
+    if ($('statExperts')) $('statExperts').textContent = expertsCount.data().count;
+    if ($('statStudents')) $('statStudents').textContent = usersCount.data().count;
+  } catch (err) {
     console.warn('Stats error:', err);
-    if ($('statDoubts')) $('statDoubts').textContent = '0';
-    if ($('statExperts')) $('statExperts').textContent = '0';
-    if ($('statStudents')) $('statStudents').textContent = '0';
+    // Fallback: try simple get for counts
+    try {
+      const [d, e, u] = await Promise.all([
+        db.collection('doubts').limit(100).get(),
+        db.collection('experts').limit(100).get(),
+        db.collection('users').limit(100).get()
+      ]);
+      if ($('statDoubts')) $('statDoubts').textContent = d.size;
+      if ($('statExperts')) $('statExperts').textContent = e.size;
+      if ($('statStudents')) $('statStudents').textContent = u.size;
+    } catch (_) {}
   }
 
   if ($('miniDoubts')) $('miniDoubts').textContent = userProfile?.doubtsAsked || 0;
@@ -729,56 +756,16 @@ async function loadStats() {
   if ($('miniRating')) $('miniRating').textContent = userProfile?.rating ? userProfile.rating.toFixed(1) : '—';
 }
 
-// ═══ BOOT LOADER — always hide after max 3 seconds ═══
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const loader = $('bootLoader');
-    if (loader) loader.classList.add('hide');
-  }, 2000);
-});
-
-// Safety: agar 5 sec me bhi kuch load na ho to force hide
-setTimeout(() => {
-  const loader = $('bootLoader');
-  if (loader && !loader.classList.contains('hide')) {
-    loader.classList.add('hide');
-  }
-}, 5000);
-
-/* ─────────────── SECTION 13: INIT APP ─────────────── */
-function initApp() {
-  loadStats();
-  updateUserUI();
-  db.collection('experts').where('verified', '==', true).limit(1).get().catch(() => {});
-}
-
-/* ─────────────── SECTION 14: BOOT ─────────────── */
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    if (!currentUser && $('bootLoader')) $('bootLoader').classList.add('hide');
-  }, 1500);
-});
-
-// Handle image viewer
-window.openImageViewer = function(url) {
-  if ($('viewerImage')) $('viewerImage').src = url;
-  openModal('imageViewerModal');
-};
-
- SECTION 15: EXPERT DASHBOARD + ANSWER SYSTEM
-   ══════════════════════════════════════════════════════════════ */
-
+/* ─────────────── SECTION 12: EXPERT DASHBOARD ─────────────── */
 let currentAnswerDoubtId = null;
 let expertDoubtFilter = 'open';
 
-// Show/Hide Expert Panel based on role
 function updateExpertPanelVisibility() {
   const isExpert = userProfile?.role === 'expert' || userProfile?.role === 'admin';
   const btn = $('navExpertDashboard');
   if (btn) btn.style.display = isExpert ? 'flex' : 'none';
 }
 
-// Load Expert Dashboard
 async function loadExpertDashboard() {
   if (userProfile?.role !== 'expert' && userProfile?.role !== 'admin') {
     toast('warn', 'Access denied', 'Only experts can access this panel.');
@@ -786,7 +773,6 @@ async function loadExpertDashboard() {
     return;
   }
 
-  // Load stats
   try {
     const snap = await db.collection('doubts').limit(500).get();
     let openCount = 0, answeredCount = 0;
@@ -805,6 +791,7 @@ async function loadExpertDashboard() {
 
   loadExpertDoubts();
 }
+window.loadExpertDashboard = loadExpertDashboard;
 
 async function loadExpertDoubts() {
   const list = $('expertDoubtsList');
@@ -812,14 +799,15 @@ async function loadExpertDoubts() {
   list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
 
   try {
-    let q = db.collection('doubts');
+    let snap;
     if (expertDoubtFilter === 'open') {
-      q = q.where('status', '==', 'open');
+      snap = await db.collection('doubts').where('status', '==', 'open').limit(50).get();
     } else if (expertDoubtFilter === 'answered') {
-      q = q.where('answeredBy', '==', currentUser.uid);
+      snap = await db.collection('doubts').where('answeredBy', '==', currentUser.uid).limit(50).get();
+    } else {
+      snap = await db.collection('doubts').limit(50).get();
     }
 
-    const snap = await q.limit(50).get();
     const doubts = [];
     snap.forEach(d => doubts.push({ id: d.id, ...d.data() }));
 
@@ -853,17 +841,13 @@ function expertDoubtCardHtml(d) {
         <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject || 'General')}</span>
         <span class="doubt-status ${d.status}">${d.status}</span>
       </div>
-
       <div class="student-info">
         <img src="${escapeHtml(avatar)}" alt="">
         <span>${escapeHtml(d.userName || 'Student')}</span>
         <span style="margin-left:auto;font-size:.72rem;color:var(--text-muted)">${when}</span>
       </div>
-
       <div class="edc-question">${escapeHtml(d.question || '')}</div>
-
       ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-bottom:.7rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
-
       <div class="edc-actions">
         ${!isAnswered ? `
           <button class="primary" onclick="openAnswerModal('${d.id}')">
@@ -883,7 +867,6 @@ function expertDoubtCardHtml(d) {
   `;
 }
 
-// Open Answer Modal
 window.openAnswerModal = async function(doubtId) {
   try {
     const doc = await db.collection('doubts').doc(doubtId).get();
@@ -933,7 +916,7 @@ document.addEventListener('change', (e) => {
   }
 });
 
-// ═══ SUBMIT ANSWER — with ImgBB upload ═══
+// Submit answer
 document.addEventListener('click', async (e) => {
   if (e.target.closest('#submitAnswerBtn')) {
     const btn = $('submitAnswerBtn');
@@ -948,14 +931,11 @@ document.addEventListener('click', async (e) => {
 
     try {
       let imageUrl = '';
-      
-      // Upload image to ImgBB (if selected)
       if (imageFile) {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading image…';
         imageUrl = await uploadToImgBB(imageFile);
       }
 
-      // Add answer to subcollection
       await db.collection('doubts').doc(currentAnswerDoubtId)
         .collection('answers').add({
           expertId: currentUser.uid,
@@ -968,7 +948,6 @@ document.addEventListener('click', async (e) => {
           helpful: 0
         });
 
-      // Update doubt doc
       await db.collection('doubts').doc(currentAnswerDoubtId).update({
         status: 'answered',
         answeredBy: currentUser.uid,
@@ -977,17 +956,13 @@ document.addEventListener('click', async (e) => {
         answerCount: firebase.firestore.FieldValue.increment(1)
       });
 
-      // Update expert stats
       await db.collection('users').doc(currentUser.uid).update({
         doubtsSolved: firebase.firestore.FieldValue.increment(1),
         earnings: firebase.firestore.FieldValue.increment(10)
       }).catch(() => {});
 
       notifyTelegram(
-        `✅ Doubt Answered!\n` +
-        `Expert: ${userProfile.name}\n` +
-        `Doubt ID: ${currentAnswerDoubtId}\n` +
-        `Answer preview: ${text.slice(0, 150)}...`
+        `✅ Doubt Answered!\nExpert: ${userProfile.name}\nDoubt ID: ${currentAnswerDoubtId}\nAnswer: ${text.slice(0, 150)}...`
       );
 
       toast('success', 'Answer submitted!', '+₹10 added to your earnings');
@@ -1004,7 +979,7 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-// Filter chips for expert dashboard
+// Expert dashboard filter chips
 document.addEventListener('click', (e) => {
   const chip = e.target.closest('#expertDoubtFilters .chip');
   if (chip) {
@@ -1015,7 +990,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ═══ VIEW DOUBT DETAILS (Student side) ═══
+// Student view: doubt details
 window.viewDoubt = async function(id) {
   try {
     const doc = await db.collection('doubts').doc(id).get();
@@ -1070,3 +1045,51 @@ window.viewDoubt = async function(id) {
     toast('warn', 'Error', err.message);
   }
 };
+
+/* ─────────────── SECTION 13: IMAGE VIEWER ─────────────── */
+window.openImageViewer = function(url) {
+  if ($('viewerImage')) $('viewerImage').src = url;
+  openModal('imageViewerModal');
+};
+
+/* ─────────────── SECTION 14: KEYBOARD SHORTCUTS ─────────────── */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => {
+      m.classList.remove('show');
+    });
+    document.body.style.overflow = '';
+  }
+});
+
+/* ─────────────── SECTION 15: SCROLL PROGRESS + BACK TO TOP ─────────────── */
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const scrolled = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  const sp = $('scrollProgress');
+  if (sp) sp.style.width = scrolled + '%';
+
+  const btt = $('backToTop');
+  if (btt) {
+    if (h.scrollTop > 400) btt.classList.add('show');
+    else btt.classList.remove('show');
+  }
+});
+
+$('backToTop')?.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ─────────────── SECTION 16: INIT APP ─────────────── */
+function initApp() {
+  loadStats();
+  updateUserUI();
+}
+
+/* ─────────────── SECTION 17: BOOT ─────────────── */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const loader = $('bootLoader');
+    if (loader) loader.classList.add('hide');
+  }, 1500);
+});
