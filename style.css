@@ -695,3 +695,204 @@ footer {
   .login-features { grid-template-columns: 1fr; }
   .hero { padding: 2rem 1rem; }
 }
+/* ═══ EXPERT DASHBOARD ═══ */
+.expert-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.expert-stat-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all .2s;
+}
+
+.expert-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.expert-stat-card i {
+  font-size: 1.8rem;
+}
+
+.expert-stat-card .es-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.expert-stat-card .es-lbl {
+  font-size: .75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-top: 4px;
+}
+
+.expert-doubts-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1rem;
+}
+
+.expert-doubt-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.2rem;
+  transition: all .2s;
+}
+
+.expert-doubt-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.expert-doubt-card .student-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: .7rem;
+  font-size: .82rem;
+  color: var(--text-secondary);
+}
+
+.expert-doubt-card .student-info img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.expert-doubt-card .edc-question {
+  font-size: .92rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: .8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.expert-doubt-card .edc-actions {
+  display: flex;
+  gap: .5rem;
+}
+
+.expert-doubt-card .edc-actions button {
+  flex: 1;
+  padding: .55rem;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  border: 1px solid var(--border-color);
+  background: white;
+}
+
+.expert-doubt-card .edc-actions button.primary {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.expert-doubt-card .edc-actions button:hover {
+  transform: translateY(-1px);
+}
+
+/* Original Doubt Box in Answer Modal */
+.original-doubt {
+  background: var(--bg-surface-2);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  border-left: 4px solid var(--accent-primary);
+}
+
+.od-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .5rem;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+.od-question {
+  font-size: .92rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: .6rem;
+}
+
+.od-meta {
+  font-size: .75rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Answer display in student's doubt view */
+.answer-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.2rem;
+  margin-top: 1rem;
+}
+
+.answer-card .expert-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: .8rem;
+  padding-bottom: .8rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.answer-card .expert-header img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.answer-card .expert-header .name {
+  font-weight: 700;
+  font-size: .92rem;
+}
+
+.answer-card .expert-header .title {
+  font-size: .75rem;
+  color: var(--text-muted);
+}
+
+.answer-card .answer-text {
+  font-size: .9rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--text-primary);
+}
+
+.answer-card .answer-img {
+  margin-top: .8rem;
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .expert-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .expert-doubts-list { grid-template-columns: 1fr; }
+}
