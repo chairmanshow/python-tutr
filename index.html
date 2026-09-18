@@ -71,7 +71,7 @@
         <li><button class="nav-item" data-tab="expertDashboard" id="navExpertDashboard" style="display:none;"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Expert Panel</span></button></li>
         <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-users"></i> <span class="nav-text">Experts</span></button></li>
         <li><button class="nav-item" data-tab="community"><i class="fa-solid fa-earth-americas"></i> <span class="nav-text">Community</span><span class="nav-badge" id="navBadge" style="display:none;">0</span></button></li>
-        <li><button class="nav-item" data-tab="subscription"><i class="fa-solid fa-crown"></i> <span class="nav-text">Premium</span></button></li>
+        <li><button class="nav-item" data-tab="subscription"><i class="fa-solid fa-heart"></i> <span class="nav-text">Donate</span></button></li>
         <li><button class="nav-item" data-tab="support"><i class="fa-brands fa-telegram"></i> <span class="nav-text">Support</span></button></li>
       </ul>
 
@@ -296,48 +296,63 @@
       </div>
     </section>
 
-    <!-- ═══ SUBSCRIPTION TAB ═══ -->
-    <section id="subscription" class="tab-content">
-      <div class="section-header">
-        <h1>Choose Your Plan</h1>
-        <p>Unlock unlimited doubt solving and premium features</p>
+<!-- ═══ DONATE TAB ═══ -->
+<section id="subscription" class="tab-content">
+  <div class="section-header">
+    <h1>Support Us ❤️</h1>
+    <p>Your small contribution keeps quality education free for every student</p>
+  </div>
+
+  <div class="donate-wrapper">
+
+    <!-- Message Card -->
+    <div class="donate-message-card">
+      <div class="donate-icon">
+        <i class="fa-solid fa-heart"></i>
       </div>
-      <div class="plans-grid" id="plansGrid"></div>
-      <div class="payment-section" id="paymentSection" style="display:none;">
-        <h3>Complete Payment</h3>
-        <div class="payment-card">
-          <div class="upi-box">
-            <div class="upi-label">Pay via UPI</div>
-            <div class="upi-id" id="upiIdDisplay">chairman@upi</div>
-            <button class="copy-upi-btn" id="copyUpiBtn"><i class="fa-regular fa-copy"></i> Copy</button>
-          </div>
-          <div class="qr-box">
-            <div class="qr-placeholder" id="qrPlaceholder">
-              <i class="fa-solid fa-qrcode"></i>
-              <p>QR Code will be here</p>
-            </div>
-          </div>
-          <div class="payment-instructions">
-            <p><strong>Steps:</strong></p>
-            <ol>
-              <li>Pay ₹<span id="payAmount">0</span> to the UPI ID above</li>
-              <li>Take a screenshot of the payment</li>
-              <li>Upload the screenshot below</li>
-              <li>We'll verify within 2 hours and activate your plan</li>
-            </ol>
-          </div>
-          <div class="upload-proof">
-            <label for="proofUpload" class="upload-label">
-              <i class="fa-solid fa-cloud-arrow-up"></i>
-              <span>Upload payment screenshot</span>
-            </label>
-            <input type="file" id="proofUpload" accept="image/*" hidden>
-            <div id="proofPreview" class="proof-preview"></div>
-          </div>
-          <button class="btn-primary" id="submitPaymentBtn" disabled><i class="fa-solid fa-paper-plane"></i> Submit Payment Proof</button>
+      <h2>We're Building This For You</h2>
+      <p>
+        Hum aapke liye bahut mehnat se <strong>quality education</strong> provide kar rahe hain.
+        Humne koi subscription ya paid plan nahi rakha — <strong>sab kuch free hai</strong>.
+      </p>
+      <p>
+        Agar aapko hamara platform pasand aaye aur aap chahte ho ki hum aur bhi
+        students tak pahunche, to aap hume <strong>support kar sakte ho</strong>.
+      </p>
+      <p class="donate-tagline">
+        <i class="fa-solid fa-quote-left"></i>
+        Every rupee helps us reach one more student
+        <i class="fa-solid fa-quote-right"></i>
+      </p>
+    </div>
+
+    <!-- UPI + QR Card -->
+    <div class="donate-payment-card">
+      <div class="donate-qr-box">
+        <div class="qr-placeholder" id="qrPlaceholder">
+          <i class="fa-solid fa-qrcode"></i>
+          <p>Scan to donate</p>
         </div>
       </div>
-    </section>
+
+      <div class="donate-upi-box">
+        <div class="donate-upi-label">
+          <i class="fa-solid fa-indian-rupee-sign"></i> UPI ID
+        </div>
+        <div class="donate-upi-id" id="upiIdDisplay">chairman@upi</div>
+        <button class="donate-copy-btn" id="copyUpiBtn">
+          <i class="fa-regular fa-copy"></i> Copy UPI ID
+        </button>
+      </div>
+
+      <div class="donate-thanks">
+        <i class="fa-solid fa-hands-praying"></i>
+        Thank you for supporting our mission
+      </div>
+    </div>
+
+  </div>
+</section>
 
     <!-- ═══ PROFILE TAB ═══ -->
     <section id="profile" class="tab-content">
