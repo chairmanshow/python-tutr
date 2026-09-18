@@ -1263,7 +1263,7 @@ window.viewDoubt = async function(id) {
                 <div class="name" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp || 10}, '${escapeHtml(expert.title || '')}')" style="cursor:pointer;color:var(--accent-primary)">${escapeHtml(expert.name)}</div>
                 <div class="title">${escapeHtml(expert.title)} • ${expert.exp || 10}+ yrs exp</div>
               </div>
-              <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-bolt"></i> AI</span>
+             <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-shield-halved"></i> Trusted</span>
             </div>
             <div class="ai-answer-text">${escapeHtml(a.text || '')}</div>
             ${a.imageUrl ? `<img src="${escapeHtml(a.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(a.imageUrl)}')">` : ''}
