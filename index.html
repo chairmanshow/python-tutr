@@ -72,7 +72,7 @@
         <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-users"></i> <span class="nav-text">Experts</span></button></li>
         <li><button class="nav-item" data-tab="community"><i class="fa-solid fa-earth-americas"></i> <span class="nav-text">Community</span><span class="nav-badge" id="navBadge" style="display:none;">0</span></button></li>
         <li><button class="nav-item" data-tab="subscription"><i class="fa-solid fa-heart"></i> <span class="nav-text">Donate</span></button></li>
-        <li><button class="nav-item" data-tab="support"><i class="fa-brands fa-telegram"></i> <span class="nav-text">Support</span></button></li>
+        <li><button class="nav-item" data-tab="support"><i class="fa-solid fa-envelope"></i> <span class="nav-text">Support</span></button></li>
       </ul>
 
       <div class="user-menu">
@@ -91,7 +91,7 @@
           </div>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
-          <button class="dropdown-item" data-goto="subscription"><i class="fa-solid fa-crown"></i> Subscription</button>
+          <button class="dropdown-item" data-goto="subscription"><i class="fa-solid fa-heart"></i> Support Us</button>
           <button class="dropdown-item" id="becomeExpertBtn"><i class="fa-solid fa-user-tie"></i> Become an Expert</button>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
@@ -141,78 +141,40 @@
           </div>
           <div class="sub-status" id="subStatus">
             <i class="fa-solid fa-circle-info"></i>
-            <span>Free plan — upgrade for unlimited doubts</span>
+            <span>All features are free for everyone</span>
           </div>
         </div>
       </div>
-      <!-- ═══ TASKS SECTION (NEW) ═══ -->
-<div class="tasks-widget" id="tasksWidget">
-  <div class="tasks-header">
-    <h3><i class="fa-solid fa-list-check"></i> Write Your Tasks</h3>
-    <p>Plan your study — break big goals into steps</p>
-  </div>
 
-  <div class="tasks-input-row">
-    <input type="text" id="taskInput" placeholder="e.g., Complete Physics Chapter 5..." maxlength="120">
-    <button class="btn-primary" id="addTaskBtn"><i class="fa-solid fa-plus"></i> Add</button>
-  </div>
+      <!-- ═══ TASKS WIDGET ═══ -->
+      <div class="tasks-widget" id="tasksWidget">
+        <div class="tasks-header">
+          <h3><i class="fa-solid fa-list-check"></i> Write Your Tasks</h3>
+          <p>Plan your study — break big goals into steps</p>
+        </div>
 
-  <div class="tasks-list" id="tasksList">
-    <div class="empty-state">
-      <i class="fa-solid fa-clipboard-list"></i>
-      <h4>No tasks yet</h4>
-      <p>Add your first task above to get started</p>
-    </div>
-  </div>
+        <div class="tasks-input-row">
+          <input type="text" id="taskInput" placeholder="e.g., Complete Physics Chapter 5..." maxlength="120">
+          <button class="btn-primary" id="addTaskBtn"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
 
-  <div class="tasks-actions">
-    <button class="btn-primary" id="startTasksBtn" disabled>
-      <i class="fa-solid fa-play"></i> Start Task Mode
-    </button>
-    <button class="btn-ghost" id="clearTasksBtn">
-      <i class="fa-solid fa-trash"></i> Clear All
-    </button>
-  </div>
-</div>
+        <div class="tasks-list" id="tasksList">
+          <div class="empty-state">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <h4>No tasks yet</h4>
+            <p>Add your first task above to get started</p>
+          </div>
+        </div>
 
-<!-- ═══ TASK FOCUS MODE (Full screen overlay) ═══ -->
-<div class="task-focus-overlay" id="taskFocusOverlay">
-  <div class="task-focus-card">
-    <div class="task-step-indicator">
-      Step <span id="currentStepNum">1</span> of <span id="totalStepNum">1</span>
-    </div>
-    <div class="task-timer-ring">
-      <svg viewBox="0 0 200 200">
-        <circle class="timer-track" cx="100" cy="100" r="90"/>
-        <circle class="timer-fill" id="timerFill" cx="100" cy="100" r="90"/>
-      </svg>
-      <div class="task-timer-text" id="taskTimerText">00:00</div>
-    </div>
-    <div class="task-current-text" id="taskCurrentText">Task goes here</div>
-    <div class="task-focus-actions">
-      <button class="btn-ghost" id="prevTaskBtn"><i class="fa-solid fa-arrow-left"></i> Prev</button>
-      <button class="btn-primary" id="nextTaskBtn">Next <i class="fa-solid fa-arrow-right"></i></button>
-    </div>
-    <button class="task-focus-close" id="closeFocusBtn"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-</div>
-
-<!-- ═══ VICTORY ANIMATION OVERLAY ═══ -->
-<div class="victory-overlay" id="victoryOverlay">
-  <canvas id="victoryConfetti"></canvas>
-  <div class="victory-content">
-    <div class="victory-emoji">🏆</div>
-    <h1>Victory!</h1>
-    <p>You completed all your tasks</p>
-    <div class="victory-time">
-      <i class="fa-solid fa-clock"></i>
-      <span>Total time: <strong id="victoryTotalTime">00:00</strong></span>
-    </div>
-    <button class="btn-primary" id="victoryCloseBtn">
-      <i class="fa-solid fa-rocket"></i> Awesome!
-    </button>
-  </div>
-</div>
+        <div class="tasks-actions">
+          <button class="btn-primary" id="startTasksBtn" disabled>
+            <i class="fa-solid fa-play"></i> Start Task Mode
+          </button>
+          <button class="btn-ghost" id="clearTasksBtn">
+            <i class="fa-solid fa-trash"></i> Clear All
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- ═══ DOUBTS TAB ═══ -->
@@ -221,14 +183,15 @@
         <h1>My Doubts</h1>
         <p>Ask questions and track their solutions</p>
       </div>
-      <!-- ═══ LIVE EXPERTS INDICATOR (NEW) ═══ -->
-<div class="live-experts-bar" id="liveExpertsBar">
-  <div class="live-pulse"></div>
-  <div class="live-text">
-    <strong id="liveCount">12</strong> experts online now
-  </div>
-  <div class="live-avatars" id="liveAvatars"></div>
-</div>
+
+      <div class="live-experts-bar" id="liveExpertsBar">
+        <div class="live-pulse"></div>
+        <div class="live-text">
+          <strong id="liveCount">12</strong> experts online now
+        </div>
+        <div class="live-avatars" id="liveAvatars"></div>
+      </div>
+
       <div class="doubts-toolbar">
         <button class="btn-primary" id="newDoubtBtn"><i class="fa-solid fa-plus"></i> Ask New Doubt</button>
         <div class="filter-chips" id="doubtFilters">
@@ -238,6 +201,7 @@
           <button class="chip" data-status="closed">Closed</button>
         </div>
       </div>
+
       <div class="doubts-grid" id="doubtsGrid">
         <div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No doubts yet</h4><p>Click "Ask New Doubt" to get started</p></div>
       </div>
@@ -267,7 +231,7 @@
       </div>
     </section>
 
-    <!-- ═══ EXPERTS TAB (NEW — was missing) ═══ -->
+    <!-- ═══ EXPERTS TAB ═══ -->
     <section id="experts" class="tab-content">
       <div class="section-header">
         <h1>Our Experts</h1>
@@ -296,63 +260,59 @@
       </div>
     </section>
 
-<!-- ═══ DONATE TAB ═══ -->
-<section id="subscription" class="tab-content">
-  <div class="section-header">
-    <h1>Support Us ❤️</h1>
-    <p>Your small contribution keeps quality education free for every student</p>
-  </div>
-
-  <div class="donate-wrapper">
-
-    <!-- Message Card -->
-    <div class="donate-message-card">
-      <div class="donate-icon">
-        <i class="fa-solid fa-heart"></i>
+    <!-- ═══ DONATE TAB ═══ -->
+    <section id="subscription" class="tab-content">
+      <div class="section-header">
+        <h1>Support Us ❤️</h1>
+        <p>Your small contribution keeps quality education free for every student</p>
       </div>
-      <h2>We're Building This For You</h2>
-      <p>
-        Hum aapke liye bahut mehnat se <strong>quality education</strong> provide kar rahe hain.
-        Humne koi subscription ya paid plan nahi rakha — <strong>sab kuch free hai</strong>.
-      </p>
-      <p>
-        Agar aapko hamara platform pasand aaye aur aap chahte ho ki hum aur bhi
-        students tak pahunche, to aap hume <strong>support kar sakte ho</strong>.
-      </p>
-      <p class="donate-tagline">
-        <i class="fa-solid fa-quote-left"></i>
-        Every rupee helps us reach one more student
-        <i class="fa-solid fa-quote-right"></i>
-      </p>
-    </div>
 
-    <!-- UPI + QR Card -->
-    <div class="donate-payment-card">
-      <div class="donate-qr-box">
-        <div class="qr-placeholder" id="qrPlaceholder">
-          <i class="fa-solid fa-qrcode"></i>
-          <p>Scan to donate</p>
+      <div class="donate-wrapper">
+        <div class="donate-message-card">
+          <div class="donate-icon">
+            <i class="fa-solid fa-heart"></i>
+          </div>
+          <h2>We're Building This For You</h2>
+          <p>
+            Hum aapke liye bahut mehnat se <strong>quality education</strong> provide kar rahe hain.
+            Humne koi subscription ya paid plan nahi rakha — <strong>sab kuch free hai</strong>.
+          </p>
+          <p>
+            Agar aapko hamara platform pasand aaye aur aap chahte ho ki hum aur bhi
+            students tak pahunche, to aap hume <strong>support kar sakte ho</strong>.
+          </p>
+          <p class="donate-tagline">
+            <i class="fa-solid fa-quote-left"></i>
+            Every rupee helps us reach one more student
+            <i class="fa-solid fa-quote-right"></i>
+          </p>
+        </div>
+
+        <div class="donate-payment-card">
+          <div class="donate-qr-box">
+            <div class="qr-placeholder" id="qrPlaceholder">
+              <i class="fa-solid fa-qrcode"></i>
+              <p>Scan to donate</p>
+            </div>
+          </div>
+
+          <div class="donate-upi-box">
+            <div class="donate-upi-label">
+              <i class="fa-solid fa-indian-rupee-sign"></i> UPI ID
+            </div>
+            <div class="donate-upi-id" id="upiIdDisplay">chairman@upi</div>
+            <button class="donate-copy-btn" id="copyUpiBtn">
+              <i class="fa-regular fa-copy"></i> Copy UPI ID
+            </button>
+          </div>
+
+          <div class="donate-thanks">
+            <i class="fa-solid fa-hands-praying"></i>
+            Thank you for supporting our mission
+          </div>
         </div>
       </div>
-
-      <div class="donate-upi-box">
-        <div class="donate-upi-label">
-          <i class="fa-solid fa-indian-rupee-sign"></i> UPI ID
-        </div>
-        <div class="donate-upi-id" id="upiIdDisplay">chairman@upi</div>
-        <button class="donate-copy-btn" id="copyUpiBtn">
-          <i class="fa-regular fa-copy"></i> Copy UPI ID
-        </button>
-      </div>
-
-      <div class="donate-thanks">
-        <i class="fa-solid fa-hands-praying"></i>
-        Thank you for supporting our mission
-      </div>
-    </div>
-
-  </div>
-</section>
+    </section>
 
     <!-- ═══ PROFILE TAB ═══ -->
     <section id="profile" class="tab-content">
@@ -393,15 +353,30 @@
     <section id="support" class="tab-content">
       <div class="section-header">
         <h1>Support</h1>
-        <p>Send us a message on Telegram</p>
+        <p>Send us a message — we'll reply within 24 hours</p>
       </div>
       <div class="support-wrapper">
         <div class="support-card">
           <form id="supportForm">
-            <div class="form-group"><label>Your Name</label><input type="text" id="spName" required></div>
-            <div class="form-group"><label>Email</label><input type="email" id="spEmail" required></div>
-            <div class="form-group"><label>Message</label><textarea id="spMsg" rows="5" required></textarea></div>
-            <button type="submit" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Send</button>
+            <div class="form-group">
+              <label>Your Name</label>
+              <input type="text" id="spName" required placeholder="Full name">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="spEmail" required placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+              <label>Subject</label>
+              <input type="text" id="spSubject" required placeholder="What is this about?">
+            </div>
+            <div class="form-group">
+              <label>Message</label>
+              <textarea id="spMsg" rows="5" required placeholder="Type your message..."></textarea>
+            </div>
+            <button type="submit" class="btn-primary">
+              <i class="fa-solid fa-paper-plane"></i> Send Message
+            </button>
           </form>
           <div id="spStatus"></div>
         </div>
@@ -411,48 +386,12 @@
   </main>
 
   <!-- ═══ NEW DOUBT MODAL ═══ -->
-<div class="modal-overlay" id="newDoubtModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fa-solid fa-circle-question"></i> Ask a New Doubt</h3>
-      <button class="close-modal" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Subject</label>
-        <select id="doubtSubject">
-          <option value="Mathematics">Mathematics</option>
-          <option value="Physics">Physics</option>
-          <option value="Chemistry">Chemistry</option>
-          <option value="Biology">Biology</option>
-          <option value="Computer Science">Computer Science</option>
-          <option value="English">English</option>
-          <option value="Other">Other</option>
-        </select>
+  <div class="modal-overlay" id="newDoubtModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-circle-question"></i> Ask a New Doubt</h3>
+        <button class="close-modal" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="form-group">
-        <label>Class / Level</label>
-        <select id="doubtClass">
-          <option value="1-10">Class 1-10</option>
-          <option value="11-12">Class 11-12</option>
-          <option value="jee">JEE</option>
-          <option value="neet">NEET</option>
-          <option value="college">College</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Your Question</label>
-        <textarea id="doubtQuestion" rows="5" placeholder="Type your doubt here..."></textarea>
-      </div>
-      <div class="form-group">
-        <label>Attach Image (optional)</label>
-        <input type="file" id="doubtImage" accept="image/*">
-        <div id="doubtImagePreview"></div>
-      </div>
-      <button class="btn-primary" id="postDoubtBtn"><i class="fa-solid fa-paper-plane"></i> Post Doubt</button>
-    </div>
-  </div>
-</div>
       <div class="modal-body">
         <div class="form-group">
           <label>Subject</label>
@@ -534,13 +473,6 @@
     </div>
   </div>
 
-  <!-- ═══ IMAGE VIEWER MODAL ═══ -->
-  <div class="modal-overlay" id="imageViewerModal">
-    <div class="image-viewer-content">
-      <button class="close-modal" onclick="closeModal('imageViewerModal')"><i class="fa-solid fa-xmark"></i></button>
-      <img id="viewerImage" src="" alt="">
-    </div>
-  </div>
   <!-- ═══ EXPERT PROFILE MODAL ═══ -->
   <div class="modal-overlay" id="expertProfileModal">
     <div class="modal-content" style="max-width: 480px;">
@@ -553,8 +485,56 @@
       <div class="modal-body" id="expertProfileBody"></div>
     </div>
   </div>
+
+  <!-- ═══ IMAGE VIEWER MODAL ═══ -->
+  <div class="modal-overlay" id="imageViewerModal">
+    <div class="image-viewer-content">
+      <button class="close-modal" onclick="closeModal('imageViewerModal')"><i class="fa-solid fa-xmark"></i></button>
+      <img id="viewerImage" src="" alt="">
+    </div>
+  </div>
+
+  <!-- ═══ TASK FOCUS MODE OVERLAY ═══ -->
+  <div class="task-focus-overlay" id="taskFocusOverlay">
+    <div class="task-focus-card">
+      <div class="task-step-indicator">
+        Step <span id="currentStepNum">1</span> of <span id="totalStepNum">1</span>
+      </div>
+      <div class="task-timer-ring">
+        <svg viewBox="0 0 200 200">
+          <circle class="timer-track" cx="100" cy="100" r="90"/>
+          <circle class="timer-fill" id="timerFill" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="task-timer-text" id="taskTimerText">00:00</div>
+      </div>
+      <div class="task-current-text" id="taskCurrentText">Task goes here</div>
+      <div class="task-focus-actions">
+        <button class="btn-ghost" id="prevTaskBtn"><i class="fa-solid fa-arrow-left"></i> Prev</button>
+        <button class="btn-primary" id="nextTaskBtn">Next <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+      <button class="task-focus-close" id="closeFocusBtn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <!-- ═══ VICTORY OVERLAY ═══ -->
+  <div class="victory-overlay" id="victoryOverlay">
+    <canvas id="victoryConfetti"></canvas>
+    <div class="victory-content">
+      <div class="victory-emoji">🏆</div>
+      <h1>Victory!</h1>
+      <p>You completed all your tasks</p>
+      <div class="victory-time">
+        <i class="fa-solid fa-clock"></i>
+        <span>Total time: <strong id="victoryTotalTime">00:00</strong></span>
+      </div>
+      <button class="btn-primary" id="victoryCloseBtn">
+        <i class="fa-solid fa-rocket"></i> Awesome!
+      </button>
+    </div>
+  </div>
+
   <footer>
-    <p>&copy; 2026 The Chairman Show. .</p>
+    <p>&copy; 2026 The Chairman Show. Built by Sumit Shrivas.</p>
   </footer>
 </div>
 
@@ -566,7 +546,6 @@
 <script src="app.js"></script>
 
 <script>
-  // Global fallback: force-hide boot loader after 5s
   setTimeout(function() {
     var loader = document.getElementById('bootLoader');
     if (loader) loader.classList.add('hide');
