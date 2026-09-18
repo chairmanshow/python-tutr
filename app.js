@@ -1383,3 +1383,652 @@ window.addEventListener('load', () => {
 });
 
 console.log('🚀 The Chairman Show — App Loaded Successfully');
+/* ══════════════════════════════════════════════════════════════
+   ADMIN PANEL + LIVE WORKSHOPS SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+let currentManageWorkshopId = null;
+let allWorkshopsCache = [];
+let allRequestsCache = [];
+
+/* ─── Admin Visibility Check ─── */
+function isAdmin() {
+  return userProfile?.role === 'admin';
+}
+
+function updateAdminVisibility() {
+  const adminNav = $('navAdmin');
+  if (adminNav) {
+    adminNav.style.display = isAdmin() ? 'flex' : 'none';
+  }
+}
+
+/* ─── Load Admin Dashboard ─── */
+async function loadAdminDashboard() {
+  if (!isAdmin()) {
+    toast('warn', 'Access denied', 'Only admins can access this panel.');
+    switchToTab('home');
+    return;
+  }
+  loadAdminWorkshops();
+  loadAdminRequests();
+}
+window.loadAdminDashboard = loadAdminDashboard;
+
+/* ─── Admin Tabs Switch ─── */
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('.admin-tab');
+  if (tab) {
+    $$('.admin-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.atab;
+    $$('.admin-panel').forEach(p => p.classList.remove('active'));
+    const panel = $('adminPanel' + target.charAt(0).toUpperCase() + target.slice(1));
+    if (panel) panel.classList.add('active');
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════
+   WORKSHOPS — Admin CRUD
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadAdminWorkshops() {
+  const list = $('adminWorkshopsList');
+  if (!list) return;
+  list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
+
+  try {
+    const snap = await db.collection('workshops').limit(100).get();
+    allWorkshopsCache = [];
+    snap.forEach(d => allWorkshopsCache.push({ id: d.id, ...d.data() }));
+
+    allWorkshopsCache.sort((a, b) => {
+      const ta = a.scheduledAt?.toDate?.()?.getTime() || 0;
+      const tb = b.scheduledAt?.toDate?.()?.getTime() || 0;
+      return tb - ta;
+    });
+
+    if (!allWorkshopsCache.length) {
+      list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-video"></i><h4>No workshops yet</h4><p>Click "Create Workshop" to get started</p></div>';
+      return;
+    }
+
+    list.innerHTML = allWorkshopsCache.map(w => {
+      const status = getWorkshopStatus(w);
+      const scheduled = w.scheduledAt?.toDate?.() ? formatTime(w.scheduledAt.toDate().getTime()) : 'Not scheduled';
+      const allowedCount = (w.allowedUsers || []).length;
+      return `
+        <div class="admin-workshop-card">
+          <div class="awc-header">
+            <div class="awc-title">${escapeHtml(w.title || 'Untitled')}</div>
+            <span class="awc-status ${status.class}">${status.label}</span>
+          </div>
+          <div class="awc-meta">
+            <span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(w.expertName || 'Expert')}</span>
+            <span><i class="fa-solid fa-book"></i> ${escapeHtml(w.subject || 'General')}</span>
+            <span><i class="fa-solid fa-clock"></i> ${scheduled}</span>
+            <span><i class="fa-solid fa-users"></i> ${allowedCount} user${allowedCount !== 1 ? 's' : ''} allowed</span>
+          </div>
+          <div class="awc-actions">
+            <button class="primary" onclick="manageAccess('${w.id}')">
+              <i class="fa-solid fa-users-gear"></i> Access
+            </button>
+            <button onclick="editWorkshop('${w.id}')">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button class="danger" onclick="deleteWorkshop('${w.id}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Error loading workshops</h4><p>' + escapeHtml(err.message) + '</p></div>';
+  }
+}
+window.loadAdminWorkshops = loadAdminWorkshops;
+
+function getWorkshopStatus(w) {
+  if (!w.scheduledAt?.toDate) return { class: 'upcoming', label: 'Upcoming' };
+  const now = Date.now();
+  const start = w.scheduledAt.toDate().getTime();
+  const duration = (w.duration || 60) * 60 * 1000;
+  const end = start + duration;
+
+  if (now < start) return { class: 'upcoming', label: 'Upcoming' };
+  if (now >= start && now <= end) return { class: 'live', label: '🔴 Live' };
+  return { class: 'ended', label: 'Ended' };
+}
+
+/* ─── Create Workshop ─── */
+$('createWorkshopBtn')?.addEventListener('click', () => {
+  // Reset form
+  if ($('cwTitle')) $('cwTitle').value = '';
+  if ($('cwDescription')) $('cwDescription').value = '';
+  if ($('cwExpert')) $('cwExpert').value = '';
+  if ($('cwLink')) $('cwLink').value = '';
+  if ($('cwDate')) $('cwDate').value = '';
+  if ($('cwTime')) $('cwTime').value = '';
+  if ($('cwDuration')) $('cwDuration').value = 60;
+  if ($('cwSubject')) $('cwSubject').value = 'Mathematics';
+  openModal('createWorkshopModal');
+});
+
+$('saveWorkshopBtn')?.addEventListener('click', async () => {
+  if (!isAdmin()) return;
+
+  const title = $('cwTitle').value.trim();
+  const description = $('cwDescription').value.trim();
+  const expertName = $('cwExpert').value.trim();
+  const subject = $('cwSubject').value;
+  const link = $('cwLink').value.trim();
+  const date = $('cwDate').value;
+  const time = $('cwTime').value;
+  const duration = parseInt($('cwDuration').value) || 60;
+
+  if (!title || !expertName || !link || !date || !time) {
+    toast('warn', 'Please fill all required fields');
+    return;
+  }
+
+  const btn = $('saveWorkshopBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating…';
+
+  try {
+    const scheduledAt = new Date(`${date}T${time}:00`);
+    if (isNaN(scheduledAt.getTime())) {
+      throw new Error('Invalid date/time');
+    }
+
+    await db.collection('workshops').add({
+      title,
+      description,
+      expertName,
+      subject,
+      link,
+      scheduledAt: firebase.firestore.Timestamp.fromDate(scheduledAt),
+      duration,
+      allowedUsers: [],
+      createdBy: currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    toast('success', 'Workshop created!', 'Add users to allow access');
+    closeModal('createWorkshopModal');
+    loadAdminWorkshops();
+  } catch (err) {
+    console.error(err);
+    toast('warn', 'Failed to create', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Create Workshop';
+  }
+});
+
+/* ─── Delete Workshop ─── */
+window.deleteWorkshop = async function(id) {
+  if (!isAdmin()) return;
+  if (!confirm('Delete this workshop? Users will lose access.')) return;
+
+  try {
+    await db.collection('workshops').doc(id).delete();
+    toast('success', 'Workshop deleted');
+    loadAdminWorkshops();
+  } catch (err) {
+    toast('warn', 'Delete failed', err.message);
+  }
+};
+
+/* ─── Edit Workshop ─── */
+window.editWorkshop = function(id) {
+  const w = allWorkshopsCache.find(x => x.id === id);
+  if (!w) return;
+
+  if ($('cwTitle')) $('cwTitle').value = w.title || '';
+  if ($('cwDescription')) $('cwDescription').value = w.description || '';
+  if ($('cwExpert')) $('cwExpert').value = w.expertName || '';
+  if ($('cwSubject')) $('cwSubject').value = w.subject || 'Mathematics';
+  if ($('cwLink')) $('cwLink').value = w.link || '';
+  if ($('cwDuration')) $('cwDuration').value = w.duration || 60;
+
+  if (w.scheduledAt?.toDate) {
+    const d = w.scheduledAt.toDate();
+    const dateStr = d.toISOString().split('T')[0];
+    const timeStr = d.toTimeString().slice(0, 5);
+    if ($('cwDate')) $('cwDate').value = dateStr;
+    if ($('cwTime')) $('cwTime').value = timeStr;
+  }
+
+  // Change save button to update mode
+  const btn = $('saveWorkshopBtn');
+  btn.innerHTML = '<i class="fa-solid fa-check"></i> Update Workshop';
+  btn.onclick = async () => {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating…';
+    try {
+      const scheduledAt = new Date(`${$('cwDate').value}T${$('cwTime').value}:00`);
+      await db.collection('workshops').doc(id).update({
+        title: $('cwTitle').value.trim(),
+        description: $('cwDescription').value.trim(),
+        expertName: $('cwExpert').value.trim(),
+        subject: $('cwSubject').value,
+        link: $('cwLink').value.trim(),
+        scheduledAt: firebase.firestore.Timestamp.fromDate(scheduledAt),
+        duration: parseInt($('cwDuration').value) || 60
+      });
+      toast('success', 'Workshop updated!');
+      closeModal('createWorkshopModal');
+      loadAdminWorkshops();
+      location.reload(); // Simple reload to reset button
+    } catch (err) {
+      toast('warn', 'Update failed', err.message);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Update Workshop';
+    }
+  };
+
+  openModal('createWorkshopModal');
+};
+
+/* ══════════════════════════════════════════════════════════════
+   MANAGE ACCESS
+   ══════════════════════════════════════════════════════════════ */
+
+window.manageAccess = async function(workshopId) {
+  if (!isAdmin()) return;
+  currentManageWorkshopId = workshopId;
+
+  const w = allWorkshopsCache.find(x => x.id === workshopId);
+  if (!w) return;
+
+  if ($('manageInfo')) {
+    $('manageInfo').innerHTML = `<i class="fa-solid fa-video"></i> ${escapeHtml(w.title)}`;
+  }
+  if ($('accessEmail')) $('accessEmail').value = '';
+
+  renderAccessList(w.allowedUsers || []);
+  openModal('manageAccessModal');
+};
+
+function renderAccessList(allowedUsers) {
+  const list = $('accessList');
+  const count = $('accessCount');
+  if (!list) return;
+
+  if (count) count.textContent = allowedUsers.length;
+
+  if (!allowedUsers.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:1rem;"><p style="font-size:.82rem;">No users allowed yet</p></div>';
+    return;
+  }
+
+  list.innerHTML = allowedUsers.map((u, i) => {
+    const email = u.email || u;
+    const name = u.name || email.split('@')[0];
+    const avatar = u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff`;
+    return `
+      <div class="access-user">
+        <img src="${escapeHtml(avatar)}" alt="">
+        <div class="access-user-info">
+          <div class="name">${escapeHtml(name)}</div>
+          <div class="email">${escapeHtml(email)}</div>
+        </div>
+        <button onclick="removeAccess(${i})" title="Remove">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+window.removeAccess = async function(index) {
+  if (!isAdmin() || !currentManageWorkshopId) return;
+  const w = allWorkshopsCache.find(x => x.id === currentManageWorkshopId);
+  if (!w) return;
+
+  const allowedUsers = [...(w.allowedUsers || [])];
+  const removed = allowedUsers.splice(index, 1);
+
+  try {
+    await db.collection('workshops').doc(currentManageWorkshopId).update({ allowedUsers });
+    w.allowedUsers = allowedUsers;
+    renderAccessList(allowedUsers);
+    toast('success', 'Removed', (removed[0]?.email || removed[0]) + ' removed');
+  } catch (err) {
+    toast('warn', 'Failed', err.message);
+  }
+};
+
+$('addAccessBtn')?.addEventListener('click', async () => {
+  if (!isAdmin() || !currentManageWorkshopId) return;
+  const email = $('accessEmail').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    toast('warn', 'Please enter valid email');
+    return;
+  }
+
+  const w = allWorkshopsCache.find(x => x.id === currentManageWorkshopId);
+  if (!w) return;
+
+  const allowedUsers = [...(w.allowedUsers || [])];
+  if (allowedUsers.some(u => (u.email || u).toLowerCase() === email)) {
+    toast('warn', 'User already added');
+    return;
+  }
+
+  // Try to find user by email
+  let userData = { email, name: email.split('@')[0] };
+  try {
+    const usersSnap = await db.collection('users').where('email', '==', email).limit(1).get();
+    if (!usersSnap.empty) {
+      const u = usersSnap.docs[0].data();
+      userData = { uid: usersSnap.docs[0].id, email, name: u.name || email.split('@')[0], photoURL: u.photoURL || '' };
+    }
+  } catch (e) {}
+
+  allowedUsers.push(userData);
+
+  const btn = $('addAccessBtn');
+  btn.disabled = true;
+
+  try {
+    await db.collection('workshops').doc(currentManageWorkshopId).update({ allowedUsers });
+    w.allowedUsers = allowedUsers;
+    renderAccessList(allowedUsers);
+    $('accessEmail').value = '';
+    toast('success', 'User added!', email + ' can now join');
+  } catch (err) {
+    toast('warn', 'Failed to add', err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('accessEmail')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('addAccessBtn')?.click();
+});
+
+/* ══════════════════════════════════════════════════════════════
+   ACCESS REQUESTS
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadAdminRequests() {
+  const list = $('adminRequestsList');
+  if (!list) return;
+  list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
+
+  try {
+    const snap = await db.collection('access_requests').where('status', '==', 'pending').limit(100).get();
+    allRequestsCache = [];
+    snap.forEach(d => allRequestsCache.push({ id: d.id, ...d.data() }));
+
+    const badge = $('pendingCount');
+    if (badge) {
+      if (allRequestsCache.length > 0) {
+        badge.textContent = allRequestsCache.length;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (!allRequestsCache.length) {
+      list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No pending requests</h4><p>Access requests from students will appear here</p></div>';
+      return;
+    }
+
+    list.innerHTML = allRequestsCache.map(r => {
+      const avatar = r.userPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.userName || 'User')}&background=7c3aed&color=fff`;
+      const when = r.requestedAt?.toDate?.() ? formatTime(r.requestedAt.toDate().getTime()) : 'Just now';
+      return `
+        <div class="admin-request-card">
+          <img class="arc-avatar" src="${escapeHtml(avatar)}" alt="">
+          <div class="arc-info">
+            <div class="name">${escapeHtml(r.userName || 'User')}</div>
+            <div class="email">${escapeHtml(r.userEmail || '')}</div>
+            <div class="workshop-want"><i class="fa-solid fa-video"></i> ${escapeHtml(r.workshopTitle || 'Workshop')}</div>
+            <div class="time"><i class="fa-solid fa-clock"></i> ${when}</div>
+          </div>
+          <div class="arc-actions">
+            <button class="approve" onclick="approveRequest('${r.id}')">
+              <i class="fa-solid fa-check"></i> Approve
+            </button>
+            <button class="reject" onclick="rejectRequest('${r.id}')">
+              <i class="fa-solid fa-xmark"></i> Reject
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Error loading requests</h4><p>' + escapeHtml(err.message) + '</p></div>';
+  }
+}
+window.loadAdminRequests = loadAdminRequests;
+
+window.approveRequest = async function(requestId) {
+  if (!isAdmin()) return;
+  const r = allRequestsCache.find(x => x.id === requestId);
+  if (!r) return;
+
+  try {
+    // Get workshop
+    const wDoc = await db.collection('workshops').doc(r.workshopId).get();
+    if (!wDoc.exists) {
+      toast('warn', 'Workshop no longer exists');
+      await db.collection('access_requests').doc(requestId).delete();
+      loadAdminRequests();
+      return;
+    }
+    const w = wDoc.data();
+    const allowedUsers = [...(w.allowedUsers || [])];
+    if (!allowedUsers.some(u => (u.email || u).toLowerCase() === r.userEmail.toLowerCase())) {
+      allowedUsers.push({
+        uid: r.userId,
+        email: r.userEmail,
+        name: r.userName || r.userEmail.split('@')[0],
+        photoURL: r.userPhoto || ''
+      });
+    }
+
+    await db.collection('workshops').doc(r.workshopId).update({ allowedUsers });
+    await db.collection('access_requests').doc(requestId).update({
+      status: 'approved',
+      reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    toast('success', 'Approved!', r.userName + ' can now join');
+    loadAdminRequests();
+  } catch (err) {
+    toast('warn', 'Approval failed', err.message);
+  }
+};
+
+window.rejectRequest = async function(requestId) {
+  if (!isAdmin()) return;
+  if (!confirm('Reject this request?')) return;
+
+  try {
+    await db.collection('access_requests').doc(requestId).update({
+      status: 'rejected',
+      reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('success', 'Request rejected');
+    loadAdminRequests();
+  } catch (err) {
+    toast('warn', 'Failed', err.message);
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   STUDENT VIEW — LIVE WORKSHOPS
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadStudentWorkshops() {
+  const grid = $('workshopsGrid');
+  if (!grid) return;
+
+  // Agar admin hai to sab dikhao
+  const isUserAdmin = isAdmin();
+
+  try {
+    const snap = await db.collection('workshops').limit(50).get();
+    const workshops = [];
+    snap.forEach(d => {
+      const data = d.data();
+      // Filter: allowed users only (unless admin)
+      const allowed = (data.allowedUsers || []).some(u => 
+        (u.uid && u.uid === currentUser.uid) || 
+        (u.email && u.email.toLowerCase() === (currentUser.email || '').toLowerCase())
+      );
+      if (isUserAdmin || allowed) {
+        workshops.push({ id: d.id, ...data });
+      }
+    });
+
+    if (!workshops.length) {
+      grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-video"></i><h4>No live workshops available</h4><p>Check back later for upcoming sessions</p></div>';
+      return;
+    }
+
+    workshops.sort((a, b) => {
+      const ta = a.scheduledAt?.toDate?.()?.getTime() || 0;
+      const tb = b.scheduledAt?.toDate?.()?.getTime() || 0;
+      return ta - tb; // Soonest first
+    });
+
+    grid.innerHTML = workshops.map(w => renderWorkshopCard(w)).join('');
+  } catch (err) {
+    console.error('Workshops load error:', err);
+    grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-video"></i><h4>No live workshops available</h4><p>Check back later</p></div>';
+  }
+}
+window.loadStudentWorkshops = loadStudentWorkshops;
+
+function renderWorkshopCard(w) {
+  const status = getWorkshopStatus(w);
+  const scheduled = w.scheduledAt?.toDate?.() ? formatTime(w.scheduledAt.toDate().getTime()) : 'Not scheduled';
+  const isLive = status.class === 'live';
+
+  const allowed = (w.allowedUsers || []).some(u => 
+    (u.uid && u.uid === currentUser.uid) || 
+    (u.email && u.email.toLowerCase() === (currentUser.email || '').toLowerCase())
+  ) || isAdmin();
+
+  return `
+    <div class="workshop-card ${isLive ? 'live' : ''} ${!allowed ? 'locked' : ''}">
+      ${isLive ? '<div class="workshop-live-badge"><span class="workshop-live-dot"></span> LIVE</div>' : ''}
+      <div class="workshop-title">${escapeHtml(w.title || 'Workshop')}</div>
+      ${w.description ? `<div class="workshop-description">${escapeHtml(w.description)}</div>` : ''}
+      <div class="workshop-expert">
+        <i class="fa-solid fa-user-tie"></i> ${escapeHtml(w.expertName || 'Expert')}
+      </div>
+      <div class="workshop-time">
+        <i class="fa-solid fa-clock"></i> ${scheduled} • ${w.duration || 60} min
+      </div>
+      <div class="workshop-actions">
+        ${allowed ? `
+          <button class="join" onclick="joinWorkshop('${escapeHtml(w.link || '')}')">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Join
+          </button>
+        ` : `
+          <button class="request" onclick="requestWorkshopAccess('${w.id}')">
+            <i class="fa-solid fa-lock-open"></i> Request Access
+          </button>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+window.joinWorkshop = function(link) {
+  if (!link) {
+    toast('warn', 'No link available');
+    return;
+  }
+  window.open(link, '_blank', 'noopener');
+  toast('success', 'Opening workshop…');
+};
+
+window.requestWorkshopAccess = async function(workshopId) {
+  const w = allWorkshopsCache.find(x => x.id === workshopId) || 
+            (await db.collection('workshops').doc(workshopId).get()).data();
+  if (!w) return;
+
+  try {
+    // Check existing request
+    const existing = await db.collection('access_requests')
+      .where('userId', '==', currentUser.uid)
+      .where('workshopId', '==', workshopId)
+      .limit(1)
+      .get();
+
+    if (!existing.empty) {
+      toast('info', 'Request already sent', 'Wait for admin approval');
+      return;
+    }
+
+    await db.collection('access_requests').add({
+      workshopId,
+      workshopTitle: w.title || 'Workshop',
+      userId: currentUser.uid,
+      userName: userProfile.name,
+      userEmail: userProfile.email,
+      userPhoto: userProfile.photoURL || '',
+      status: 'pending',
+      requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    toast('success', 'Request sent!', 'Admin will review it soon');
+  } catch (err) {
+    toast('warn', 'Failed to send request', err.message);
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   HOOK INTO EXISTING SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+// Extend switchToTab to load admin + workshops
+const _prevSwitchToTab = window.switchToTab;
+window.switchToTab = function(tabId) {
+  _prevSwitchToTab(tabId);
+  if (tabId === 'admin') loadAdminDashboard();
+  if (tabId === 'experts') loadStudentWorkshops();
+};
+
+// Extend updateUserUI to show admin nav
+const _prevUpdateUserUI = updateUserUI;
+updateUserUI = function() {
+  _prevUpdateUserUI();
+  updateAdminVisibility();
+};
+
+// Check for pending requests count (admin only)
+async function checkPendingRequests() {
+  if (!isAdmin()) return;
+  try {
+    const snap = await db.collection('access_requests').where('status', '==', 'pending').count().get();
+    const badge = $('pendingCount');
+    if (badge && snap.data().count > 0) {
+      badge.textContent = snap.data().count;
+      badge.style.display = 'flex';
+    }
+  } catch (e) {}
+}
+
+// Init admin when app loads
+const _prevInitApp = initApp;
+initApp = function() {
+  _prevInitApp();
+  updateAdminVisibility();
+  if (isAdmin()) {
+    setTimeout(checkPendingRequests, 2000);
+  }
+};
+
+console.log('🛡️ Admin Panel + Workshops System Loaded');
