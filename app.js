@@ -1097,11 +1097,9 @@ window.addEventListener('load', () => {
    AI DOUBT SOLVING SYSTEM (NEW)
    ══════════════════════════════════════════════════════════════ */
 
-// ⚙️ CONFIG — apni API key yahan daalo
+// ✅ CORRECT — key is on server, not in code
 const AI_CONFIG = {
-  GROQ_KEY: 'gsk_YOUR_GROQ_KEY_HERE',   // ⬅️ YAHAN APNI GROQ KEY DAALO
-  GROQ_URL: 'https://api.groq.com/openai/v1/chat/completions',
-  MODEL: 'llama-3.1-8b-instant',         // Fast & free
+  PROXY_URL: 'https://tcs-ai-proxy.sumitshrivas24.workers.dev',  // Your worker URL
   MAX_WORDS: 40
 };
 
