@@ -70,6 +70,7 @@
         <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
         <li><button class="nav-item" data-tab="expertDashboard" id="navExpertDashboard" style="display:none;"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Expert Panel</span></button></li>
         <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-users"></i> <span class="nav-text">Experts</span></button></li>
+        <li><button class="nav-item" data-tab="admin" id="navAdmin" style="display:none;"><i class="fa-solid fa-shield-halved"></i> <span class="nav-text">Admin</span></button></li>
         <li><button class="nav-item" data-tab="community"><i class="fa-solid fa-earth-americas"></i> <span class="nav-text">Community</span><span class="nav-badge" id="navBadge" style="display:none;">0</span></button></li>
         <li><button class="nav-item" data-tab="subscription"><i class="fa-solid fa-heart"></i> <span class="nav-text">Donate</span></button></li>
         <li><button class="nav-item" data-tab="support"><i class="fa-solid fa-envelope"></i> <span class="nav-text">Support</span></button></li>
@@ -232,18 +233,34 @@
     </section>
 
     <!-- ═══ EXPERTS TAB ═══ -->
-    <section id="experts" class="tab-content">
-      <div class="section-header">
-        <h1>Our Experts</h1>
-        <p>Verified subject experts ready to help you</p>
+  <section id="experts" class="tab-content">
+  <div class="section-header">
+    <h1>Our Experts</h1>
+    <p>Verified subject experts ready to help you</p>
+  </div>
+
+  <!-- ═══ LIVE WORKSHOPS SECTION ═══ -->
+  <div class="workshops-section" id="workshopsSection">
+    <div class="workshops-header">
+      <h2><i class="fa-solid fa-video"></i> Live Workshops</h2>
+      <p>Join live sessions with expert teachers</p>
+    </div>
+    <div class="workshops-grid" id="workshopsGrid">
+      <div class="empty-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading workshops…</p>
       </div>
-      <div class="expert-sections" id="expertSections">
-        <div class="empty-state">
-          <i class="fa-solid fa-spinner fa-spin"></i>
-          <p>Loading experts…</p>
-        </div>
-      </div>
-    </section>
+    </div>
+  </div>
+
+  <!-- ═══ EXPERTS SECTIONS ═══ -->
+  <div class="expert-sections" id="expertSections">
+    <div class="empty-state">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <p>Loading experts…</p>
+    </div>
+  </div>
+</section>
 
     <!-- ═══ COMMUNITY TAB ═══ -->
     <section id="community" class="tab-content">
@@ -371,7 +388,51 @@
     </div>
   </div>
 </section>
+<!-- ═══ ADMIN TAB ═══ -->
+<section id="admin" class="tab-content">
+  <div class="section-header">
+    <h1>Admin Dashboard</h1>
+    <p>Manage workshops, users, and access requests</p>
+  </div>
 
+  <!-- Admin Tabs -->
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-atab="workshops">
+      <i class="fa-solid fa-video"></i> Workshops
+    </button>
+    <button class="admin-tab" data-atab="requests">
+      <i class="fa-solid fa-bell"></i> Requests
+      <span class="admin-badge" id="pendingCount" style="display:none;">0</span>
+    </button>
+  </div>
+
+  <!-- WORKSHOPS PANEL -->
+  <div class="admin-panel active" id="adminPanelWorkshops">
+    <div class="admin-toolbar">
+      <button class="btn-primary" id="createWorkshopBtn">
+        <i class="fa-solid fa-plus"></i> Create Workshop
+      </button>
+    </div>
+    <div class="admin-workshops-list" id="adminWorkshopsList">
+      <div class="empty-state">
+        <i class="fa-solid fa-video"></i>
+        <h4>No workshops yet</h4>
+        <p>Click "Create Workshop" to get started</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- REQUESTS PANEL -->
+  <div class="admin-panel" id="adminPanelRequests">
+    <div class="admin-requests-list" id="adminRequestsList">
+      <div class="empty-state">
+        <i class="fa-solid fa-inbox"></i>
+        <h4>No pending requests</h4>
+        <p>Access requests from students will appear here</p>
+      </div>
+    </div>
+  </div>
+</section>
   <!-- ═══ NEW DOUBT MODAL ═══ -->
   <div class="modal-overlay" id="newDoubtModal">
     <div class="modal-content">
@@ -480,7 +541,99 @@
       <img id="viewerImage" src="" alt="">
     </div>
   </div>
+<!-- ═══ CREATE WORKSHOP MODAL ═══ -->
+<div class="modal-overlay" id="createWorkshopModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-video"></i> Create Workshop</h3>
+      <button class="close-modal" onclick="closeModal('createWorkshopModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Workshop Title *</label>
+        <input type="text" id="cwTitle" placeholder="e.g., JEE Physics — Rotational Motion" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="cwDescription" rows="2" placeholder="Short description..." maxlength="200"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Expert Name *</label>
+        <input type="text" id="cwExpert" placeholder="e.g., Dr. Vikram Mehta">
+      </div>
+      <div class="form-group">
+        <label>Subject *</label>
+        <select id="cwSubject">
+          <option value="Mathematics">Mathematics</option>
+          <option value="Physics">Physics</option>
+          <option value="Chemistry">Chemistry</option>
+          <option value="Biology">Biology</option>
+          <option value="Computer Science">Computer Science</option>
+          <option value="English">English</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Meeting Link *</label>
+        <input type="url" id="cwLink" placeholder="https://meet.google.com/abc-defg-hij">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Scheduled Date *</label>
+          <input type="date" id="cwDate">
+        </div>
+        <div class="form-group">
+          <label>Scheduled Time *</label>
+          <input type="time" id="cwTime">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Duration (minutes) *</label>
+        <input type="number" id="cwDuration" value="60" min="15" max="300">
+      </div>
+      <button class="btn-primary" id="saveWorkshopBtn" style="width:100%;justify-content:center;margin-top:.5rem">
+        <i class="fa-solid fa-check"></i> Create Workshop
+      </button>
+    </div>
+  </div>
+</div>
 
+<!-- ═══ MANAGE ACCESS MODAL ═══ -->
+<div class="modal-overlay" id="manageAccessModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-users-gear"></i> Manage Access</h3>
+      <button class="close-modal" onclick="closeModal('manageAccessModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="manage-info" id="manageInfo"></div>
+
+      <div class="form-group">
+        <label>Add User by Email</label>
+        <div class="input-with-btn">
+          <input type="email" id="accessEmail" placeholder="student@example.com">
+          <button class="btn-primary" id="addAccessBtn">
+            <i class="fa-solid fa-plus"></i> Add
+          </button>
+        </div>
+      </div>
+
+      <div class="access-list-header">
+        <strong>Allowed Users</strong>
+        <span id="accessCount">0</span>
+      </div>
+      <div class="access-list" id="accessList">
+        <div class="empty-state" style="padding:1rem;">
+          <p style="font-size:.82rem;">No users allowed yet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   <!-- ═══ TASK FOCUS MODE OVERLAY ═══ -->
   <div class="task-focus-overlay" id="taskFocusOverlay">
     <div class="task-focus-card">
