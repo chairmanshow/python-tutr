@@ -1093,3 +1093,696 @@ window.addEventListener('load', () => {
     if (loader) loader.classList.add('hide');
   }, 1500);
 });
+/* ══════════════════════════════════════════════════════════════
+   AI DOUBT SOLVING SYSTEM (NEW)
+   ══════════════════════════════════════════════════════════════ */
+
+// ⚙️ CONFIG — apni API key yahan daalo
+const AI_CONFIG = {
+  GROQ_KEY: 'gsk_YOUR_GROQ_KEY_HERE',   // ⬅️ YAHAN APNI GROQ KEY DAALO
+  GROQ_URL: 'https://api.groq.com/openai/v1/chat/completions',
+  MODEL: 'llama-3.1-8b-instant',         // Fast & free
+  MAX_WORDS: 40
+};
+
+/* ─── 20 EXPERT NAMES POOL ─── */
+const EXPERT_POOL = [
+  { name: 'Dr. Rajesh Sharma', title: 'Physics & Mathematics', exp: 12, subject: 'PCM', avatar: 'RS' },
+  { name: 'Prof. Anjali Verma', title: 'Chemistry Specialist', exp: 9, subject: 'Chemistry', avatar: 'AV' },
+  { name: 'Dr. Vikram Mehta', title: 'IIT-JEE Physics', exp: 15, subject: 'Physics', avatar: 'VM' },
+  { name: 'Ms. Priya Nair', title: 'Biology & NEET Expert', exp: 7, subject: 'Biology', avatar: 'PN' },
+  { name: 'Mr. Arun Patel', title: 'Mathematics Professor', exp: 11, subject: 'Mathematics', avatar: 'AP' },
+  { name: 'Dr. Sneha Reddy', title: 'Organic Chemistry', exp: 10, subject: 'Chemistry', avatar: 'SR' },
+  { name: 'Prof. Karan Singh', title: 'Computer Science', exp: 8, subject: 'CS', avatar: 'KS' },
+  { name: 'Ms. Meera Iyer', title: 'English Literature', exp: 6, subject: 'English', avatar: 'MI' },
+  { name: 'Dr. Aditya Joshi', title: 'Physics Olympiad Coach', exp: 14, subject: 'Physics', avatar: 'AJ' },
+  { name: 'Prof. Neha Gupta', title: 'NEET Biology', exp: 9, subject: 'Biology', avatar: 'NG' },
+  { name: 'Mr. Rohan Malhotra', title: 'JEE Mathematics', exp: 13, subject: 'Mathematics', avatar: 'RM' },
+  { name: 'Dr. Kavita Desai', title: 'Inorganic Chemistry', exp: 12, subject: 'Chemistry', avatar: 'KD' },
+  { name: 'Prof. Suresh Kumar', title: 'Physics & Math', exp: 18, subject: 'PCM', avatar: 'SK' },
+  { name: 'Ms. Ananya Bose', title: 'Science & English', exp: 5, subject: 'General', avatar: 'AB' },
+  { name: 'Dr. Harsh Vardhan', title: 'Advanced Mathematics', exp: 16, subject: 'Mathematics', avatar: 'HV' },
+  { name: 'Prof. Ritu Agarwal', title: 'Biology & Zoology', exp: 10, subject: 'Biology', avatar: 'RA' },
+  { name: 'Mr. Nikhil Chopra', title: 'Physics IIT', exp: 8, subject: 'Physics', avatar: 'NC' },
+  { name: 'Dr. Pooja Saxena', title: 'Chemistry PhD', exp: 11, subject: 'Chemistry', avatar: 'PS' },
+  { name: 'Prof. Manish Tiwari', title: 'Maths & Stats', exp: 13, subject: 'Mathematics', avatar: 'MT' },
+  { name: 'Dr. Sunita Kapoor', title: 'Senior Biology Expert', exp: 17, subject: 'Biology', avatar: 'SK' }
+];
+
+/* ─── Get random experts for current session ─── */
+function getRandomExperts(count = 20) {
+  const shuffled = [...EXPERT_POOL].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+/* ─── Pick a random expert for a doubt ─── */
+function pickExpertForDoubt() {
+  const sessionExperts = getSessionExperts();
+  return sessionExperts[Math.floor(Math.random() * sessionExperts.length)];
+}
+
+/* ─── Session storage for per-user random experts ─── */
+function getSessionExperts() {
+  const key = 'tcs_experts_' + (currentUser?.uid || 'guest');
+  let stored = null;
+  try { stored = JSON.parse(sessionStorage.getItem(key)); } catch(e) {}
+  if (!stored || !Array.isArray(stored) || stored.length < 15) {
+    stored = getRandomExperts(20);
+    try { sessionStorage.setItem(key, JSON.stringify(stored)); } catch(e) {}
+  }
+  return stored;
+}
+
+/* ─── Generate expert avatar URL ─── */
+function expertAvatarUrl(expert) {
+  const colors = ['2563eb', '7c3aed', '059669', 'd97706', 'dc2626', '0891b2'];
+  const color = colors[Math.abs(hashCode(expert.name)) % colors.length];
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=${color}&color=fff&bold=true&size=128`;
+}
+function hashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
+  return h;
+}
+
+/* ─── CALL GROQ AI ─── */
+async function getAIAnswer(question, subject, cls) {
+  const expert = pickExpertForDoubt();
+
+  const systemPrompt = `You are ${expert.name}, an Indian expert teacher in ${subject} with ${expert.exp} years of experience.
+Answer the student's ${subject} doubt (Class: ${cls}) in 30-40 words MAXIMUM.
+Be precise, use simple language, include the key formula/concept if relevant.
+Never exceed 40 words. Never mention you are an AI. Sign nothing.`;
+
+  try {
+    const res = await fetch(AI_CONFIG.GROQ_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AI_CONFIG.GROQ_KEY}`
+      },
+      body: JSON.stringify({
+        model: AI_CONFIG.MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: question }
+        ],
+        temperature: 0.6,
+        max_tokens: 100
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error('AI service error: ' + err.slice(0, 100));
+    }
+
+    const data = await res.json();
+    let answer = data.choices?.[0]?.message?.content?.trim() || '';
+
+    // Enforce word limit
+    const words = answer.split(/\s+/);
+    if (words.length > 45) {
+      answer = words.slice(0, 42).join(' ') + '...';
+    }
+
+    return { answer, expert };
+  } catch (err) {
+    console.error('AI error:', err);
+    throw err;
+  }
+}
+
+/* ─── TYPEWRITER ANIMATION ─── */
+function typeWriter(element, text, speed = 25) {
+  return new Promise(resolve => {
+    element.innerHTML = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'ai-cursor';
+    element.appendChild(cursor);
+
+    let i = 0;
+    const textNode = document.createTextNode('');
+    element.insertBefore(textNode, cursor);
+
+    function type() {
+      if (i < text.length) {
+        textNode.textContent += text.charAt(i);
+        i++;
+        setTimeout(type, speed);
+      } else {
+        setTimeout(() => {
+          cursor.remove();
+          resolve();
+        }, 400);
+      }
+    }
+    type();
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   OVERRIDE: viewDoubt → AI answer with animation
+   ══════════════════════════════════════════════════════════════ */
+window.viewDoubt = async function(id) {
+  try {
+    const doc = await db.collection('doubts').doc(id).get();
+    if (!doc.exists) return;
+    const d = doc.data();
+
+    // Check if doubt already has an AI answer stored
+    const answersSnap = await db.collection('doubts').doc(id).collection('answers')
+      .orderBy('createdAt', 'asc').get();
+
+    let answersHtml = '';
+
+    if (!answersSnap.empty) {
+      // Show existing answer(s)
+      const ansDocs = answersSnap.docs;
+      answersHtml = ansDocs.map(ansDoc => {
+        const a = ansDoc.data();
+        const when = a.createdAt?.toDate?.() ? formatTime(a.createdAt.toDate().getTime()) : 'Just now';
+        const expert = a.expert || { name: a.expertName || 'Expert', title: 'Subject Expert', exp: 10, avatar: 'E' };
+        const avatar = expertAvatarUrl(expert);
+        return `
+          <div class="ai-answer-card">
+            <div class="ai-answer-header">
+              <img src="${avatar}" alt="" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp || 10}, '${escapeHtml(expert.title || '')}')" style="cursor:pointer">
+              <div>
+                <div class="name" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp || 10}, '${escapeHtml(expert.title || '')}')" style="cursor:pointer;color:var(--accent-primary)">${escapeHtml(expert.name)}</div>
+                <div class="title">${escapeHtml(expert.title)} • ${expert.exp || 10}+ yrs exp</div>
+              </div>
+              <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-bolt"></i> AI</span>
+            </div>
+            <div class="ai-answer-text">${escapeHtml(a.text || '')}</div>
+            ${a.imageUrl ? `<img src="${escapeHtml(a.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(a.imageUrl)}')">` : ''}
+            <div class="ai-answer-footer">
+              <button onclick="copyAnswer(this, ${JSON.stringify(a.text || '')})"><i class="fa-regular fa-copy"></i> Copy</button>
+              <button onclick="markHelpful('${id}')"><i class="fa-regular fa-thumbs-up"></i> Helpful</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Build modal body
+    if ($('doubtDetailsBody')) {
+      $('doubtDetailsBody').innerHTML = `
+        <div class="original-doubt">
+          <div class="od-header">
+            <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject)}</span>
+            <span class="doubt-status ${d.status}">${d.status}</span>
+          </div>
+          <div class="od-question">${escapeHtml(d.question)}</div>
+          ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+        </div>
+        <h4 style="margin-bottom:.8rem;display:flex;align-items:center;gap:8px;">
+          <i class="fa-solid fa-comments" style="color:var(--accent-primary)"></i>
+          Expert Answer
+        </h4>
+        <div id="answerArea">${answersHtml}</div>
+      `;
+    }
+
+    openModal('doubtDetailsModal');
+
+    // If no answer exists yet → generate AI answer with animation
+    if (answersSnap.empty) {
+      setTimeout(async () => {
+        await generateAndShowAIAnswer(id, d);
+      }, 400);
+    }
+  } catch (err) {
+    console.error(err);
+    toast('warn', 'Error', err.message);
+  }
+};
+
+/* ─── Generate AI answer + typewriter animation ─── */
+async function generateAndShowAIAnswer(doubtId, doubtData) {
+  const area = $('answerArea');
+  if (!area) return;
+
+  // Show thinking state
+  area.innerHTML = `
+    <div class="ai-answer-card">
+      <div class="ai-thinking">
+        <i class="fa-solid fa-brain" style="color:var(--accent-secondary)"></i>
+        <span>An expert is thinking</span>
+        <span class="ai-thinking-dots"><span></span><span></span><span></span></span>
+      </div>
+    </div>
+  `;
+
+  try {
+    const { answer, expert } = await getAIAnswer(
+      doubtData.question,
+      doubtData.subject,
+      doubtData.class || 'General'
+    );
+
+    const avatar = expertAvatarUrl(expert);
+
+    area.innerHTML = `
+      <div class="ai-answer-card">
+        <div class="ai-answer-header">
+          <img src="${avatar}" alt="" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp}, '${escapeHtml(expert.title)}')" style="cursor:pointer">
+          <div>
+            <div class="name" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp}, '${escapeHtml(expert.title)}')" style="cursor:pointer;color:var(--accent-primary)">${escapeHtml(expert.name)}</div>
+            <div class="title">${escapeHtml(expert.title)} • ${expert.exp}+ yrs exp</div>
+          </div>
+          <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-bolt"></i> AI</span>
+        </div>
+        <div class="ai-answer-text" id="typewriterText"></div>
+        <div class="ai-answer-footer" id="aiFooter" style="display:none">
+          <button onclick="copyAnswer(this, ${JSON.stringify(answer)})"><i class="fa-regular fa-copy"></i> Copy</button>
+          <button onclick="markHelpful('${doubtId}')"><i class="fa-regular fa-thumbs-up"></i> Helpful</button>
+        </div>
+      </div>
+    `;
+
+    // Typewriter effect
+    await typeWriter($('typewriterText'), answer, 22);
+
+    // Show footer
+    const footer = $('aiFooter');
+    if (footer) footer.style.display = 'flex';
+
+    // Save to Firestore
+    try {
+      await db.collection('doubts').doc(doubtId).collection('answers').add({
+        expertId: 'ai_expert',
+        expertName: expert.name,
+        expertPhoto: avatar,
+        expertTitle: expert.title,
+        expert: { name: expert.name, title: expert.title, exp: expert.exp, avatar: expert.avatar },
+        text: answer,
+        imageUrl: '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        helpful: 0,
+        isAI: true
+      });
+
+      await db.collection('doubts').doc(doubtId).update({
+        status: 'answered',
+        answeredBy: 'ai_expert',
+        answeredByName: expert.name,
+        answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+        answerCount: firebase.firestore.FieldValue.increment(1)
+      });
+
+      await db.collection('users').doc(currentUser.uid).update({
+        doubtsSolved: firebase.firestore.FieldValue.increment(1)
+      }).catch(() => {});
+
+      toast('success', 'Answer ready!', `Answered by ${expert.name}`);
+    } catch (saveErr) {
+      console.warn('Save failed:', saveErr);
+    }
+  } catch (err) {
+    area.innerHTML = `
+      <div class="ai-answer-card">
+        <div style="color:var(--danger);display:flex;align-items:center;gap:8px;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Could not generate answer. Please try again.</span>
+        </div>
+        <button class="btn-ghost" style="margin-top:.8rem" onclick="viewDoubt('${doubtId}')">Retry</button>
+      </div>
+    `;
+  }
+}
+
+/* ─── Copy answer to clipboard ─── */
+window.copyAnswer = function(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  });
+};
+
+/* ─── Mark helpful ─── */
+window.markHelpful = function(doubtId) {
+  toast('success', 'Thanks!', 'Marked as helpful');
+};
+
+/* ══════════════════════════════════════════════════════════════
+   EXPERT PROFILE MODAL
+   ══════════════════════════════════════════════════════════════ */
+window.showExpertProfile = function(name, exp, title) {
+  const expert = EXPERT_POOL.find(e => e.name === name) || { name, exp, title, subject: 'General' };
+  const avatar = expertAvatarUrl(expert);
+  const solved = 500 + Math.floor(Math.random() * 2000);
+  const rating = (4.5 + Math.random() * 0.5).toFixed(1);
+  const students = 1000 + Math.floor(Math.random() * 5000);
+
+  if ($('expertProfileBody')) {
+    $('expertProfileBody').innerHTML = `
+      <div class="expert-profile-header">
+        <img src="${avatar}" alt="">
+        <h4>${escapeHtml(name)}</h4>
+        <p>${escapeHtml(title || 'Subject Expert')}</p>
+      </div>
+      <div class="expert-stats-grid">
+        <div class="expert-stat-box">
+          <div class="v">${exp}+</div>
+          <div class="l">Years Exp</div>
+        </div>
+        <div class="expert-stat-box">
+          <div class="v">${solved}</div>
+          <div class="l">Doubts Solved</div>
+        </div>
+        <div class="expert-stat-box">
+          <div class="v">${rating}★</div>
+          <div class="l">Rating</div>
+        </div>
+      </div>
+      <div class="expert-bio">
+        <strong><i class="fa-solid fa-quote-left"></i> About</strong>
+        ${escapeHtml(name)} is a highly experienced ${escapeHtml(expert.subject || 'subject')} expert with ${exp} years of teaching experience.
+        Has helped over ${students.toLocaleString('en-IN')} students crack their exams.
+        Specializes in step-by-step explanations and concept clarity.
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem" onclick="closeModal('expertProfileModal');switchToTab('doubts');setTimeout(()=>openModal('newDoubtModal'),300)">
+        <i class="fa-solid fa-paper-plane"></i> Ask a Doubt
+      </button>
+    `;
+  }
+  openModal('expertProfileModal');
+};
+
+/* ══════════════════════════════════════════════════════════════
+   LIVE EXPERTS BAR (Doubts tab)
+   ══════════════════════════════════════════════════════════════ */
+function updateLiveExperts() {
+  const sessionExperts = getSessionExperts();
+  const onlineCount = 8 + Math.floor(Math.random() * 8); // 8-15
+
+  if ($('liveCount')) $('liveCount').textContent = onlineCount;
+
+  if ($('liveAvatars')) {
+    const shown = sessionExperts.slice(0, 5);
+    $('liveAvatars').innerHTML = shown.map((e, i) => 
+      `<img src="${expertAvatarUrl(e)}" alt="${escapeHtml(e.name)}" title="${escapeHtml(e.name)}" style="animation-delay:${i * 0.08}s">`
+    ).join('');
+  }
+}
+
+// Update count every 8 seconds for "live" feel
+setInterval(() => {
+  if ($('liveCount') && activeTab === 'doubts') {
+    const newCount = 8 + Math.floor(Math.random() * 8);
+    $('liveCount').textContent = newCount;
+  }
+}, 8000);
+
+/* ══════════════════════════════════════════════════════════════
+   TASKS SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+let tasks = [];
+let currentTaskIndex = 0;
+let taskTimerStart = 0;
+let taskTimerInterval = null;
+let totalTaskTime = 0;
+let victoryConfettiAnim = null;
+
+function loadTasks() {
+  const key = 'tcs_tasks_' + (currentUser?.uid || 'guest');
+  try { tasks = JSON.parse(localStorage.getItem(key)) || []; }
+  catch { tasks = []; }
+  renderTasks();
+}
+
+function saveTasks() {
+  const key = 'tcs_tasks_' + (currentUser?.uid || 'guest');
+  try { localStorage.setItem(key, JSON.stringify(tasks)); } catch {}
+}
+
+function renderTasks() {
+  const list = $('tasksList');
+  if (!list) return;
+
+  if (!tasks.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <h4>No tasks yet</h4>
+        <p>Add your first task above to get started</p>
+      </div>`;
+  } else {
+    list.innerHTML = tasks.map((t, i) => `
+      <div class="task-item ${t.done ? 'done' : ''}">
+        <div class="task-num">${i + 1}</div>
+        <div class="task-text">${escapeHtml(t.text)}</div>
+        <div class="task-actions">
+          <button class="delete-btn" onclick="deleteTask(${i})" title="Delete">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const startBtn = $('startTasksBtn');
+  if (startBtn) startBtn.disabled = tasks.length === 0;
+}
+
+window.deleteTask = function(i) {
+  tasks.splice(i, 1);
+  saveTasks();
+  renderTasks();
+};
+
+/* Add task */
+$('addTaskBtn')?.addEventListener('click', () => {
+  const input = $('taskInput');
+  const text = input.value.trim();
+  if (!text) { toast('warn', 'Please enter a task'); return; }
+  if (tasks.length >= 20) { toast('warn', 'Max 20 tasks'); return; }
+  tasks.push({ text, done: false, timeSpent: 0 });
+  input.value = '';
+  saveTasks();
+  renderTasks();
+  toast('success', 'Task added!');
+});
+
+$('taskInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('addTaskBtn').click();
+});
+
+/* Clear all */
+$('clearTasksBtn')?.addEventListener('click', () => {
+  if (!tasks.length) return;
+  if (!confirm('Clear all tasks?')) return;
+  tasks = [];
+  saveTasks();
+  renderTasks();
+  toast('success', 'Tasks cleared');
+});
+
+/* Start focus mode */
+$('startTasksBtn')?.addEventListener('click', () => {
+  if (!tasks.length) return;
+  currentTaskIndex = 0;
+  totalTaskTime = 0;
+  openTaskFocus();
+});
+
+function openTaskFocus() {
+  $('taskFocusOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  renderTaskFocus();
+  startTaskTimer();
+}
+
+function closeTaskFocus() {
+  $('taskFocusOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  stopTaskTimer();
+}
+
+$('closeFocusBtn')?.addEventListener('click', closeTaskFocus);
+
+function renderTaskFocus() {
+  const total = tasks.length;
+  const step = currentTaskIndex + 1;
+  if ($('currentStepNum')) $('currentStepNum').textContent = step;
+  if ($('totalStepNum')) $('totalStepNum').textContent = total;
+  if ($('taskCurrentText')) $('taskCurrentText').textContent = tasks[currentTaskIndex]?.text || '';
+
+  const prev = $('prevTaskBtn');
+  if (prev) prev.disabled = currentTaskIndex === 0;
+
+  const next = $('nextTaskBtn');
+  if (next) {
+    if (currentTaskIndex === total - 1) {
+      next.innerHTML = 'Finish <i class="fa-solid fa-flag-checkered"></i>';
+    } else {
+      next.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+    }
+  }
+}
+
+$('prevTaskBtn')?.addEventListener('click', () => {
+  if (currentTaskIndex > 0) {
+    // Save time for current task
+    if (tasks[currentTaskIndex]) {
+      tasks[currentTaskIndex].timeSpent = (tasks[currentTaskIndex].timeSpent || 0) + (Date.now() - taskTimerStart);
+    }
+    currentTaskIndex--;
+    resetTaskTimer();
+    renderTaskFocus();
+  }
+});
+
+$('nextTaskBtn')?.addEventListener('click', () => {
+  // Save time for current task
+  if (tasks[currentTaskIndex]) {
+    tasks[currentTaskIndex].timeSpent = (tasks[currentTaskIndex].timeSpent || 0) + (Date.now() - taskTimerStart);
+    tasks[currentTaskIndex].done = true;
+  }
+  totalTaskTime += Date.now() - taskTimerStart;
+
+  if (currentTaskIndex === tasks.length - 1) {
+    // Victory!
+    saveTasks();
+    stopTaskTimer();
+    closeTaskFocus();
+    showVictory();
+  } else {
+    currentTaskIndex++;
+    resetTaskTimer();
+    renderTaskFocus();
+  }
+});
+
+/* ─── TIMER ─── */
+let taskSeconds = 0;
+
+function startTaskTimer() {
+  taskTimerStart = Date.now();
+  taskSeconds = 0;
+  updateTaskTimerDisplay(0);
+  stopTaskTimer();
+  taskTimerInterval = setInterval(() => {
+    taskSeconds++;
+    updateTaskTimerDisplay(taskSeconds);
+  }, 1000);
+}
+
+function stopTaskTimer() {
+  if (taskTimerInterval) {
+    clearInterval(taskTimerInterval);
+    taskTimerInterval = null;
+  }
+}
+
+function resetTaskTimer() {
+  stopTaskTimer();
+  taskTimerStart = Date.now();
+  taskSeconds = 0;
+  updateTaskTimerDisplay(0);
+  startTaskTimer();
+}
+
+function updateTaskTimerDisplay(secs) {
+  if ($('taskTimerText')) {
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    $('taskTimerText').textContent = `${m}:${s}`;
+  }
+  // Update ring (60s per full circle)
+  const fill = $('timerFill');
+  if (fill) {
+    const circumference = 565.48;
+    const progress = (secs % 60) / 60;
+    fill.style.strokeDashoffset = circumference * (1 - progress);
+  }
+}
+
+/* ─── VICTORY ─── */
+function showVictory() {
+  const totalSecs = Math.floor(totalTaskTime / 1000);
+  const m = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+  const s = String(totalSecs % 60).padStart(2, '0');
+  if ($('victoryTotalTime')) $('victoryTotalTime').textContent = `${m}:${s}`;
+  $('victoryOverlay').classList.add('show');
+  launchVictoryConfetti();
+}
+
+$('victoryCloseBtn')?.addEventListener('click', () => {
+  $('victoryOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  if (victoryConfettiAnim) cancelAnimationFrame(victoryConfettiAnim);
+});
+
+/* ─── Confetti animation ─── */
+function launchVictoryConfetti() {
+  const canvas = $('victoryConfetti');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const colors = ['#fbbf24', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#fde68a'];
+  const pieces = [];
+  for (let i = 0; i < 150; i++) {
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 4,
+      size: 6 + Math.random() * 8,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.2
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      ctx.restore();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.rotSpeed;
+      p.vy += 0.05;
+
+      if (p.y > canvas.height + 20) {
+        p.y = -20;
+        p.x = Math.random() * canvas.width;
+        p.vy = 2 + Math.random() * 4;
+      }
+    });
+    victoryConfettiAnim = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ─── Init tasks on app start ─── */
+const _origInitApp = initApp;
+initApp = function() {
+  _origInitApp();
+  loadTasks();
+  updateLiveExperts();
+};
+
+/* ─── Refresh live experts when switching to doubts tab ─── */
+const _origSwitchToTab = window.switchToTab;
+window.switchToTab = function(tabId) {
+  _origSwitchToTab(tabId);
+  if (tabId === 'doubts') updateLiveExperts();
+};
+
+console.log('🚀 AI Doubt System Loaded');
