@@ -780,10 +780,7 @@ async function getAIAnswer(question, subject, cls) {
   }
 
   let answer = data.answer.trim();
-  const words = answer.split(/\s+/);
-  if (words.length > 45) {
-    answer = words.slice(0, 42).join(' ') + '...';
-  }
+
 
   return { answer, expert };
 }
