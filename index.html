@@ -411,22 +411,46 @@
   </main>
 
   <!-- ═══ NEW DOUBT MODAL ═══ -->
-  <div class="modal-overlay" id="newDoubtModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-circle-question"></i> Ask a New Doubt</h3>
-        <button class="close-modal" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <!-- ═══ EXPERT PROFILE MODAL (NEW) ═══ -->
-<div class="modal-overlay" id="expertProfileModal">
-  <div class="modal-content" style="max-width: 480px;">
+<div class="modal-overlay" id="newDoubtModal">
+  <div class="modal-content">
     <div class="modal-header">
-      <h3><i class="fa-solid fa-user-tie"></i> Expert Profile</h3>
-      <button class="close-modal" onclick="closeModal('expertProfileModal')">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <h3><i class="fa-solid fa-circle-question"></i> Ask a New Doubt</h3>
+      <button class="close-modal" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="modal-body" id="expertProfileBody"></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Subject</label>
+        <select id="doubtSubject">
+          <option value="Mathematics">Mathematics</option>
+          <option value="Physics">Physics</option>
+          <option value="Chemistry">Chemistry</option>
+          <option value="Biology">Biology</option>
+          <option value="Computer Science">Computer Science</option>
+          <option value="English">English</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Class / Level</label>
+        <select id="doubtClass">
+          <option value="1-10">Class 1-10</option>
+          <option value="11-12">Class 11-12</option>
+          <option value="jee">JEE</option>
+          <option value="neet">NEET</option>
+          <option value="college">College</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Your Question</label>
+        <textarea id="doubtQuestion" rows="5" placeholder="Type your doubt here..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Attach Image (optional)</label>
+        <input type="file" id="doubtImage" accept="image/*">
+        <div id="doubtImagePreview"></div>
+      </div>
+      <button class="btn-primary" id="postDoubtBtn"><i class="fa-solid fa-paper-plane"></i> Post Doubt</button>
+    </div>
   </div>
 </div>
       <div class="modal-body">
@@ -519,7 +543,7 @@
   </div>
 
   <footer>
-    <p>&copy; 2026 The Chairman Show. Built by Sumit Shrivas.</p>
+    <p>&copy; 2026 The Chairman Show. .</p>
   </footer>
 </div>
 
