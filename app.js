@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   THE CHAIRMAN SHOW — Full Platform Logic (Fixed Version)
+   THE CHAIRMAN SHOW — Full Platform Logic (Final Version)
    ══════════════════════════════════════════════════════════════ */
 
 /* ─────────────── SECTION 1: CONFIG ─────────────── */
@@ -24,10 +24,20 @@ const CONFIG = {
   ADMIN_EMAIL: "overactingofficial7@gmail.com"
 };
 
+const AI_CONFIG = {
+  PROXY_URL: "https://tcs-ai-proxy.sumitshrivas24.workers.dev",
+  MAX_WORDS: 40
+};
+
 const IMGBB_KEY = '42eeb26299ccd04102779f92f5db31cf';
 
 let currentUser = null;
 let userProfile = null;
+let activeTab = 'home';
+let userDoubts = [];
+let doubtFilter = 'all';
+let currentAnswerDoubtId = null;
+let expertDoubtFilter = 'open';
 
 /* ─────────────── SECTION 2: UTILITIES ─────────────── */
 const $ = (id) => document.getElementById(id);
@@ -142,7 +152,7 @@ async function uploadToImgBB(file) {
 }
 
 /* ─────────────── SECTION 3: AUTH ─────────────── */
-$('googleSignInBtn').addEventListener('click', async () => {
+$('googleSignInBtn')?.addEventListener('click', async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   try {
@@ -155,7 +165,7 @@ $('googleSignInBtn').addEventListener('click', async () => {
   }
 });
 
-$('signOutBtn').addEventListener('click', () => {
+$('signOutBtn')?.addEventListener('click', () => {
   if (confirm('Sign out?')) {
     userProfile = null;
     userDoubts = [];
@@ -168,8 +178,8 @@ const authTimeout = setTimeout(() => {
   if (!currentUser) {
     const loader = $('bootLoader');
     if (loader) loader.classList.add('hide');
-    $('loginScreen').style.display = 'flex';
-    $('loginScreen').classList.remove('hide');
+    const ls = $('loginScreen');
+    if (ls) { ls.style.display = 'flex'; ls.classList.remove('hide'); }
   }
 }, 3000);
 
@@ -193,16 +203,22 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 function showApp() {
-  $('loginScreen').classList.add('hide');
-  $('app').style.display = 'block';
-  setTimeout(() => $('loginScreen').style.display = 'none', 500);
-  $('bootLoader').classList.add('hide');
+  const ls = $('loginScreen');
+  if (ls) { ls.classList.add('hide'); }
+  const app = $('app');
+  if (app) app.style.display = 'block';
+  setTimeout(() => { if (ls) ls.style.display = 'none'; }, 500);
+  const loader = $('bootLoader');
+  if (loader) loader.classList.add('hide');
 }
 function showLogin() {
-  $('loginScreen').style.display = 'flex';
-  $('app').style.display = 'none';
-  setTimeout(() => $('loginScreen').classList.remove('hide'), 50);
-  $('bootLoader').classList.add('hide');
+  const ls = $('loginScreen');
+  const app = $('app');
+  if (ls) ls.style.display = 'flex';
+  if (app) app.style.display = 'none';
+  setTimeout(() => { if (ls) ls.classList.remove('hide'); }, 50);
+  const loader = $('bootLoader');
+  if (loader) loader.classList.add('hide');
 }
 
 /* ─────────────── SECTION 4: USER PROFILE ─────────────── */
@@ -218,21 +234,15 @@ async function ensureUserProfile(user) {
       role: 'student',
       class: '',
       bio: '',
-      subscription: 'free',
-      subscriptionExpiry: null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       doubtsAsked: 0,
       doubtsSolved: 0,
-      earnings: 0,
-      rating: 0,
-      totalRatings: 0
+      rating: 0
     };
     await ref.set(profile);
     userProfile = profile;
   } else {
     userProfile = snap.data();
-    // Ensure defaults for older profiles
-    userProfile.subscription = userProfile.subscription || 'free';
     userProfile.role = userProfile.role || 'student';
   }
   updateUserUI();
@@ -255,30 +265,20 @@ function updateUserUI() {
   if ($('profileClass')) $('profileClass').value = userProfile.class || '';
   if ($('profileBio')) $('profileBio').value = userProfile.bio || '';
 
-  const subEl = $('subStatus');
-  if (subEl) {
-    const sub = userProfile.subscription || 'free';
-    if (sub === 'free') {
-      subEl.innerHTML = '<i class="fa-solid fa-circle-info"></i> Free plan — upgrade for unlimited doubts';
-    } else {
-      subEl.innerHTML = `<i class="fa-solid fa-crown" style="color:var(--warning)"></i> ${sub.toUpperCase()} plan active`;
-    }
-  }
-
   updateExpertPanelVisibility();
 }
 
-$('userMenuBtn').addEventListener('click', (e) => {
+$('userMenuBtn')?.addEventListener('click', (e) => {
   e.stopPropagation();
-  $('userDropdown').classList.toggle('show');
+  $('userDropdown')?.classList.toggle('show');
 });
 document.addEventListener('click', () => {
   const dd = $('userDropdown');
   if (dd) dd.classList.remove('show');
 });
-$('userDropdown').addEventListener('click', (e) => e.stopPropagation());
+$('userDropdown')?.addEventListener('click', (e) => e.stopPropagation());
 
-$('saveProfileBtn').addEventListener('click', async () => {
+$('saveProfileBtn')?.addEventListener('click', async () => {
   const updates = {
     name: $('profileDisplayName').value.trim() || userProfile.name,
     class: $('profileClass').value,
@@ -295,8 +295,7 @@ $('saveProfileBtn').addEventListener('click', async () => {
 });
 
 /* ─────────────── SECTION 5: TAB SWITCHING ─────────────── */
-let activeTab = 'home';
-function switchToTab(tabId) {
+window.switchToTab = function(tabId) {
   $$('.tab-content').forEach(t => t.classList.remove('active'));
   $$('.nav-item').forEach(b => b.classList.remove('active'));
   const target = $(tabId);
@@ -306,12 +305,10 @@ function switchToTab(tabId) {
   activeTab = tabId;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  if (tabId === 'doubts') loadDoubts();
+  if (tabId === 'doubts') { loadDoubts(); updateLiveExperts(); }
   if (tabId === 'experts') loadExperts();
   if (tabId === 'expertDashboard') loadExpertDashboard();
-  if (tabId === 'subscription') loadDonatePage();
-}
-window.switchToTab = switchToTab;
+};
 
 document.addEventListener('click', (e) => {
   const navBtn = e.target.closest('.nav-item[data-tab]');
@@ -390,8 +387,7 @@ function expertCardHtml(e) {
         ${subjects.map(s => `<span class="expert-subject-tag">${escapeHtml(s)}</span>`).join('')}
       </div>
       <div class="expert-actions">
-        <button onclick="contactExpert('${e.id}')">Message</button>
-        <button class="primary" onclick="requestDoubt('${e.id}')">Ask Doubt</button>
+        <button onclick="requestDoubt('${e.id}')">Ask Doubt</button>
       </div>
     </div>`;
 }
@@ -399,7 +395,7 @@ function expertCardHtml(e) {
 window.becomeExpert = function(sectionId) {
   const section = EXPERT_SECTIONS.find(s => s.id === sectionId);
   if (!section) return;
-  if (!confirm(`Apply as an expert for "${section.title}"?\n\nYou'll need to fill a short form and wait for verification.`)) return;
+  if (!confirm(`Apply as an expert for "${section.title}"?`)) return;
 
   db.collection('experts').doc(currentUser.uid).set({
     uid: currentUser.uid,
@@ -416,12 +412,7 @@ window.becomeExpert = function(sectionId) {
     appliedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     toast('success', 'Application submitted!', 'Admin will verify you within 24 hours.');
-    notifyTelegram(`📝 New expert application:\nName: ${userProfile.name}\nEmail: ${userProfile.email}\nSection: ${section.title}`);
   }).catch(err => toast('warn', 'Failed', err.message));
-};
-
-window.contactExpert = function(expertId) {
-  toast('info', 'Contact expert', 'Direct messaging coming soon. For now, ask a doubt!');
 };
 
 window.requestDoubt = function(expertId) {
@@ -429,7 +420,6 @@ window.requestDoubt = function(expertId) {
   setTimeout(() => openModal('newDoubtModal'), 300);
 };
 
-// "Become an Expert" from user dropdown
 const becomeExpertBtn = $('becomeExpertBtn');
 if (becomeExpertBtn) {
   becomeExpertBtn.addEventListener('click', () => {
@@ -444,9 +434,6 @@ if (becomeExpertBtn) {
 }
 
 /* ─────────────── SECTION 7: DOUBTS ─────────────── */
-let doubtFilter = 'all';
-let userDoubts = [];
-
 async function loadDoubts() {
   const grid = $('doubtsGrid');
   if (!grid) return;
@@ -461,14 +448,12 @@ async function loadDoubts() {
     userDoubts = [];
     snap.forEach(d => userDoubts.push({ id: d.id, ...d.data() }));
 
-    // Sort by createdAt desc (client-side, no index needed)
     userDoubts.sort((a, b) => {
       const ta = a.createdAt?.toDate?.()?.getTime() || 0;
       const tb = b.createdAt?.toDate?.()?.getTime() || 0;
       return tb - ta;
     });
 
-    // Filter client-side
     if (doubtFilter !== 'all') {
       userDoubts = userDoubts.filter(d => d.status === doubtFilter);
     }
@@ -507,9 +492,10 @@ $$('#doubtFilters .chip').forEach(chip => {
   });
 });
 
-$('newDoubtBtn').addEventListener('click', () => {
+$('newDoubtBtn')?.addEventListener('click', () => {
   openModal('newDoubtModal');
 });
+
 $('doubtImage')?.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -520,7 +506,7 @@ $('doubtImage')?.addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-$('postDoubtBtn').addEventListener('click', async () => {
+$('postDoubtBtn')?.addEventListener('click', async () => {
   const subject = $('doubtSubject').value;
   const doubtClass = $('doubtClass').value;
   const question = $('doubtQuestion').value.trim();
@@ -541,7 +527,7 @@ $('postDoubtBtn').addEventListener('click', async () => {
 
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting…';
 
-    await db.collection('doubts').add({
+    const newDoc = await db.collection('doubts').add({
       userId: currentUser.uid,
       userName: userProfile.name,
       userPhoto: userProfile.photoURL || '',
@@ -555,14 +541,15 @@ $('postDoubtBtn').addEventListener('click', async () => {
       doubtsAsked: firebase.firestore.FieldValue.increment(1)
     }).catch(() => {});
 
-    notifyTelegram(`🆕 New Doubt!\nStudent: ${userProfile.name}\nSubject: ${subject}\nClass: ${doubtClass}\n\n${question.slice(0, 200)}`);
-
     toast('success', 'Doubt posted!', 'An expert will answer soon.');
     closeModal('newDoubtModal');
     $('doubtQuestion').value = '';
     $('doubtImage').value = '';
     $('doubtImagePreview').innerHTML = '';
     loadDoubts();
+
+    // Auto-open the doubt + trigger AI answer
+    setTimeout(() => viewDoubt(newDoc.id), 400);
   } catch (err) {
     console.error(err);
     toast('warn', 'Failed to post', err.message);
@@ -572,111 +559,7 @@ $('postDoubtBtn').addEventListener('click', async () => {
   }
 });
 
-/* ─────────────── SECTION 8: SUBSCRIPTION ─────────────── */
-const PLANS = [
-  { id:'free', name:'Free', price:0, period:'forever', features:['3 doubts/day','Community chat','Basic support'], popular:false },
-  { id:'basic', name:'Basic', price:99, period:'/month', features:['20 doubts/day','Priority support','Voice messages','Image sharing'], popular:false },
-  { id:'premium', name:'Premium', price:299, period:'/month', features:['Unlimited doubts','1-on-1 expert calls','24/7 priority','Ad-free experience','Download solutions'], popular:true }
-];
-
-let selectedPlan = null;
-
-function loadPlans() {
-  const grid = $('plansGrid');
-  if (!grid) return;
-  grid.innerHTML = PLANS.map(p => `
-    <div class="plan-card ${p.popular ? 'popular' : ''}">
-      <div class="plan-name">${p.name}</div>
-      <div class="plan-price">₹${p.price}<small>${p.price === 0 ? '' : p.period}</small></div>
-      <div class="plan-period">${p.price === 0 ? 'Free forever' : 'per month'}</div>
-      <ul class="plan-features">
-        ${p.features.map(f => `<li><i class="fa-solid fa-check"></i> ${escapeHtml(f)}</li>`).join('')}
-      </ul>
-      <button class="btn-primary" onclick="selectPlan('${p.id}')" ${userProfile.subscription === p.id ? 'disabled' : ''}>
-        ${userProfile.subscription === p.id ? '<i class="fa-solid fa-check"></i> Current Plan' : (p.price === 0 ? 'Get Started' : 'Choose Plan')}
-      </button>
-    </div>
-  `).join('');
-}
-window.loadPlans = loadPlans;
-
-window.selectPlan = function(planId) {
-  const plan = PLANS.find(p => p.id === planId);
-  if (!plan || plan.price === 0) { toast('info', 'Free plan is active'); return; }
-  selectedPlan = plan;
-  $('payAmount').textContent = plan.price;
-  $('upiIdDisplay').textContent = CONFIG.UPI_ID;
-  $('paymentSection').style.display = 'block';
-  $('paymentSection').scrollIntoView({ behavior: 'smooth' });
-};
-
-$('copyUpiBtn').addEventListener('click', () => {
-  navigator.clipboard.writeText(CONFIG.UPI_ID).then(() => toast('success', 'UPI ID copied!'));
-});
-
-let proofFile = null;
-$('proofUpload').addEventListener('change', (e) => {
-  proofFile = e.target.files[0];
-  if (!proofFile) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    $('proofPreview').innerHTML = `<img src="${ev.target.result}" alt="proof">`;
-    $('submitPaymentBtn').disabled = false;
-  };
-  reader.readAsDataURL(proofFile);
-});
-
-$('submitPaymentBtn').addEventListener('click', async () => {
-  if (!proofFile || !selectedPlan) return;
-  const btn = $('submitPaymentBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading…';
-
-  try {
-    const url = await uploadToImgBB(proofFile);
-
-    await db.collection('payments').add({
-      userId: currentUser.uid,
-      userName: userProfile.name,
-      userEmail: userProfile.email,
-      planId: selectedPlan.id,
-      planName: selectedPlan.name,
-      amount: selectedPlan.price,
-      screenshotUrl: url,
-      status: 'pending',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    notifyTelegram(`💰 New payment!\nUser: ${userProfile.name}\nEmail: ${userProfile.email}\nPlan: ${selectedPlan.name} (₹${selectedPlan.price})\nScreenshot: ${url}\n\n⚠️ Verify manually in Firebase console and activate plan.`);
-
-    toast('success', 'Payment submitted!', 'Verification within 2 hours.');
-    $('paymentSection').style.display = 'none';
-    $('proofPreview').innerHTML = '';
-    $('proofUpload').value = '';
-    proofFile = null;
-    selectedPlan = null;
-  } catch (err) {
-    console.error(err);
-    toast('warn', 'Upload failed', err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Payment Proof';
-  }
-});
-
-/* ─────────────── SECTION 9: TELEGRAM NOTIFICATIONS ─────────────── */
-async function notifyTelegram(message) {
-  try {
-    await fetch(CONFIG.TELEGRAM_PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'System', email: 'system@tcs', msg: message })
-    });
-  } catch (err) { console.warn('Telegram notify failed:', err); }
-}
-
-
-/* ─────────────── SECTION 11: STATS ─────────────── */
+/* ─────────────── SECTION 8: STATS ─────────────── */
 async function loadStats() {
   try {
     const [doubtsCount, expertsCount, usersCount] = await Promise.all([
@@ -689,17 +572,6 @@ async function loadStats() {
     if ($('statStudents')) $('statStudents').textContent = usersCount.data().count;
   } catch (err) {
     console.warn('Stats error:', err);
-    // Fallback: try simple get for counts
-    try {
-      const [d, e, u] = await Promise.all([
-        db.collection('doubts').limit(100).get(),
-        db.collection('experts').limit(100).get(),
-        db.collection('users').limit(100).get()
-      ]);
-      if ($('statDoubts')) $('statDoubts').textContent = d.size;
-      if ($('statExperts')) $('statExperts').textContent = e.size;
-      if ($('statStudents')) $('statStudents').textContent = u.size;
-    } catch (_) {}
   }
 
   if ($('miniDoubts')) $('miniDoubts').textContent = userProfile?.doubtsAsked || 0;
@@ -707,10 +579,7 @@ async function loadStats() {
   if ($('miniRating')) $('miniRating').textContent = userProfile?.rating ? userProfile.rating.toFixed(1) : '—';
 }
 
-/* ─────────────── SECTION 12: EXPERT DASHBOARD ─────────────── */
-let currentAnswerDoubtId = null;
-let expertDoubtFilter = 'open';
-
+/* ─────────────── SECTION 9: EXPERT DASHBOARD ─────────────── */
 function updateExpertPanelVisibility() {
   const isExpert = userProfile?.role === 'expert' || userProfile?.role === 'admin';
   const btn = $('navExpertDashboard');
@@ -801,16 +670,16 @@ function expertDoubtCardHtml(d) {
       ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-bottom:.7rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
       <div class="edc-actions">
         ${!isAnswered ? `
-          <button class="primary" onclick="openAnswerModal('${d.id}')">
-            <i class="fa-solid fa-pen"></i> Answer
+          <button class="primary" onclick="viewDoubt('${d.id}')">
+            <i class="fa-solid fa-eye"></i> View
           </button>
         ` : isMine ? `
           <button disabled style="cursor:default">
-            <i class="fa-solid fa-check" style="color:var(--success)"></i> You answered this
+            <i class="fa-solid fa-check" style="color:var(--success)"></i> You answered
           </button>
         ` : `
           <button disabled style="cursor:default;opacity:.6">
-            <i class="fa-solid fa-check"></i> Already answered
+            <i class="fa-solid fa-check"></i> Answered
           </button>
         `}
       </div>
@@ -818,119 +687,6 @@ function expertDoubtCardHtml(d) {
   `;
 }
 
-window.openAnswerModal = async function(doubtId) {
-  try {
-    const doc = await db.collection('doubts').doc(doubtId).get();
-    if (!doc.exists) { toast('warn', 'Doubt not found'); return; }
-    const d = doc.data();
-
-    currentAnswerDoubtId = doubtId;
-    if ($('odSubject')) $('odSubject').textContent = d.subject || 'General';
-    if ($('odStatus')) {
-      $('odStatus').textContent = d.status;
-      $('odStatus').className = 'doubt-status ' + d.status;
-    }
-    if ($('odQuestion')) $('odQuestion').textContent = d.question || '';
-    if ($('odImage')) {
-      $('odImage').innerHTML = d.imageUrl
-        ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">`
-        : '';
-    }
-    if ($('odMeta')) {
-      $('odMeta').innerHTML = `
-        <span><i class="fa-regular fa-user"></i> ${escapeHtml(d.userName || 'Student')}</span>
-        <span><i class="fa-solid fa-graduation-cap"></i> ${escapeHtml(d.class || 'N/A')}</span>
-        <span><i class="fa-regular fa-clock"></i> ${d.createdAt?.toDate?.() ? formatTime(d.createdAt.toDate().getTime()) : 'Just now'}</span>
-      `;
-    }
-
-    if ($('answerText')) $('answerText').value = '';
-    if ($('answerImage')) $('answerImage').value = '';
-    if ($('answerImagePreview')) $('answerImagePreview').innerHTML = '';
-
-    openModal('answerDoubtModal');
-  } catch (err) {
-    toast('warn', 'Error', err.message);
-  }
-};
-
-// Answer image preview
-document.addEventListener('change', (e) => {
-  if (e.target.id === 'answerImage') {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      $('answerImagePreview').innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;">`;
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-// Submit answer
-document.addEventListener('click', async (e) => {
-  if (e.target.closest('#submitAnswerBtn')) {
-    const btn = $('submitAnswerBtn');
-    const text = $('answerText').value.trim();
-    const imageFile = $('answerImage').files[0];
-
-    if (!text) { toast('warn', 'Please write an answer'); return; }
-    if (!currentAnswerDoubtId) return;
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
-
-    try {
-      let imageUrl = '';
-      if (imageFile) {
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading image…';
-        imageUrl = await uploadToImgBB(imageFile);
-      }
-
-      await db.collection('doubts').doc(currentAnswerDoubtId)
-        .collection('answers').add({
-          expertId: currentUser.uid,
-          expertName: userProfile.name,
-          expertPhoto: userProfile.photoURL || '',
-          expertTitle: userProfile.title || 'Subject Expert',
-          text: text,
-          imageUrl: imageUrl,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          helpful: 0
-        });
-
-      await db.collection('doubts').doc(currentAnswerDoubtId).update({
-        status: 'answered',
-        answeredBy: currentUser.uid,
-        answeredByName: userProfile.name,
-        answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
-        answerCount: firebase.firestore.FieldValue.increment(1)
-      });
-
-      await db.collection('users').doc(currentUser.uid).update({
-        doubtsSolved: firebase.firestore.FieldValue.increment(1),
-        earnings: firebase.firestore.FieldValue.increment(10)
-      }).catch(() => {});
-
-      notifyTelegram(
-        `✅ Doubt Answered!\nExpert: ${userProfile.name}\nDoubt ID: ${currentAnswerDoubtId}\nAnswer: ${text.slice(0, 150)}...`
-      );
-
-      toast('success', 'Answer submitted!', '+₹10 added to your earnings');
-      closeModal('answerDoubtModal');
-      currentAnswerDoubtId = null;
-      loadExpertDoubts();
-    } catch (err) {
-      console.error(err);
-      toast('warn', 'Failed', err.message);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Answer';
-    }
-  }
-});
-
-// Expert dashboard filter chips
 document.addEventListener('click', (e) => {
   const chip = e.target.closest('#expertDoubtFilters .chip');
   if (chip) {
@@ -941,156 +697,36 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Student view: doubt details
-window.viewDoubt = async function(id) {
-  try {
-    const doc = await db.collection('doubts').doc(id).get();
-    if (!doc.exists) return;
-    const d = doc.data();
-
-    const answersSnap = await db.collection('doubts').doc(id).collection('answers')
-      .orderBy('createdAt', 'asc').get();
-
-    const answersHtml = answersSnap.empty
-      ? '<div class="empty-state" style="padding:2rem 1rem"><i class="fa-solid fa-hourglass-half"></i><h4>Waiting for expert</h4><p>Your doubt is visible to experts. You\'ll be notified when answered.</p></div>'
-      : answersSnap.docs.map(ansDoc => {
-          const a = ansDoc.data();
-          const when = a.createdAt?.toDate?.() ? formatTime(a.createdAt.toDate().getTime()) : 'Just now';
-          const avatar = a.expertPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.expertName)}&background=7c3aed&color=fff`;
-          return `
-            <div class="answer-card">
-              <div class="expert-header">
-                <img src="${escapeHtml(avatar)}" alt="">
-                <div>
-                  <div class="name">${escapeHtml(a.expertName)}</div>
-                  <div class="title">${escapeHtml(a.expertTitle || 'Subject Expert')} • ${when}</div>
-                </div>
-              </div>
-              <div class="answer-text">${escapeHtml(a.text)}</div>
-              ${a.imageUrl ? `<img class="answer-img" src="${escapeHtml(a.imageUrl)}" onclick="openImageViewer('${escapeHtml(a.imageUrl)}')">` : ''}
-            </div>
-          `;
-        }).join('');
-
-    if ($('doubtDetailsBody')) {
-      $('doubtDetailsBody').innerHTML = `
-        <div class="original-doubt">
-          <div class="od-header">
-            <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject)}</span>
-            <span class="doubt-status ${d.status}">${d.status}</span>
-          </div>
-          <div class="od-question">${escapeHtml(d.question)}</div>
-          ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
-        </div>
-        <h4 style="margin-bottom:.8rem;display:flex;align-items:center;gap:8px;">
-          <i class="fa-solid fa-comments" style="color:var(--accent-primary)"></i>
-          Expert Answers (${answersSnap.size})
-        </h4>
-        ${answersHtml}
-      `;
-    }
-
-    openModal('doubtDetailsModal');
-  } catch (err) {
-    console.error(err);
-    toast('warn', 'Error', err.message);
-  }
-};
-
-/* ─────────────── SECTION 13: IMAGE VIEWER ─────────────── */
-window.openImageViewer = function(url) {
-  if ($('viewerImage')) $('viewerImage').src = url;
-  openModal('imageViewerModal');
-};
-
-/* ─────────────── SECTION 14: KEYBOARD SHORTCUTS ─────────────── */
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay.show').forEach(m => {
-      m.classList.remove('show');
-    });
-    document.body.style.overflow = '';
-  }
-});
-
-/* ─────────────── SECTION 15: SCROLL PROGRESS + BACK TO TOP ─────────────── */
-window.addEventListener('scroll', () => {
-  const h = document.documentElement;
-  const scrolled = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
-  const sp = $('scrollProgress');
-  if (sp) sp.style.width = scrolled + '%';
-
-  const btt = $('backToTop');
-  if (btt) {
-    if (h.scrollTop > 400) btt.classList.add('show');
-    else btt.classList.remove('show');
-  }
-});
-
-$('backToTop')?.addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-/* ─────────────── SECTION 16: INIT APP ─────────────── */
-function initApp() {
-  loadStats();
-  updateUserUI();
-}
-
-/* ─────────────── SECTION 17: BOOT ─────────────── */
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const loader = $('bootLoader');
-    if (loader) loader.classList.add('hide');
-  }, 1500);
-});
 /* ══════════════════════════════════════════════════════════════
-   AI DOUBT SOLVING SYSTEM (NEW)
+   AI EXPERT SYSTEM
    ══════════════════════════════════════════════════════════════ */
-
-// ✅ CORRECT — key is on server, not in code
-const AI_CONFIG = {
-  PROXY_URL: 'https://tcs-ai-proxy.sumitshrivas24.workers.dev',  // Your worker URL
-  MAX_WORDS: 40
-};
-
-/* ─── 20 EXPERT NAMES POOL ─── */
 const EXPERT_POOL = [
-  { name: 'Dr. Rajesh Sharma', title: 'Physics & Mathematics', exp: 12, subject: 'PCM', avatar: 'RS' },
-  { name: 'Prof. Anjali Verma', title: 'Chemistry Specialist', exp: 9, subject: 'Chemistry', avatar: 'AV' },
-  { name: 'Dr. Vikram Mehta', title: 'IIT-JEE Physics', exp: 15, subject: 'Physics', avatar: 'VM' },
-  { name: 'Ms. Priya Nair', title: 'Biology & NEET Expert', exp: 7, subject: 'Biology', avatar: 'PN' },
-  { name: 'Mr. Arun Patel', title: 'Mathematics Professor', exp: 11, subject: 'Mathematics', avatar: 'AP' },
-  { name: 'Dr. Sneha Reddy', title: 'Organic Chemistry', exp: 10, subject: 'Chemistry', avatar: 'SR' },
-  { name: 'Prof. Karan Singh', title: 'Computer Science', exp: 8, subject: 'CS', avatar: 'KS' },
-  { name: 'Ms. Meera Iyer', title: 'English Literature', exp: 6, subject: 'English', avatar: 'MI' },
-  { name: 'Dr. Aditya Joshi', title: 'Physics Olympiad Coach', exp: 14, subject: 'Physics', avatar: 'AJ' },
-  { name: 'Prof. Neha Gupta', title: 'NEET Biology', exp: 9, subject: 'Biology', avatar: 'NG' },
-  { name: 'Mr. Rohan Malhotra', title: 'JEE Mathematics', exp: 13, subject: 'Mathematics', avatar: 'RM' },
-  { name: 'Dr. Kavita Desai', title: 'Inorganic Chemistry', exp: 12, subject: 'Chemistry', avatar: 'KD' },
-  { name: 'Prof. Suresh Kumar', title: 'Physics & Math', exp: 18, subject: 'PCM', avatar: 'SK' },
-  { name: 'Ms. Ananya Bose', title: 'Science & English', exp: 5, subject: 'General', avatar: 'AB' },
-  { name: 'Dr. Harsh Vardhan', title: 'Advanced Mathematics', exp: 16, subject: 'Mathematics', avatar: 'HV' },
-  { name: 'Prof. Ritu Agarwal', title: 'Biology & Zoology', exp: 10, subject: 'Biology', avatar: 'RA' },
-  { name: 'Mr. Nikhil Chopra', title: 'Physics IIT', exp: 8, subject: 'Physics', avatar: 'NC' },
-  { name: 'Dr. Pooja Saxena', title: 'Chemistry PhD', exp: 11, subject: 'Chemistry', avatar: 'PS' },
-  { name: 'Prof. Manish Tiwari', title: 'Maths & Stats', exp: 13, subject: 'Mathematics', avatar: 'MT' },
-  { name: 'Dr. Sunita Kapoor', title: 'Senior Biology Expert', exp: 17, subject: 'Biology', avatar: 'SK' }
+  { name: 'Dr. Rajesh Sharma', title: 'Physics & Mathematics', exp: 12, subject: 'PCM' },
+  { name: 'Prof. Anjali Verma', title: 'Chemistry Specialist', exp: 9, subject: 'Chemistry' },
+  { name: 'Dr. Vikram Mehta', title: 'IIT-JEE Physics', exp: 15, subject: 'Physics' },
+  { name: 'Ms. Priya Nair', title: 'Biology & NEET Expert', exp: 7, subject: 'Biology' },
+  { name: 'Mr. Arun Patel', title: 'Mathematics Professor', exp: 11, subject: 'Mathematics' },
+  { name: 'Dr. Sneha Reddy', title: 'Organic Chemistry', exp: 10, subject: 'Chemistry' },
+  { name: 'Prof. Karan Singh', title: 'Computer Science', exp: 8, subject: 'CS' },
+  { name: 'Ms. Meera Iyer', title: 'English Literature', exp: 6, subject: 'English' },
+  { name: 'Dr. Aditya Joshi', title: 'Physics Olympiad Coach', exp: 14, subject: 'Physics' },
+  { name: 'Prof. Neha Gupta', title: 'NEET Biology', exp: 9, subject: 'Biology' },
+  { name: 'Mr. Rohan Malhotra', title: 'JEE Mathematics', exp: 13, subject: 'Mathematics' },
+  { name: 'Dr. Kavita Desai', title: 'Inorganic Chemistry', exp: 12, subject: 'Chemistry' },
+  { name: 'Prof. Suresh Kumar', title: 'Physics & Math', exp: 18, subject: 'PCM' },
+  { name: 'Ms. Ananya Bose', title: 'Science & English', exp: 5, subject: 'General' },
+  { name: 'Dr. Harsh Vardhan', title: 'Advanced Mathematics', exp: 16, subject: 'Mathematics' },
+  { name: 'Prof. Ritu Agarwal', title: 'Biology & Zoology', exp: 10, subject: 'Biology' },
+  { name: 'Mr. Nikhil Chopra', title: 'Physics IIT', exp: 8, subject: 'Physics' },
+  { name: 'Dr. Pooja Saxena', title: 'Chemistry PhD', exp: 11, subject: 'Chemistry' },
+  { name: 'Prof. Manish Tiwari', title: 'Maths & Stats', exp: 13, subject: 'Mathematics' },
+  { name: 'Dr. Sunita Kapoor', title: 'Senior Biology Expert', exp: 17, subject: 'Biology' }
 ];
 
-/* ─── Get random experts for current session ─── */
 function getRandomExperts(count = 20) {
-  const shuffled = [...EXPERT_POOL].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+  return [...EXPERT_POOL].sort(() => Math.random() - 0.5).slice(0, count);
 }
 
-/* ─── Pick a random expert for a doubt ─── */
-function pickExpertForDoubt() {
-  const sessionExperts = getSessionExperts();
-  return sessionExperts[Math.floor(Math.random() * sessionExperts.length)];
-}
-
-/* ─── Session storage for per-user random experts ─── */
 function getSessionExperts() {
   const key = 'tcs_experts_' + (currentUser?.uid || 'guest');
   let stored = null;
@@ -1102,7 +738,11 @@ function getSessionExperts() {
   return stored;
 }
 
-/* ─── Generate expert avatar URL ─── */
+function pickExpertForDoubt() {
+  const sessionExperts = getSessionExperts();
+  return sessionExperts[Math.floor(Math.random() * sessionExperts.length)];
+}
+
 function expertAvatarUrl(expert) {
   const colors = ['2563eb', '7c3aed', '059669', 'd97706', 'dc2626', '0891b2'];
   const color = colors[Math.abs(hashCode(expert.name)) % colors.length];
@@ -1114,49 +754,41 @@ function hashCode(str) {
   return h;
 }
 
-/* ─── CALL AI VIA PROXY (safe, key on server) ─── */
 async function getAIAnswer(question, subject, cls) {
   const expert = pickExpertForDoubt();
 
-  try {
-    const res = await fetch(AI_CONFIG.PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: question,
-        subject: subject,
-        class: cls,
-        expertName: expert.name,
-        expertExp: expert.exp
-      })
-    });
+  const res = await fetch(AI_CONFIG.PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question: question,
+      subject: subject,
+      class: cls,
+      expertName: expert.name,
+      expertExp: expert.exp
+    })
+  });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error('AI service error: ' + errText.slice(0, 150));
-    }
-
-    const data = await res.json();
-    if (!data.ok || !data.answer) {
-      throw new Error(data.error || 'No answer received');
-    }
-
-    let answer = data.answer.trim();
-
-    // Enforce 40-word limit
-    const words = answer.split(/\s+/);
-    if (words.length > 45) {
-      answer = words.slice(0, 42).join(' ') + '...';
-    }
-
-    return { answer, expert };
-  } catch (err) {
-    console.error('AI error:', err);
-    throw err;
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error('AI service error: ' + errText.slice(0, 150));
   }
+
+  const data = await res.json();
+  if (!data.ok || !data.answer) {
+    throw new Error(data.error || 'No answer received');
+  }
+
+  let answer = data.answer.trim();
+  const words = answer.split(/\s+/);
+  if (words.length > 45) {
+    answer = words.slice(0, 42).join(' ') + '...';
+  }
+
+  return { answer, expert };
 }
-/* ─── TYPEWRITER ANIMATION ─── */
-function typeWriter(element, text, speed = 25) {
+
+function typeWriter(element, text, speed = 22) {
   return new Promise(resolve => {
     element.innerHTML = '';
     const cursor = document.createElement('span');
@@ -1183,28 +815,40 @@ function typeWriter(element, text, speed = 25) {
   });
 }
 
-/* ══════════════════════════════════════════════════════════════
-   OVERRIDE: viewDoubt → AI answer with animation
-   ══════════════════════════════════════════════════════════════ */
+/* ─── View Doubt + AI Answer ─── */
 window.viewDoubt = async function(id) {
+  const modalEl = $('doubtDetailsModal');
+  const bodyEl = $('doubtDetailsBody');
+  if (!modalEl || !bodyEl) {
+    toast('warn', 'Error', 'Modal not found. Please refresh.');
+    return;
+  }
+
+  modalEl.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  bodyEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
+
   try {
     const doc = await db.collection('doubts').doc(id).get();
-    if (!doc.exists) return;
+    if (!doc.exists) {
+      bodyEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Doubt not found</h4></div>';
+      return;
+    }
     const d = doc.data();
 
-    // Check if doubt already has an AI answer stored
-    const answersSnap = await db.collection('doubts').doc(id).collection('answers')
-      .orderBy('createdAt', 'asc').get();
+    let answersSnap;
+    try {
+      answersSnap = await db.collection('doubts').doc(id).collection('answers')
+        .orderBy('createdAt', 'asc').get();
+    } catch (e) {
+      answersSnap = { empty: true, size: 0, docs: [] };
+    }
 
     let answersHtml = '';
-
     if (!answersSnap.empty) {
-      // Show existing answer(s)
-      const ansDocs = answersSnap.docs;
-      answersHtml = ansDocs.map(ansDoc => {
+      answersHtml = answersSnap.docs.map(ansDoc => {
         const a = ansDoc.data();
-        const when = a.createdAt?.toDate?.() ? formatTime(a.createdAt.toDate().getTime()) : 'Just now';
-        const expert = a.expert || { name: a.expertName || 'Expert', title: 'Subject Expert', exp: 10, avatar: 'E' };
+        const expert = a.expert || { name: a.expertName || 'Expert', title: 'Subject Expert', exp: 10 };
         const avatar = expertAvatarUrl(expert);
         return `
           <div class="ai-answer-card">
@@ -1214,7 +858,7 @@ window.viewDoubt = async function(id) {
                 <div class="name" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp || 10}, '${escapeHtml(expert.title || '')}')" style="cursor:pointer;color:var(--accent-primary)">${escapeHtml(expert.name)}</div>
                 <div class="title">${escapeHtml(expert.title)} • ${expert.exp || 10}+ yrs exp</div>
               </div>
-             <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-shield-halved"></i> Trusted</span>
+              <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-shield-halved"></i> Trusted</span>
             </div>
             <div class="ai-answer-text">${escapeHtml(a.text || '')}</div>
             ${a.imageUrl ? `<img src="${escapeHtml(a.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(a.imageUrl)}')">` : ''}
@@ -1227,45 +871,42 @@ window.viewDoubt = async function(id) {
       }).join('');
     }
 
-    // Build modal body
-    if ($('doubtDetailsBody')) {
-      $('doubtDetailsBody').innerHTML = `
-        <div class="original-doubt">
-          <div class="od-header">
-            <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject)}</span>
-            <span class="doubt-status ${d.status}">${d.status}</span>
-          </div>
-          <div class="od-question">${escapeHtml(d.question)}</div>
-          ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+    bodyEl.innerHTML = `
+      <div class="original-doubt">
+        <div class="od-header">
+          <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject || 'General')}</span>
+          <span class="doubt-status ${d.status || 'open'}">${d.status || 'open'}</span>
         </div>
-        <h4 style="margin-bottom:.8rem;display:flex;align-items:center;gap:8px;">
-          <i class="fa-solid fa-comments" style="color:var(--accent-primary)"></i>
-          Expert Answer
-        </h4>
-        <div id="answerArea">${answersHtml}</div>
-      `;
-    }
+        <div class="od-question">${escapeHtml(d.question || '')}</div>
+        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+      </div>
+      <h4 style="margin-bottom:.8rem;display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-comments" style="color:var(--accent-primary)"></i>
+        Expert Answer
+      </h4>
+      <div id="answerArea">${answersHtml}</div>
+    `;
 
-    openModal('doubtDetailsModal');
-
-    // If no answer exists yet → generate AI answer with animation
     if (answersSnap.empty) {
-      setTimeout(async () => {
-        await generateAndShowAIAnswer(id, d);
-      }, 400);
+      setTimeout(() => generateAndShowAIAnswer(id, d), 400);
     }
   } catch (err) {
-    console.error(err);
-    toast('warn', 'Error', err.message);
+    console.error('viewDoubt error:', err);
+    bodyEl.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <h4>Could not load doubt</h4>
+        <p>${escapeHtml(err.message)}</p>
+        <button class="btn-primary" style="margin-top:1rem" onclick="closeModal('doubtDetailsModal')">Close</button>
+      </div>
+    `;
   }
 };
 
-/* ─── Generate AI answer + typewriter animation ─── */
 async function generateAndShowAIAnswer(doubtId, doubtData) {
   const area = $('answerArea');
   if (!area) return;
 
-  // Show thinking state
   area.innerHTML = `
     <div class="ai-answer-card">
       <div class="ai-thinking">
@@ -1293,7 +934,7 @@ async function generateAndShowAIAnswer(doubtId, doubtData) {
             <div class="name" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp}, '${escapeHtml(expert.title)}')" style="cursor:pointer;color:var(--accent-primary)">${escapeHtml(expert.name)}</div>
             <div class="title">${escapeHtml(expert.title)} • ${expert.exp}+ yrs exp</div>
           </div>
-          <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-bolt"></i> AI</span>
+          <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-shield-halved"></i> Trusted</span>
         </div>
         <div class="ai-answer-text" id="typewriterText"></div>
         <div class="ai-answer-footer" id="aiFooter" style="display:none">
@@ -1303,31 +944,24 @@ async function generateAndShowAIAnswer(doubtId, doubtData) {
       </div>
     `;
 
-    // Typewriter effect
     await typeWriter($('typewriterText'), answer, 22);
 
-    // Show footer
     const footer = $('aiFooter');
     if (footer) footer.style.display = 'flex';
 
-    // Save to Firestore
     try {
       await db.collection('doubts').doc(doubtId).collection('answers').add({
-        expertId: 'ai_expert',
         expertName: expert.name,
-        expertPhoto: avatar,
         expertTitle: expert.title,
-        expert: { name: expert.name, title: expert.title, exp: expert.exp, avatar: expert.avatar },
+        expert: { name: expert.name, title: expert.title, exp: expert.exp },
         text: answer,
         imageUrl: '',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        helpful: 0,
-        isAI: true
+        helpful: 0
       });
 
       await db.collection('doubts').doc(doubtId).update({
         status: 'answered',
-        answeredBy: 'ai_expert',
         answeredByName: expert.name,
         answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
         answerCount: firebase.firestore.FieldValue.increment(1)
@@ -1336,25 +970,30 @@ async function generateAndShowAIAnswer(doubtId, doubtData) {
       await db.collection('users').doc(currentUser.uid).update({
         doubtsSolved: firebase.firestore.FieldValue.increment(1)
       }).catch(() => {});
-
-      toast('success', 'Answer ready!', `Answered by ${expert.name}`);
     } catch (saveErr) {
       console.warn('Save failed:', saveErr);
     }
   } catch (err) {
+    console.error('AI Generation Error:', err);
     area.innerHTML = `
       <div class="ai-answer-card">
-        <div style="color:var(--danger);display:flex;align-items:center;gap:8px;">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-          <span>Could not generate answer. Please try again.</span>
+        <div style="color:var(--danger);display:flex;align-items:flex-start;gap:8px;">
+          <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px"></i>
+          <div>
+            <div style="font-weight:600;margin-bottom:4px">Could not generate answer</div>
+            <div style="font-size:.78rem;color:var(--text-muted);font-family:var(--font-mono);word-break:break-all">
+              ${escapeHtml(err.message)}
+            </div>
+          </div>
         </div>
-        <button class="btn-ghost" style="margin-top:.8rem" onclick="viewDoubt('${doubtId}')">Retry</button>
+        <button class="btn-ghost" style="margin-top:.8rem" onclick="viewDoubt('${doubtId}')">
+          <i class="fa-solid fa-rotate-right"></i> Retry
+        </button>
       </div>
     `;
   }
 }
 
-/* ─── Copy answer to clipboard ─── */
 window.copyAnswer = function(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
     const orig = btn.innerHTML;
@@ -1363,14 +1002,11 @@ window.copyAnswer = function(btn, text) {
   });
 };
 
-/* ─── Mark helpful ─── */
 window.markHelpful = function(doubtId) {
   toast('success', 'Thanks!', 'Marked as helpful');
 };
 
-/* ══════════════════════════════════════════════════════════════
-   EXPERT PROFILE MODAL
-   ══════════════════════════════════════════════════════════════ */
+/* ─── Expert Profile Modal ─── */
 window.showExpertProfile = function(name, exp, title) {
   const expert = EXPERT_POOL.find(e => e.name === name) || { name, exp, title, subject: 'General' };
   const avatar = expertAvatarUrl(expert);
@@ -1403,22 +1039,16 @@ window.showExpertProfile = function(name, exp, title) {
         <strong><i class="fa-solid fa-quote-left"></i> About</strong>
         ${escapeHtml(name)} is a highly experienced ${escapeHtml(expert.subject || 'subject')} expert with ${exp} years of teaching experience.
         Has helped over ${students.toLocaleString('en-IN')} students crack their exams.
-        Specializes in step-by-step explanations and concept clarity.
       </div>
-      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem" onclick="closeModal('expertProfileModal');switchToTab('doubts');setTimeout(()=>openModal('newDoubtModal'),300)">
-        <i class="fa-solid fa-paper-plane"></i> Ask a Doubt
-      </button>
     `;
   }
   openModal('expertProfileModal');
 };
 
-/* ══════════════════════════════════════════════════════════════
-   LIVE EXPERTS BAR (Doubts tab)
-   ══════════════════════════════════════════════════════════════ */
+/* ─── Live Experts Bar ─── */
 function updateLiveExperts() {
   const sessionExperts = getSessionExperts();
-  const onlineCount = 8 + Math.floor(Math.random() * 8); // 8-15
+  const onlineCount = 8 + Math.floor(Math.random() * 8);
 
   if ($('liveCount')) $('liveCount').textContent = onlineCount;
 
@@ -1430,13 +1060,46 @@ function updateLiveExperts() {
   }
 }
 
-// Update count every 8 seconds for "live" feel
 setInterval(() => {
   if ($('liveCount') && activeTab === 'doubts') {
     const newCount = 8 + Math.floor(Math.random() * 8);
     $('liveCount').textContent = newCount;
   }
 }, 8000);
+
+/* ─────────────── SECTION 10: IMAGE VIEWER ─────────────── */
+window.openImageViewer = function(url) {
+  if ($('viewerImage')) $('viewerImage').src = url;
+  openModal('imageViewerModal');
+};
+
+/* ─────────────── SECTION 11: KEYBOARD SHORTCUTS ─────────────── */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => {
+      m.classList.remove('show');
+    });
+    document.body.style.overflow = '';
+  }
+});
+
+/* ─────────────── SECTION 12: SCROLL + BACK TO TOP ─────────────── */
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const scrolled = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  const sp = $('scrollProgress');
+  if (sp) sp.style.width = scrolled + '%';
+
+  const btt = $('backToTop');
+  if (btt) {
+    if (h.scrollTop > 400) btt.classList.add('show');
+    else btt.classList.remove('show');
+  }
+});
+
+$('backToTop')?.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 /* ══════════════════════════════════════════════════════════════
    TASKS SYSTEM
@@ -1447,6 +1110,7 @@ let taskTimerStart = 0;
 let taskTimerInterval = null;
 let totalTaskTime = 0;
 let victoryConfettiAnim = null;
+let taskSeconds = 0;
 
 function loadTasks() {
   const key = 'tcs_tasks_' + (currentUser?.uid || 'guest');
@@ -1495,7 +1159,6 @@ window.deleteTask = function(i) {
   renderTasks();
 };
 
-/* Add task */
 $('addTaskBtn')?.addEventListener('click', () => {
   const input = $('taskInput');
   const text = input.value.trim();
@@ -1512,7 +1175,6 @@ $('taskInput')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') $('addTaskBtn').click();
 });
 
-/* Clear all */
 $('clearTasksBtn')?.addEventListener('click', () => {
   if (!tasks.length) return;
   if (!confirm('Clear all tasks?')) return;
@@ -1522,7 +1184,6 @@ $('clearTasksBtn')?.addEventListener('click', () => {
   toast('success', 'Tasks cleared');
 });
 
-/* Start focus mode */
 $('startTasksBtn')?.addEventListener('click', () => {
   if (!tasks.length) return;
   currentTaskIndex = 0;
@@ -1531,14 +1192,17 @@ $('startTasksBtn')?.addEventListener('click', () => {
 });
 
 function openTaskFocus() {
-  $('taskFocusOverlay').classList.add('show');
+  const overlay = $('taskFocusOverlay');
+  if (!overlay) return;
+  overlay.classList.add('show');
   document.body.style.overflow = 'hidden';
   renderTaskFocus();
   startTaskTimer();
 }
 
 function closeTaskFocus() {
-  $('taskFocusOverlay').classList.remove('show');
+  const overlay = $('taskFocusOverlay');
+  if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
   stopTaskTimer();
 }
@@ -1567,7 +1231,6 @@ function renderTaskFocus() {
 
 $('prevTaskBtn')?.addEventListener('click', () => {
   if (currentTaskIndex > 0) {
-    // Save time for current task
     if (tasks[currentTaskIndex]) {
       tasks[currentTaskIndex].timeSpent = (tasks[currentTaskIndex].timeSpent || 0) + (Date.now() - taskTimerStart);
     }
@@ -1578,7 +1241,6 @@ $('prevTaskBtn')?.addEventListener('click', () => {
 });
 
 $('nextTaskBtn')?.addEventListener('click', () => {
-  // Save time for current task
   if (tasks[currentTaskIndex]) {
     tasks[currentTaskIndex].timeSpent = (tasks[currentTaskIndex].timeSpent || 0) + (Date.now() - taskTimerStart);
     tasks[currentTaskIndex].done = true;
@@ -1586,7 +1248,6 @@ $('nextTaskBtn')?.addEventListener('click', () => {
   totalTaskTime += Date.now() - taskTimerStart;
 
   if (currentTaskIndex === tasks.length - 1) {
-    // Victory!
     saveTasks();
     stopTaskTimer();
     closeTaskFocus();
@@ -1597,9 +1258,6 @@ $('nextTaskBtn')?.addEventListener('click', () => {
     renderTaskFocus();
   }
 });
-
-/* ─── TIMER ─── */
-let taskSeconds = 0;
 
 function startTaskTimer() {
   taskTimerStart = Date.now();
@@ -1633,7 +1291,6 @@ function updateTaskTimerDisplay(secs) {
     const s = String(secs % 60).padStart(2, '0');
     $('taskTimerText').textContent = `${m}:${s}`;
   }
-  // Update ring (60s per full circle)
   const fill = $('timerFill');
   if (fill) {
     const circumference = 565.48;
@@ -1642,23 +1299,23 @@ function updateTaskTimerDisplay(secs) {
   }
 }
 
-/* ─── VICTORY ─── */
 function showVictory() {
   const totalSecs = Math.floor(totalTaskTime / 1000);
   const m = String(Math.floor(totalSecs / 60)).padStart(2, '0');
   const s = String(totalSecs % 60).padStart(2, '0');
   if ($('victoryTotalTime')) $('victoryTotalTime').textContent = `${m}:${s}`;
-  $('victoryOverlay').classList.add('show');
+  const v = $('victoryOverlay');
+  if (v) v.classList.add('show');
   launchVictoryConfetti();
 }
 
 $('victoryCloseBtn')?.addEventListener('click', () => {
-  $('victoryOverlay').classList.remove('show');
+  const v = $('victoryOverlay');
+  if (v) v.classList.remove('show');
   document.body.style.overflow = '';
   if (victoryConfettiAnim) cancelAnimationFrame(victoryConfettiAnim);
 });
 
-/* ─── Confetti animation ─── */
 function launchVictoryConfetti() {
   const canvas = $('victoryConfetti');
   if (!canvas) return;
@@ -1712,79 +1369,20 @@ function launchVictoryConfetti() {
   draw();
 }
 
-/* ─── Init tasks on app start ─── */
-const _origInitApp = initApp;
-initApp = function() {
-  _origInitApp();
+/* ─────────────── SECTION 13: INIT APP ─────────────── */
+function initApp() {
+  loadStats();
+  updateUserUI();
   loadTasks();
   updateLiveExperts();
-};
-
-/* ─── Refresh live experts when switching to doubts tab ─── */
-const _origSwitchToTab = window.switchToTab;
-window.switchToTab = function(tabId) {
-  _origSwitchToTab(tabId);
-  if (tabId === 'doubts') updateLiveExperts();
-};
-
-console.log('🚀 AI Doubt System Loaded');
-/* ══════════════════════════════════════════════════════════════
-   DONATE PAGE
-   ══════════════════════════════════════════════════════════════ */
-function loadDonatePage() {
-  // UPI ID set karo
-  const upiEl = $('upiIdDisplay');
-  if (upiEl && CONFIG.UPI_ID) {
-    upiEl.textContent = CONFIG.UPI_ID;
-  }
-
-  // Copy button
-  const copyBtn = $('copyUpiBtn');
-  if (copyBtn && !copyBtn.dataset.bound) {
-    copyBtn.dataset.bound = '1';
-    copyBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(CONFIG.UPI_ID);
-        copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-        copyBtn.classList.add('copied');
-        toast('success', 'UPI ID copied!', 'Paste it in your UPI app');
-        setTimeout(() => {
-          copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy UPI ID';
-          copyBtn.classList.remove('copied');
-        }, 2000);
-      } catch (err) {
-        toast('warn', 'Copy failed', 'Please copy manually');
-      }
-    });
-  }
-
-  // QR Code generate karo (if available)
-  generateUPIQR();
 }
-window.loadDonatePage = loadDonatePage;
 
-/* ─── Generate UPI QR Code ─── */
-function generateUPIQR() {
-  const qrContainer = $('qrPlaceholder');
-  if (!qrContainer) return;
+/* ─────────────── SECTION 14: BOOT ─────────────── */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const loader = $('bootLoader');
+    if (loader) loader.classList.add('hide');
+  }, 1500);
+});
 
-  // Agar QR already generate ho chuka hai, skip
-  if (qrContainer.dataset.generated === '1') return;
-
-  const upiId = CONFIG.UPI_ID;
-  if (!upiId || upiId.includes('Mail')) {
-    // UPI ID valid nahi hai, placeholder hi rakho
-    return;
-  }
-
-  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=The%20Chairman%20Show&cu=INR`;
-  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
-
-  // Replace placeholder with QR image
-  qrContainer.outerHTML = `
-    <div class="qr-placeholder" id="qrPlaceholder" data-generated="1" style="border:none;background:white;padding:8px">
-      <img src="${qrApiUrl}" alt="UPI QR Code" style="width:100%;height:100%;border-radius:8px;" 
-           onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-qrcode\\'></i><p>QR unavailable</p>'">
-    </div>
-  `;
-}
+console.log('🚀 The Chairman Show — App Loaded Successfully');
