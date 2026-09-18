@@ -555,12 +555,21 @@ main {
 /* ═══ SUPPORT ═══ */
 .support-wrapper { max-width: 560px; margin: 0 auto; }
 .support-card {
-  background: white; border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg); padding: 2rem;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
-.support-card .btn-primary { width: 100%; justify-content: center; }
-#spStatus { margin-top: 1rem; text-align: center; font-weight: 500; font-size: .88rem; }
+.support-card iframe {
+  display: block;
+  width: 100%;
+  min-height: 900px;
+  border: none;
+}
+@media (max-width: 640px) {
+  .support-card iframe { min-height: 1100px; }
+}
 
 /* ═══ MODAL ═══ */
 .modal-overlay {
