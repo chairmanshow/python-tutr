@@ -19,7 +19,7 @@ const db = firebase.firestore();
 const rtdb = firebase.database();
 
 const CONFIG = {
-  UPI_ID: "Please Mail on overactingofficial7@gmail.com to access platform",
+  UPI_ID: "Please Mail on overactingofficial7@gmail.com",
   TELEGRAM_PROXY: "https://tcs-telegram-proxy.sumitshrivas24.workers.dev",
   ADMIN_EMAIL: "overactingofficial7@gmail.com"
 };
@@ -309,7 +309,7 @@ function switchToTab(tabId) {
   if (tabId === 'doubts') loadDoubts();
   if (tabId === 'experts') loadExperts();
   if (tabId === 'expertDashboard') loadExpertDashboard();
-  if (tabId === 'subscription') loadPlans();
+  if (tabId === 'subscription') loadDonatePage();
 }
 window.switchToTab = switchToTab;
 
@@ -507,28 +507,9 @@ $$('#doubtFilters .chip').forEach(chip => {
   });
 });
 
-$('newDoubtBtn').addEventListener('click', async () => {
-  const sub = userProfile.subscription || 'free';
-  if (sub === 'free') {
-    try {
-      const snap = await db.collection('doubts').where('userId', '==', currentUser.uid).get();
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const todayCount = snap.docs.filter(d => {
-        const ts = d.data().createdAt?.toDate?.();
-        return ts && ts >= today;
-      }).length;
-      if (todayCount >= 3) {
-        toast('warn', 'Free plan limit', '3 doubts/day. Upgrade for unlimited.');
-        switchToTab('subscription');
-        return;
-      }
-    } catch (err) {
-      console.warn('Limit check failed:', err);
-    }
-  }
+$('newDoubtBtn').addEventListener('click', () => {
   openModal('newDoubtModal');
 });
-
 $('doubtImage')?.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -1777,3 +1758,63 @@ window.switchToTab = function(tabId) {
 };
 
 console.log('🚀 AI Doubt System Loaded');
+/* ══════════════════════════════════════════════════════════════
+   DONATE PAGE
+   ══════════════════════════════════════════════════════════════ */
+function loadDonatePage() {
+  // UPI ID set karo
+  const upiEl = $('upiIdDisplay');
+  if (upiEl && CONFIG.UPI_ID) {
+    upiEl.textContent = CONFIG.UPI_ID;
+  }
+
+  // Copy button
+  const copyBtn = $('copyUpiBtn');
+  if (copyBtn && !copyBtn.dataset.bound) {
+    copyBtn.dataset.bound = '1';
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(CONFIG.UPI_ID);
+        copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        copyBtn.classList.add('copied');
+        toast('success', 'UPI ID copied!', 'Paste it in your UPI app');
+        setTimeout(() => {
+          copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy UPI ID';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        toast('warn', 'Copy failed', 'Please copy manually');
+      }
+    });
+  }
+
+  // QR Code generate karo (if available)
+  generateUPIQR();
+}
+window.loadDonatePage = loadDonatePage;
+
+/* ─── Generate UPI QR Code ─── */
+function generateUPIQR() {
+  const qrContainer = $('qrPlaceholder');
+  if (!qrContainer) return;
+
+  // Agar QR already generate ho chuka hai, skip
+  if (qrContainer.dataset.generated === '1') return;
+
+  const upiId = CONFIG.UPI_ID;
+  if (!upiId || upiId.includes('Mail')) {
+    // UPI ID valid nahi hai, placeholder hi rakho
+    return;
+  }
+
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=The%20Chairman%20Show&cu=INR`;
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
+
+  // Replace placeholder with QR image
+  qrContainer.outerHTML = `
+    <div class="qr-placeholder" id="qrPlaceholder" data-generated="1" style="border:none;background:white;padding:8px">
+      <img src="${qrApiUrl}" alt="UPI QR Code" style="width:100%;height:100%;border-radius:8px;" 
+           onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-qrcode\\'></i><p>QR unavailable</p>'">
+    </div>
+  `;
+}
