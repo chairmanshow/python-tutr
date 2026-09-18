@@ -1467,3 +1467,194 @@ footer {
   .victory-emoji { font-size: 4.5rem; }
   .live-avatars img { width: 28px; height: 28px; }
 }
+/* ═══════════════════════════════════════════════
+   DONATE PAGE
+   ═══════════════════════════════════════════════ */
+
+.donate-wrapper {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ─── MESSAGE CARD ─── */
+.donate-message-card {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fbbf24;
+  border-radius: var(--radius-lg);
+  padding: 2rem 1.8rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.donate-message-card::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -50px;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(251,191,36,.3), transparent 70%);
+  border-radius: 50%;
+}
+.donate-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.8rem;
+  box-shadow: 0 8px 24px rgba(239,68,68,.35);
+  animation: heartBeat 1.8s infinite;
+}
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.15); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.1); }
+  60% { transform: scale(1); }
+}
+.donate-message-card h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  color: #78350f;
+  margin-bottom: 1rem;
+}
+.donate-message-card p {
+  font-size: .95rem;
+  line-height: 1.7;
+  color: #78350f;
+  margin-bottom: .9rem;
+}
+.donate-message-card strong {
+  color: #92400e;
+  font-weight: 700;
+}
+.donate-tagline {
+  font-style: italic;
+  font-weight: 600;
+  margin-top: 1.2rem !important;
+  padding-top: 1.2rem;
+  border-top: 1px dashed rgba(120,53,15,.25);
+  color: #92400e !important;
+}
+.donate-tagline i {
+  font-size: .8rem;
+  opacity: .6;
+  margin: 0 4px;
+}
+
+/* ─── PAYMENT CARD ─── */
+.donate-payment-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem 1.8rem;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.donate-qr-box {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.donate-payment-card .qr-placeholder {
+  width: 200px;
+  height: 200px;
+  background: var(--bg-surface-2);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  gap: .5rem;
+}
+.donate-payment-card .qr-placeholder i { font-size: 3rem; opacity: .4; }
+.donate-payment-card .qr-placeholder p { font-size: .82rem; }
+
+/* UPI Box */
+.donate-upi-box {
+  background: var(--accent-soft);
+  border-radius: var(--radius-md);
+  padding: 1.2rem;
+  margin-bottom: 1.2rem;
+  border: 2px dashed rgba(37,99,235,.3);
+}
+.donate-upi-label {
+  font-size: .78rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 700;
+  margin-bottom: .5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.donate-upi-label i { color: var(--accent-primary); }
+.donate-upi-id {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--accent-primary);
+  margin-bottom: .8rem;
+  word-break: break-all;
+  padding: 0 .5rem;
+}
+.donate-copy-btn {
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: .5rem 1.1rem;
+  border-radius: var(--radius-full);
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.donate-copy-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+.donate-copy-btn.copied {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+
+.donate-thanks {
+  font-size: .88rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+}
+.donate-thanks i {
+  color: var(--accent-secondary);
+  font-size: 1rem;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 640px) {
+  .donate-message-card { padding: 1.5rem 1.2rem; }
+  .donate-payment-card { padding: 1.5rem 1.2rem; }
+  .donate-message-card h2 { font-size: 1.25rem; }
+  .donate-upi-id { font-size: 1rem; }
+}
