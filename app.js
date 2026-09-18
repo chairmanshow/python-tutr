@@ -1163,42 +1163,36 @@ function hashCode(str) {
   return h;
 }
 
-/* ─── CALL GROQ AI ─── */
+/* ─── CALL AI VIA PROXY (safe, key on server) ─── */
 async function getAIAnswer(question, subject, cls) {
   const expert = pickExpertForDoubt();
 
-  const systemPrompt = `You are ${expert.name}, an Indian expert teacher in ${subject} with ${expert.exp} years of experience.
-Answer the student's ${subject} doubt (Class: ${cls}) in 30-40 words MAXIMUM.
-Be precise, use simple language, include the key formula/concept if relevant.
-Never exceed 40 words. Never mention you are an AI. Sign nothing.`;
-
   try {
-    const res = await fetch(AI_CONFIG.GROQ_URL, {
+    const res = await fetch(AI_CONFIG.PROXY_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${AI_CONFIG.GROQ_KEY}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: AI_CONFIG.MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: question }
-        ],
-        temperature: 0.6,
-        max_tokens: 100
+        question: question,
+        subject: subject,
+        class: cls,
+        expertName: expert.name,
+        expertExp: expert.exp
       })
     });
 
     if (!res.ok) {
-      const err = await res.text();
-      throw new Error('AI service error: ' + err.slice(0, 100));
+      const errText = await res.text();
+      throw new Error('AI service error: ' + errText.slice(0, 150));
     }
 
     const data = await res.json();
-    let answer = data.choices?.[0]?.message?.content?.trim() || '';
+    if (!data.ok || !data.answer) {
+      throw new Error(data.error || 'No answer received');
+    }
 
-    // Enforce word limit
+    let answer = data.answer.trim();
+
+    // Enforce 40-word limit
     const words = answer.split(/\s+/);
     if (words.length > 45) {
       answer = words.slice(0, 42).join(' ') + '...';
@@ -1210,7 +1204,6 @@ Never exceed 40 words. Never mention you are an AI. Sign nothing.`;
     throw err;
   }
 }
-
 /* ─── TYPEWRITER ANIMATION ─── */
 function typeWriter(element, text, speed = 25) {
   return new Promise(resolve => {
