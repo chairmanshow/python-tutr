@@ -675,36 +675,6 @@ async function notifyTelegram(message) {
   } catch (err) { console.warn('Telegram notify failed:', err); }
 }
 
-/* ─────────────── SECTION 10: SUPPORT FORM ─────────────── */
-$('supportForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = e.target.querySelector('button[type="submit"]');
-  const status = $('spStatus');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending…';
-  try {
-    const res = await fetch(CONFIG.TELEGRAM_PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: $('spName').value,
-        email: $('spEmail').value,
-        msg: $('spMsg').value
-      })
-    });
-    const data = await res.json();
-    if (res.ok && data.ok) {
-      status.innerHTML = '<span style="color:var(--success)"><i class="fa-solid fa-check-circle"></i> Sent! We\'ll reply soon.</span>';
-      e.target.reset();
-    } else throw new Error(data.description || data.error || 'Failed');
-  } catch (err) {
-    status.innerHTML = `<span style="color:var(--danger)"><i class="fa-solid fa-circle-xmark"></i> ${escapeHtml(err.message)}</span>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
-    setTimeout(() => { status.innerHTML = ''; }, 6000);
-  }
-});
 
 /* ─────────────── SECTION 11: STATS ─────────────── */
 async function loadStats() {
