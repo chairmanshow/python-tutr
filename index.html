@@ -145,6 +145,74 @@
           </div>
         </div>
       </div>
+      <!-- ═══ TASKS SECTION (NEW) ═══ -->
+<div class="tasks-widget" id="tasksWidget">
+  <div class="tasks-header">
+    <h3><i class="fa-solid fa-list-check"></i> Write Your Tasks</h3>
+    <p>Plan your study — break big goals into steps</p>
+  </div>
+
+  <div class="tasks-input-row">
+    <input type="text" id="taskInput" placeholder="e.g., Complete Physics Chapter 5..." maxlength="120">
+    <button class="btn-primary" id="addTaskBtn"><i class="fa-solid fa-plus"></i> Add</button>
+  </div>
+
+  <div class="tasks-list" id="tasksList">
+    <div class="empty-state">
+      <i class="fa-solid fa-clipboard-list"></i>
+      <h4>No tasks yet</h4>
+      <p>Add your first task above to get started</p>
+    </div>
+  </div>
+
+  <div class="tasks-actions">
+    <button class="btn-primary" id="startTasksBtn" disabled>
+      <i class="fa-solid fa-play"></i> Start Task Mode
+    </button>
+    <button class="btn-ghost" id="clearTasksBtn">
+      <i class="fa-solid fa-trash"></i> Clear All
+    </button>
+  </div>
+</div>
+
+<!-- ═══ TASK FOCUS MODE (Full screen overlay) ═══ -->
+<div class="task-focus-overlay" id="taskFocusOverlay">
+  <div class="task-focus-card">
+    <div class="task-step-indicator">
+      Step <span id="currentStepNum">1</span> of <span id="totalStepNum">1</span>
+    </div>
+    <div class="task-timer-ring">
+      <svg viewBox="0 0 200 200">
+        <circle class="timer-track" cx="100" cy="100" r="90"/>
+        <circle class="timer-fill" id="timerFill" cx="100" cy="100" r="90"/>
+      </svg>
+      <div class="task-timer-text" id="taskTimerText">00:00</div>
+    </div>
+    <div class="task-current-text" id="taskCurrentText">Task goes here</div>
+    <div class="task-focus-actions">
+      <button class="btn-ghost" id="prevTaskBtn"><i class="fa-solid fa-arrow-left"></i> Prev</button>
+      <button class="btn-primary" id="nextTaskBtn">Next <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+    <button class="task-focus-close" id="closeFocusBtn"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+</div>
+
+<!-- ═══ VICTORY ANIMATION OVERLAY ═══ -->
+<div class="victory-overlay" id="victoryOverlay">
+  <canvas id="victoryConfetti"></canvas>
+  <div class="victory-content">
+    <div class="victory-emoji">🏆</div>
+    <h1>Victory!</h1>
+    <p>You completed all your tasks</p>
+    <div class="victory-time">
+      <i class="fa-solid fa-clock"></i>
+      <span>Total time: <strong id="victoryTotalTime">00:00</strong></span>
+    </div>
+    <button class="btn-primary" id="victoryCloseBtn">
+      <i class="fa-solid fa-rocket"></i> Awesome!
+    </button>
+  </div>
+</div>
     </section>
 
     <!-- ═══ DOUBTS TAB ═══ -->
@@ -153,6 +221,14 @@
         <h1>My Doubts</h1>
         <p>Ask questions and track their solutions</p>
       </div>
+      <!-- ═══ LIVE EXPERTS INDICATOR (NEW) ═══ -->
+<div class="live-experts-bar" id="liveExpertsBar">
+  <div class="live-pulse"></div>
+  <div class="live-text">
+    <strong id="liveCount">12</strong> experts online now
+  </div>
+  <div class="live-avatars" id="liveAvatars"></div>
+</div>
       <div class="doubts-toolbar">
         <button class="btn-primary" id="newDoubtBtn"><i class="fa-solid fa-plus"></i> Ask New Doubt</button>
         <div class="filter-chips" id="doubtFilters">
@@ -326,6 +402,18 @@
         <h3><i class="fa-solid fa-circle-question"></i> Ask a New Doubt</h3>
         <button class="close-modal" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
       </div>
+      <!-- ═══ EXPERT PROFILE MODAL (NEW) ═══ -->
+<div class="modal-overlay" id="expertProfileModal">
+  <div class="modal-content" style="max-width: 480px;">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-user-tie"></i> Expert Profile</h3>
+      <button class="close-modal" onclick="closeModal('expertProfileModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="expertProfileBody"></div>
+  </div>
+</div>
       <div class="modal-body">
         <div class="form-group">
           <label>Subject</label>
