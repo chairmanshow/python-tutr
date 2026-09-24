@@ -6,35 +6,46 @@
 <title>The Chairman Show | Learn Python. Master DSA. Get Hired.</title>
 <meta name="description" content="Learn Python from Level 1 to 100. Get doubts solved by experts. Free coding platform for Indian students.">
 <meta name="theme-color" content="#0a0a0f">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300d4ff'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='58' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23D4AF37'/%3E%3Cstop offset='1' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='58' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ECS%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- ═══════════════════════════════════════════════════════════
+     PARTICLES BACKGROUND
+     ═══════════════════════════════════════════════════════════ -->
+<canvas id="particlesCanvas"></canvas>
+
+<!-- ═══════════════════════════════════════════════════════════
      BOOT LOADER — Cinematic
      ═══════════════════════════════════════════════════════════ -->
 <div id="bootLoader">
-  <div class="boot-terminal">
-    <div class="boot-line">
-      <span class="boot-prompt">$</span>
-      <span class="boot-cmd">initializing <span class="boot-name">the_chairman_show</span>...</span>
+  <div class="boot-content">
+    <div class="boot-crown">
+      <i class="fa-solid fa-crown"></i>
     </div>
-    <div class="boot-line delay-1">
-      <span class="boot-ok">✓</span> Firebase connected
-    </div>
-    <div class="boot-line delay-2">
-      <span class="boot-ok">✓</span> Python engine ready
-    </div>
-    <div class="boot-line delay-3">
-      <span class="boot-ok">✓</span> Loading 100 levels...
-    </div>
-    <div class="boot-bar">
-      <div class="boot-bar-fill"></div>
+    <div class="boot-logo-text">THE CHAIRMAN SHOW</div>
+    <div class="boot-terminal">
+      <div class="boot-line">
+        <span class="boot-prompt">$</span>
+        <span class="boot-cmd">initializing <span class="boot-name">platform</span>...</span>
+      </div>
+      <div class="boot-line delay-1">
+        <span class="boot-ok">✓</span> Firebase connected
+      </div>
+      <div class="boot-line delay-2">
+        <span class="boot-ok">✓</span> Python engine ready
+      </div>
+      <div class="boot-line delay-3">
+        <span class="boot-ok">✓</span> Loading 100 levels...
+      </div>
+      <div class="boot-bar">
+        <div class="boot-bar-fill"></div>
+      </div>
     </div>
     <div class="boot-cursor">█</div>
   </div>
@@ -46,15 +57,27 @@
 <div id="loginScreen" class="login-screen">
   <div class="login-grid-bg"></div>
   <div class="login-glow"></div>
+  <div class="login-orb login-orb-1"></div>
+  <div class="login-orb login-orb-2"></div>
 
   <div class="login-card">
     <div class="login-logo">
-      <div class="logo-mark">
-        <span class="bracket">&lt;</span>
-        <span class="logo-text">CS</span>
-        <span class="bracket">/&gt;</span>
+      <!-- CSS Logo (Chair + Crown) -->
+      <div class="css-logo">
+        <div class="logo-crown">
+          <i class="fa-solid fa-crown"></i>
+        </div>
+        <div class="logo-chair">
+          <div class="chair-back"></div>
+          <div class="chair-seat"></div>
+        </div>
       </div>
-      <h1>The Chairman <span>Show</span></h1>
+      <h1>THE CHAIRMAN <span>SHOW</span></h1>
+      <div class="login-divider">
+        <span class="line"></span>
+        <span class="dot"></span>
+        <span class="line"></span>
+      </div>
       <p class="login-tagline">
         <span class="terminal-text">&gt; Learn Python. Master DSA. Get Hired.</span>
         <span class="blink">_</span>
@@ -72,7 +95,7 @@
       </div>
       <div class="login-feat">
         <i class="fa-solid fa-trophy"></i>
-        <span>Track Your Progress</span>
+        <span>Track Progress</span>
       </div>
       <div class="login-feat">
         <i class="fa-solid fa-bolt"></i>
@@ -90,9 +113,7 @@
       <span>Continue with Google</span>
     </button>
 
-    <p class="login-terms">
-      By signing in, you agree to our Terms & Privacy Policy
-    </p>
+    <p class="login-terms">By signing in, you agree to our Terms & Privacy Policy</p>
     <div id="loginError" class="login-error"></div>
   </div>
 </div>
@@ -111,28 +132,30 @@
   <header>
     <div class="nav-container">
       <a href="#" class="logo" onclick="switchToTab('home'); return false;">
-        <span class="logo-mark-small">
-          <span class="bracket">&lt;</span>
-          <span class="logo-text">CS</span>
-          <span class="bracket">/&gt;</span>
-        </span>
-        <span class="logo-name">The Chairman <em>Show</em></span>
+        <div class="logo-mini">
+          <i class="fa-solid fa-crown logo-crown-mini"></i>
+          <span class="logo-text-mini">CS</span>
+        </div>
+        <div class="logo-brand">
+          <span class="logo-brand-the">THE</span>
+          <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
+        </div>
       </a>
 
       <ul class="nav-links">
         <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> <span class="nav-text">Home</span></button></li>
-        <li><button class="nav-item" data-tab="python" id="navPython"><i class="fa-brands fa-python"></i> <span class="nav-text">Python Practice</span></button></li>
+        <li><button class="nav-item" data-tab="python" id="navPython"><i class="fa-brands fa-python"></i> <span class="nav-text">Practice</span></button></li>
         <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
         <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Experts</span></button></li>
-        <li><button class="nav-item" data-tab="leaderboard" id="navLeaderboard"><i class="fa-solid fa-trophy"></i> <span class="nav-text">Leaderboard</span></button></li>
-        <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support Us</span></button></li>
+        <li><button class="nav-item" data-tab="leaderboard"><i class="fa-solid fa-trophy"></i> <span class="nav-text">Leaderboard</span></button></li>
         <li>
-  <button class="nav-item" data-tab="community" id="navCommunity">
-    <i class="fa-solid fa-comments"></i>
-    <span class="nav-text">Community</span>
-    <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
-  </button>
-</li>         
+          <button class="nav-item" data-tab="community" id="navCommunity">
+            <i class="fa-solid fa-comments"></i>
+            <span class="nav-text">Community</span>
+            <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
+          </button>
+        </li>
+        <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support</span></button></li>
       </ul>
 
       <div class="user-menu">
@@ -164,7 +187,7 @@
   <main>
 
     <!-- ═══════════════════════════════════════════════════════
-         HOME TAB — Cinematic Hero + Python Practice
+         HOME TAB
          ═══════════════════════════════════════════════════════ -->
     <section id="home" class="tab-content active">
 
@@ -172,14 +195,14 @@
       <div class="hero-cinematic">
         <div class="hero-grid-bg"></div>
         <div class="hero-orbs">
-          <div class="orb orb-1"></div>
-          <div class="orb orb-2"></div>
-          <div class="orb orb-3"></div>
+          <div class="orb orb-gold"></div>
+          <div class="orb orb-purple"></div>
+          <div class="orb orb-cyan"></div>
         </div>
 
         <div class="hero-content">
           <div class="hero-badge">
-            <span class="badge-dot"></span>
+            <i class="fa-solid fa-crown hero-crown"></i>
             <span>India's Student-First Coding Platform</span>
           </div>
 
@@ -198,7 +221,7 @@
             <button class="btn-hero-primary" data-goto="python">
               <i class="fa-brands fa-python"></i>
               <span>Start Python Practice</span>
-              <i class="fa-solid fa-arrow-right"></i>
+              <i class="fa-solid fa-arrow-right btn-arrow"></i>
             </button>
             <button class="btn-hero-ghost" data-goto="doubts">
               <i class="fa-solid fa-bolt"></i>
@@ -215,14 +238,14 @@
               <span class="terminal-title">~/the_chairman_show/main.py</span>
             </div>
             <div class="terminal-body">
-              <div class="terminal-line">
+              <div class="terminal-line fade-1">
                 <span class="t-prompt">&gt;&gt;&gt;</span>
                 <span class="t-code">print(<span class="t-string">"Welcome, Coder"</span>)</span>
               </div>
-              <div class="terminal-line">
+              <div class="terminal-line fade-2">
                 <span class="t-output">Welcome, Coder</span>
               </div>
-              <div class="terminal-line">
+              <div class="terminal-line fade-3">
                 <span class="t-prompt">&gt;&gt;&gt;</span>
                 <span class="t-code">challenges.solve(<span class="t-number">100</span>)</span>
                 <span class="t-cursor-blink">_</span>
@@ -235,7 +258,7 @@
       <!-- STATS STRIP -->
       <div class="stats-strip">
         <div class="stat-card">
-          <div class="stat-icon icon-blue"><i class="fa-solid fa-code"></i></div>
+          <div class="stat-icon icon-gold"><i class="fa-solid fa-code"></i></div>
           <div class="stat-info">
             <div class="stat-num" id="statLevels">100</div>
             <div class="stat-lbl">Levels</div>
@@ -249,7 +272,7 @@
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon icon-orange"><i class="fa-solid fa-fire"></i></div>
+          <div class="stat-icon icon-cyan"><i class="fa-solid fa-fire"></i></div>
           <div class="stat-info">
             <div class="stat-num" id="statSolvedGlobal">0</div>
             <div class="stat-lbl">Solved Today</div>
@@ -264,7 +287,7 @@
         </div>
       </div>
 
-      <!-- PYTHON PRACTICE PREVIEW (Homepage) -->
+      <!-- PYTHON PREVIEW -->
       <div class="python-preview">
         <div class="section-head-cinematic">
           <div class="section-tag">
@@ -272,18 +295,16 @@
           </div>
           <h2 class="section-title-cine">Python Practice Arena</h2>
           <p class="section-sub-cine">
-            100 levels. <span class="text-blue">Easy to Hard.</span> Real interview patterns.
+            100 levels. <span class="text-gold">Easy to Hard.</span> Real interview patterns.
           </p>
         </div>
 
-        <div class="level-track-preview" id="levelTrackPreview">
-          <!-- JS renders preview: 10 levels shown -->
-        </div>
+        <div class="level-track-preview" id="levelTrackPreview"></div>
 
         <div class="preview-cta">
           <button class="btn-hero-primary" data-goto="python">
             <span>Explore All 100 Levels</span>
-            <i class="fa-solid fa-arrow-right"></i>
+            <i class="fa-solid fa-arrow-right btn-arrow"></i>
           </button>
         </div>
       </div>
@@ -291,11 +312,11 @@
       <!-- FEATURES GRID -->
       <div class="features-cinematic">
         <div class="feature-cine-card">
-          <div class="fc-icon" style="--fc-color: #00d4ff">
+          <div class="fc-icon" style="--fc-color: #D4AF37">
             <i class="fa-solid fa-terminal"></i>
           </div>
           <h3>Real Code Editor</h3>
-          <p>Write Python code, run it, get instant feedback. No setup needed — works in your browser.</p>
+          <p>Write Python code, learn from expert solutions. No setup needed — works in your browser.</p>
         </div>
         <div class="feature-cine-card">
           <div class="fc-icon" style="--fc-color: #7c3aed">
@@ -305,11 +326,11 @@
           <p>Not just videos — solve real problems. Every concept backed by practice.</p>
         </div>
         <div class="feature-cine-card">
-          <div class="fc-icon" style="--fc-color: #f59e0b">
+          <div class="fc-icon" style="--fc-color: #00d4ff">
             <i class="fa-solid fa-brain"></i>
           </div>
           <h3>Expert Help</h3>
-          <p>Stuck? Ask a doubt. Verified experts and AI help you understand, not just copy answers.</p>
+          <p>Stuck? Ask a doubt. AI + experts help you understand, not just copy answers.</p>
         </div>
         <div class="feature-cine-card">
           <div class="fc-icon" style="--fc-color: #10b981">
@@ -324,6 +345,7 @@
       <div class="cta-banner">
         <div class="cta-banner-bg"></div>
         <div class="cta-banner-content">
+          <div class="cta-crown"><i class="fa-solid fa-crown"></i></div>
           <h2>Ready to start your coding journey?</h2>
           <p>Join thousands of Indian students mastering Python — one problem at a time.</p>
           <button class="btn-hero-primary" data-goto="python">
@@ -337,8 +359,6 @@
          PYTHON PRACTICE TAB
          ═══════════════════════════════════════════════════════ -->
     <section id="python" class="tab-content">
-
-      <!-- Practice Header -->
       <div class="python-header-cinematic">
         <div class="python-header-bg"></div>
         <div class="python-header-content">
@@ -361,7 +381,6 @@
         </div>
       </div>
 
-      <!-- Filter chips -->
       <div class="python-filter-bar">
         <div class="filter-chips-cine" id="pythonFilters">
           <button class="chip-cine active" data-diff="all">
@@ -386,7 +405,6 @@
         </div>
       </div>
 
-      <!-- Levels Grid -->
       <div class="levels-grid-cine" id="levelsGrid">
         <div class="loading-cine">
           <div class="loading-spinner-cine"></div>
@@ -396,7 +414,7 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════════════
-         PROBLEM VIEW (opened when clicking a problem)
+         PROBLEM VIEW
          ═══════════════════════════════════════════════════════ -->
     <section id="problemView" class="tab-content">
       <div class="problem-view-header">
@@ -407,7 +425,6 @@
       </div>
 
       <div class="problem-layout">
-        <!-- Left: Description -->
         <div class="problem-left">
           <div class="problem-card-cine">
             <div class="problem-title-row">
@@ -424,7 +441,6 @@
           </div>
         </div>
 
-        <!-- Right: Code Editor -->
         <div class="problem-right">
           <div class="editor-card">
             <div class="editor-header">
@@ -448,18 +464,19 @@
 
             <div class="editor-body">
               <div class="editor-line-numbers" id="editorLineNumbers"></div>
-              <textarea id="codeEditor" class="code-textarea" spellcheck="false" 
+              <textarea id="codeEditor" class="code-textarea" spellcheck="false"
                 placeholder="# Write your Python code here..."></textarea>
             </div>
 
-           <div class="editor-footer">
-  <button class="btn-run-cine" id="showSolutionBtn">
-    <i class="fa-solid fa-lightbulb"></i> Show Solution
-  </button>
-  <button class="btn-mark-solved" id="markSolvedBtn">
-    <i class="fa-regular fa-circle-check"></i> Mark as Solved
-  </button>
-</div>
+            <div class="editor-footer">
+              <button class="btn-run-cine" id="showSolutionBtn">
+                <i class="fa-solid fa-lightbulb"></i> Show Solution
+              </button>
+              <button class="btn-mark-solved" id="markSolvedBtn">
+                <i class="fa-regular fa-circle-check"></i> Mark as Solved
+              </button>
+            </div>
+          </div>
 
           <div class="output-card" id="outputCard" style="display:none;">
             <div class="output-header">
@@ -470,37 +487,36 @@
             </div>
             <div class="output-body" id="outputBody"></div>
           </div>
-<div class="solution-card" id="solutionCard" style="display:none;">
-  <div class="solution-header">
-    <span><i class="fa-solid fa-lightbulb"></i> Official Solution</span>
-    <div style="display:flex; gap:.4rem;">
-      <button class="editor-btn" id="copySolutionBtn" title="Copy solution">
-        <i class="fa-regular fa-copy"></i>
-      </button>
-      <button class="editor-btn" id="backToCodeBtn" title="Back to code">
-        <i class="fa-solid fa-code"></i>
-      </button>
-    </div>
-  </div>
-           <div class="solution-body">
-            <pre id="solutionCode"></pre>
-            <div class="solution-explanation" id="solutionExplanation"></div>
+
+          <div class="solution-card" id="solutionCard" style="display:none;">
+            <div class="solution-header">
+              <span><i class="fa-solid fa-lightbulb"></i> Official Solution</span>
+              <div style="display:flex; gap:.4rem;">
+                <button class="editor-btn" id="copySolutionBtn" title="Copy solution">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+                <button class="editor-btn" id="backToCodeBtn" title="Back to code">
+                  <i class="fa-solid fa-code"></i>
+                </button>
+              </div>
+            </div>
+            <div class="solution-body">
+              <pre id="solutionCode"></pre>
+              <div class="solution-explanation" id="solutionExplanation"></div>
+            </div>
           </div>
         </div>
-        </div>   <!-- ⬅️ यह add करो — problem-right को बंद करने के लिए -->
-      </div>
-    </section>div>
       </div>
     </section>
 
     <!-- ═══════════════════════════════════════════════════════
-         DOUBTS TAB — Programming-specific
+         DOUBTS TAB
          ═══════════════════════════════════════════════════════ -->
     <section id="doubts" class="tab-content">
       <div class="section-head-cinematic">
         <div class="section-tag"><i class="fa-solid fa-circle-question"></i> Help</div>
         <h2 class="section-title-cine">Code Doubts</h2>
-        <p class="section-sub-cine">Stuck in code? Ask. Get answered by experts + AI.</p>
+        <p class="section-sub-cine">Stuck in code? Ask. Get answered by AI + experts.</p>
       </div>
 
       <div class="doubts-toolbar-cine">
@@ -559,157 +575,129 @@
         </div>
       </div>
     </section>
-<!-- ═══════════════════════════════════════════════════════
-     COMMUNITY CHAT TAB — Real-time
-     ═══════════════════════════════════════════════════════ -->
-<section id="community" class="tab-content">
-  <div class="chat-shell-cine">
 
-    <!-- ═══ SIDEBAR ═══ -->
-    <aside class="chat-sidebar-cine" id="chatSidebar">
-      <div class="cs-header">
-        <div class="cs-brand">
-          <i class="fa-solid fa-comments"></i>
-          <span>Community</span>
-        </div>
-        <button class="cs-close-btn" id="csCloseBtn">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="cs-me">
-        <img id="csMeAvatar" src="" alt="">
-        <div class="cs-me-info">
-          <div class="cs-me-name" id="csMeName">User</div>
-          <div class="cs-me-status">
-            <span class="online-dot"></span> Online
-          </div>
-        </div>
-      </div>
-
-      <div class="cs-search">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="csSearchInput" placeholder="Search messages...">
-      </div>
-
-      <div class="cs-scroll">
-        <div class="cs-label">Channels</div>
-        <div class="cs-rooms" id="csRooms"></div>
-
-        <div class="cs-label">
-          Online — <span id="csOnlineCount">0</span>
-        </div>
-        <div class="cs-users" id="csUsers">
-          <div class="cs-loading">
-            <i class="fa-solid fa-spinner fa-spin"></i> Loading...
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- ═══ MAIN CHAT ═══ -->
-    <div class="chat-main-cine">
-      <header class="cm-top">
-        <button class="cm-menu-btn" id="cmMenuBtn">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-        <div class="cm-room-icon">
-          <i class="fa-solid fa-hashtag"></i>
-        </div>
-        <div class="cm-room-info">
-          <h3 id="cmRoomName">general</h3>
-          <div class="cm-room-sub">
-            <span class="online-dot"></span>
-            <span id="cmRoomSub">0 members online</span>
-          </div>
-        </div>
-        <button class="cm-icon-btn" id="cmSoundBtn" title="Toggle sound">
-          <i class="fa-solid fa-volume-xmark"></i>
-        </button>
-      </header>
-
-      <div class="cm-body" id="cmBody">
-        <div class="cm-empty">
-          <i class="fa-solid fa-comments"></i>
-          <h4>Welcome to Community Chat</h4>
-          <p>Say hello and start coding together!</p>
-        </div>
-      </div>
-
-      <div class="cm-typing" id="cmTyping"></div>
-
-      <div class="cm-composer-wrap">
-        <!-- Reply preview -->
-        <div class="cm-reply-preview" id="cmReplyPreview">
-          <div class="cm-rp-bar"></div>
-          <div class="cm-rp-body">
-            <div class="cm-rp-name" id="cmRpName"></div>
-            <div class="cm-rp-text" id="cmRpText"></div>
-          </div>
-          <button class="cm-icon-btn" id="cmRpCancel">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <!-- Emoji picker -->
-        <div class="cm-emoji-panel" id="cmEmojiPanel"></div>
-
-        <!-- Image preview -->
-        <div class="cm-img-preview" id="cmImgPreview" style="display:none;">
-          <img id="cmImgPreviewEl" src="" alt="">
-          <button class="cm-img-remove" id="cmImgRemove">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <!-- Composer -->
-        <form class="cm-composer" id="cmComposer">
-          <button type="button" class="cm-icon-btn" id="cmEmojiBtn" title="Emoji">
-            <i class="fa-regular fa-face-smile"></i>
-          </button>
-          <button type="button" class="cm-icon-btn" id="cmImageBtn" title="Image">
-            <i class="fa-regular fa-image"></i>
-          </button>
-          <input type="file" id="cmImageInput" accept="image/*" style="display:none;">
-          <textarea id="cmInput" rows="1" placeholder="Message..." autocomplete="off"></textarea>
-          <button type="submit" class="cm-send-btn" id="cmSendBtn" disabled>
-            <i class="fa-solid fa-paper-plane"></i>
-          </button>
-        </form>
-      </div>
-
-      <button class="cm-jump-btn" id="cmJumpBtn">
-        <i class="fa-solid fa-arrow-down"></i>
-        <span class="cm-jump-badge" id="cmJumpBadge">0</span>
-      </button>
-    </div>
-
-    <!-- ═══ JOIN OVERLAY ═══ -->
-    <div class="cm-join-overlay" id="cmJoinOverlay">
-      <div class="cm-join-card">
-        <div class="cm-join-icon">
-          <i class="fa-solid fa-comments"></i>
-        </div>
-        <h3>Join the Community</h3>
-        <p>Pick a display name and avatar color</p>
-
-        <input type="text" id="cmJoinName" maxlength="20" placeholder="Your display name">
-
-        <div class="cm-join-colors" id="cmJoinColors"></div>
-
-        <button class="cm-join-submit" id="cmJoinBtn">
-          <span>Enter Chat</span>
-          <i class="fa-solid fa-arrow-right"></i>
-        </button>
-
-        <div id="cmJoinError" class="cm-join-error"></div>
-      </div>
-    </div>
-
-  </div>
-</section>
     <!-- ═══════════════════════════════════════════════════════
-         DONATE / SUPPORT TAB
+         COMMUNITY CHAT TAB
+         ═══════════════════════════════════════════════════════ -->
+    <section id="community" class="tab-content">
+      <div class="chat-shell-cine">
+        <aside class="chat-sidebar-cine" id="chatSidebar">
+          <div class="cs-header">
+            <div class="cs-brand">
+              <i class="fa-solid fa-comments"></i>
+              <span>Community</span>
+            </div>
+            <button class="cs-close-btn" id="csCloseBtn">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="cs-me">
+            <img id="csMeAvatar" src="" alt="">
+            <div class="cs-me-info">
+              <div class="cs-me-name" id="csMeName">User</div>
+              <div class="cs-me-status"><span class="online-dot"></span> Online</div>
+            </div>
+          </div>
+
+          <div class="cs-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="csSearchInput" placeholder="Search messages...">
+          </div>
+
+          <div class="cs-scroll">
+            <div class="cs-label">Channels</div>
+            <div class="cs-rooms" id="csRooms"></div>
+            <div class="cs-label">Online — <span id="csOnlineCount">0</span></div>
+            <div class="cs-users" id="csUsers">
+              <div class="cs-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+            </div>
+          </div>
+        </aside>
+
+        <div class="chat-main-cine">
+          <header class="cm-top">
+            <button class="cm-menu-btn" id="cmMenuBtn"><i class="fa-solid fa-bars"></i></button>
+            <div class="cm-room-icon"><i class="fa-solid fa-hashtag"></i></div>
+            <div class="cm-room-info">
+              <h3 id="cmRoomName">general</h3>
+              <div class="cm-room-sub">
+                <span class="online-dot"></span>
+                <span id="cmRoomSub">0 members online</span>
+              </div>
+            </div>
+            <button class="cm-icon-btn" id="cmSoundBtn" title="Toggle sound">
+              <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+          </header>
+
+          <div class="cm-body" id="cmBody">
+            <div class="cm-empty">
+              <i class="fa-solid fa-comments"></i>
+              <h4>Welcome to Community Chat</h4>
+              <p>Say hello and start coding together!</p>
+            </div>
+          </div>
+
+          <div class="cm-typing" id="cmTyping"></div>
+
+          <div class="cm-composer-wrap">
+            <div class="cm-reply-preview" id="cmReplyPreview">
+              <div class="cm-rp-bar"></div>
+              <div class="cm-rp-body">
+                <div class="cm-rp-name" id="cmRpName"></div>
+                <div class="cm-rp-text" id="cmRpText"></div>
+              </div>
+              <button class="cm-icon-btn" id="cmRpCancel"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="cm-emoji-panel" id="cmEmojiPanel"></div>
+
+            <div class="cm-img-preview" id="cmImgPreview" style="display:none;">
+              <img id="cmImgPreviewEl" src="" alt="">
+              <button class="cm-img-remove" id="cmImgRemove"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form class="cm-composer" id="cmComposer">
+              <button type="button" class="cm-icon-btn" id="cmEmojiBtn" title="Emoji">
+                <i class="fa-regular fa-face-smile"></i>
+              </button>
+              <button type="button" class="cm-icon-btn" id="cmImageBtn" title="Image">
+                <i class="fa-regular fa-image"></i>
+              </button>
+              <input type="file" id="cmImageInput" accept="image/*" style="display:none;">
+              <textarea id="cmInput" rows="1" placeholder="Message..." autocomplete="off"></textarea>
+              <button type="submit" class="cm-send-btn" id="cmSendBtn" disabled>
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </form>
+          </div>
+
+          <button class="cm-jump-btn" id="cmJumpBtn">
+            <i class="fa-solid fa-arrow-down"></i>
+            <span class="cm-jump-badge" id="cmJumpBadge">0</span>
+          </button>
+        </div>
+
+        <div class="cm-join-overlay" id="cmJoinOverlay">
+          <div class="cm-join-card">
+            <div class="cm-join-icon"><i class="fa-solid fa-comments"></i></div>
+            <h3>Join the Community</h3>
+            <p>Pick a display name and avatar color</p>
+            <input type="text" id="cmJoinName" maxlength="20" placeholder="Your display name">
+            <div class="cm-join-colors" id="cmJoinColors"></div>
+            <button class="cm-join-submit" id="cmJoinBtn">
+              <span>Enter Chat</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <div id="cmJoinError" class="cm-join-error"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         DONATE TAB
          ═══════════════════════════════════════════════════════ -->
     <section id="donate" class="tab-content">
       <div class="section-head-cinematic">
@@ -722,10 +710,7 @@
         <div class="donate-message-cine">
           <div class="dm-icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
           <h3>Built by a Student, For Students</h3>
-          <p>
-            <strong>No subscriptions. No paywalls. No premium.</strong> Just free,
-            high-quality Python practice and doubt solving for every Indian student.
-          </p>
+          <p><strong>No subscriptions. No paywalls. No premium.</strong> Just free, high-quality Python practice and doubt solving for every Indian student.</p>
           <p>If this platform helped you, you can support us with any amount. Every rupee keeps the servers running.</p>
         </div>
 
@@ -788,18 +773,12 @@
 
   </main>
 
-  <!-- ═══════════════════════════════════════════════════════
-       MODALS
-       ═══════════════════════════════════════════════════════ -->
-
-  <!-- New Doubt Modal -->
+  <!-- MODALS -->
   <div class="modal-overlay-cine" id="newDoubtModal">
     <div class="modal-content-cine">
       <div class="modal-header-cine">
         <h3><i class="fa-solid fa-circle-question"></i> Ask a Code Doubt</h3>
-        <button class="close-modal-cine" onclick="closeModal('newDoubtModal')">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button class="close-modal-cine" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body-cine">
         <div class="form-group-cine">
@@ -831,25 +810,19 @@
     </div>
   </div>
 
-  <!-- Doubt Details Modal -->
   <div class="modal-overlay-cine" id="doubtDetailsModal">
     <div class="modal-content-cine" style="max-width: 720px;">
       <div class="modal-header-cine">
         <h3><i class="fa-solid fa-code"></i> Doubt Details</h3>
-        <button class="close-modal-cine" onclick="closeModal('doubtDetailsModal')">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button class="close-modal-cine" onclick="closeModal('doubtDetailsModal')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body-cine" id="doubtDetailsBody"></div>
     </div>
   </div>
 
-  <!-- Image Viewer -->
   <div class="modal-overlay-cine" id="imageViewerModal">
     <div class="image-viewer-cine">
-      <button class="close-modal-cine" onclick="closeModal('imageViewerModal')">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <button class="close-modal-cine" onclick="closeModal('imageViewerModal')"><i class="fa-solid fa-xmark"></i></button>
       <img id="viewerImage" src="" alt="">
     </div>
   </div>
@@ -857,12 +830,11 @@
   <footer class="footer-cine">
     <div class="footer-content">
       <div class="footer-brand">
-        <span class="logo-mark-small">
-          <span class="bracket">&lt;</span>
-          <span class="logo-text">CS</span>
-          <span class="bracket">/&gt;</span>
-        </span>
-        <span>The Chairman Show</span>
+        <div class="logo-mini">
+          <i class="fa-solid fa-crown logo-crown-mini"></i>
+          <span class="logo-text-mini">CS</span>
+        </div>
+        <span class="logo-brand-main">THE CHAIRMAN <em>SHOW</em></span>
       </div>
       <p class="footer-tagline">Made with <i class="fa-solid fa-heart" style="color:#ef4444"></i> in India · 100% Free Forever</p>
       <p class="footer-copy">© 2026 The Chairman Show. Built by Sumit Shrivas.</p>
@@ -881,7 +853,6 @@
 <script src="app.js"></script>
 
 <script>
-  // Boot loader safety net
   setTimeout(() => {
     const loader = document.getElementById('bootLoader');
     if (loader) loader.classList.add('hide');
