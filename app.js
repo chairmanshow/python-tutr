@@ -2719,3 +2719,412 @@ document.addEventListener('click', (e) => {
 });
 
 // Also call in openProblem (already handled by setTimeout updateProblemNavigation)
+/* ══════════════════════════════════════════════════════════════
+   SECTION 26: YOUTUBE FREE COURSES
+   Fetches videos from YouTube Data API v3
+   ══════════════════════════════════════════════════════════════ */
+
+const YouTube = (function() {
+  // ⚠️ अपनी YouTube API Key यहाँ डालो
+  const API_KEY = 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXX';   // ⚠️ YAHAN APNI KEY
+
+  // तुम्हारा channel ID
+  const CHANNEL_ID = 'UCkxoxW7yaoQri2HW_37FqLQ';
+
+  const API_BASE = 'https://www.googleapis.com/youtube/v3';
+
+  let allVideos = [];
+  let filteredVideos = [];
+  let currentFilter = 'all';
+  let searchTerm = '';
+  let nextPageToken = '';
+  let isLoading = false;
+  let uploadsPlaylistId = '';
+
+  // ═══ Cache helpers (avoid API quota) ═══
+  const CACHE_KEY = 'tcs_yt_cache_v1';
+  const CACHE_TTL = 1000 * 60 * 30; // 30 minutes
+
+  function getCache() {
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY));
+      if (c && c.ts && (Date.now() - c.ts) < CACHE_TTL && c.videos) {
+        return c;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function setCache(videos, nextToken, playlistId) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        ts: Date.now(),
+        videos: videos.slice(0, 200),
+        nextToken: nextToken || '',
+        playlistId: playlistId || ''
+      }));
+    } catch (e) {}
+  }
+
+  // ═══ Format helpers ═══
+  function formatViews(count) {
+    const n = parseInt(count || 0, 10);
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M views';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K views';
+    return n + ' views';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const diff = Date.now() - d.getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days < 1) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return days + ' days ago';
+    if (days < 30) return Math.floor(days / 7) + ' weeks ago';
+    if (days < 365) return Math.floor(days / 30) + ' months ago';
+    return Math.floor(days / 365) + ' years ago';
+  }
+
+  function formatDuration(iso) {
+    // ISO 8601 duration: PT1H2M3S
+    if (!iso) return '';
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return '';
+    const h = parseInt(m[1] || 0, 10);
+    const min = parseInt(m[2] || 0, 10);
+    const s = parseInt(m[3] || 0, 10);
+    if (h > 0) return h + ':' + String(min).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    return min + ':' + String(s).padStart(2, '0');
+  }
+
+  function durationToSeconds(iso) {
+    if (!iso) return 0;
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return 0;
+    return (parseInt(m[1] || 0, 10) * 3600) +
+           (parseInt(m[2] || 0, 10) * 60) +
+           (parseInt(m[3] || 0, 10));
+  }
+
+  // ═══ Step 1: Get uploads playlist ID from channel ═══
+  async function getUploadsPlaylist() {
+    const url = `${API_BASE}/channels?part=contentDetails,statistics&id=${CHANNEL_ID}&key=${API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Channel fetch failed: ' + res.status);
+    const data = await res.json();
+    if (!data.items || !data.items.length) throw new Error('Channel not found');
+
+    const channel = data.items[0];
+    uploadsPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylistId) throw new Error('Uploads playlist not found');
+
+    // Update subscriber count
+    const stats = channel.statistics;
+    if (stats?.subscriberCount) {
+      const count = parseInt(stats.subscriberCount, 10);
+      const formatted = count >= 1000000
+        ? (count / 1000000).toFixed(1) + 'M subscribers'
+        : count >= 1000
+          ? (count / 1000).toFixed(1) + 'K subscribers'
+          : count + ' subscribers';
+      const el = document.getElementById('ytSubscriberCount');
+      if (el) el.textContent = formatted + ' · ' + (stats.videoCount || 0) + ' videos';
+    }
+
+    return uploadsPlaylistId;
+  }
+
+  // ═══ Step 2: Get videos from playlist ═══
+  async function fetchVideos(pageToken) {
+    if (!uploadsPlaylistId) {
+      await getUploadsPlaylist();
+    }
+
+    const url = `${API_BASE}/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${uploadsPlaylistId}&key=${API_KEY}${pageToken ? '&pageToken=' + pageToken : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Videos fetch failed: ' + res.status);
+    const data = await res.json();
+
+    const videos = (data.items || []).map(item => {
+      const s = item.snippet;
+      const vid = item.contentDetails?.videoId || s.resourceId?.videoId;
+      return {
+        id: vid,
+        title: s.title || 'Untitled',
+        description: s.description || '',
+        thumbnail: s.thumbnails?.maxres?.url
+          || s.thumbnails?.high?.url
+          || s.thumbnails?.medium?.url
+          || s.thumbnails?.default?.url
+          || '',
+        publishedAt: s.publishedAt,
+        duration: '',  // Filled below
+        views: 0,
+        url: 'https://www.youtube.com/watch?v=' + vid
+      };
+    }).filter(v => v.id);
+
+    // ═══ Step 3: Get duration & views via videos endpoint ═══
+    if (videos.length) {
+      const ids = videos.map(v => v.id).join(',');
+      const detailUrl = `${API_BASE}/videos?part=contentDetails,statistics&id=${ids}&key=${API_KEY}`;
+      const detailRes = await fetch(detailUrl);
+      if (detailRes.ok) {
+        const detailData = await detailRes.json();
+        const detailMap = {};
+        (detailData.items || []).forEach(item => {
+          detailMap[item.id] = {
+            duration: item.contentDetails?.duration || '',
+            views: parseInt(item.statistics?.viewCount || 0, 10)
+          };
+        });
+        videos.forEach(v => {
+          if (detailMap[v.id]) {
+            v.duration = detailMap[v.id].duration;
+            v.views = detailMap[v.id].views;
+          }
+        });
+      }
+    }
+
+    return {
+      videos,
+      nextPageToken: data.nextPageToken || ''
+    };
+  }
+
+  // ═══ Render video card ═══
+  function videoCardHtml(v, index) {
+    const duration = formatDuration(v.duration);
+    const views = formatViews(v.views);
+    const when = formatDate(v.publishedAt);
+    const delay = Math.min(index * 0.03, 0.5);
+
+    return `
+      <div class="yt-video-card" style="animation-delay:${delay}s" onclick="YouTube.openVideo('${v.id}')">
+        <div class="yt-thumb">
+          <img src="${escapeHtml(v.thumbnail)}" alt="${escapeHtml(v.title)}" loading="lazy"
+            onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${v.id}/hqdefault.jpg'">
+          <div class="yt-thumb-overlay">
+            <div class="yt-play-icon">
+              <i class="fa-solid fa-play"></i>
+            </div>
+          </div>
+          ${duration ? `<span class="yt-duration">${escapeHtml(duration)}</span>` : ''}
+        </div>
+        <div class="yt-card-body">
+          <div class="yt-card-title">${escapeHtml(v.title)}</div>
+          <div class="yt-card-meta">
+            <span><i class="fa-regular fa-eye"></i> ${escapeHtml(views)}</span>
+            <span>·</span>
+            <span>${escapeHtml(when)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ═══ Render videos ═══
+  function renderVideos() {
+    const grid = document.getElementById('ytVideosGrid');
+    if (!grid) return;
+
+    let videos = [...allVideos];
+
+    // Filter
+    if (currentFilter === 'latest') {
+      videos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+    } else if (currentFilter === 'popular') {
+      videos.sort((a, b) => b.views - a.views);
+    } else if (currentFilter === 'long') {
+      videos = videos.filter(v => durationToSeconds(v.duration) > 1200); // > 20 min
+    }
+
+    // Search
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      videos = videos.filter(v =>
+        v.title.toLowerCase().includes(q) ||
+        v.description.toLowerCase().includes(q)
+      );
+    }
+
+    filteredVideos = videos;
+
+    if (!videos.length) {
+      grid.innerHTML = `
+        <div class="empty-state-cine" style="grid-column:1/-1">
+          <i class="fa-brands fa-youtube"></i>
+          <h4>No videos found</h4>
+          <p>Try a different filter or search term</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = videos.map((v, i) => videoCardHtml(v, i)).join('');
+  }
+
+  // ═══ Load videos ═══
+  async function loadVideos(loadMore) {
+    if (isLoading) return;
+    isLoading = true;
+
+    const grid = document.getElementById('ytVideosGrid');
+    const loadMoreWrap = document.getElementById('ytLoadMoreWrap');
+
+    if (!loadMore) {
+      grid.innerHTML = `
+        <div class="loading-cine">
+          <div class="loading-spinner-cine"></div>
+          <p>Loading videos from YouTube…</p>
+        </div>`;
+    }
+
+    try {
+      // Check cache first
+      if (!loadMore) {
+        const cache = getCache();
+        if (cache && cache.videos.length) {
+          allVideos = cache.videos;
+          nextPageToken = cache.nextToken || '';
+          uploadsPlaylistId = cache.playlistId || '';
+          renderVideos();
+          if (nextPageToken && loadMoreWrap) loadMoreWrap.style.display = 'block';
+          isLoading = false;
+          return;
+        }
+      }
+
+      const result = await fetchVideos(nextPageToken);
+      if (loadMore) {
+        allVideos = allVideos.concat(result.videos);
+      } else {
+        allVideos = result.videos;
+      }
+      nextPageToken = result.nextPageToken;
+
+      setCache(allVideos, nextPageToken, uploadsPlaylistId);
+
+      renderVideos();
+
+      if (nextPageToken && loadMoreWrap) {
+        loadMoreWrap.style.display = 'block';
+      } else if (loadMoreWrap) {
+        loadMoreWrap.style.display = 'none';
+      }
+
+    } catch (err) {
+      console.error('YouTube load error:', err);
+      grid.innerHTML = `
+        <div class="empty-state-cine" style="grid-column:1/-1">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <h4>Could not load videos</h4>
+          <p style="font-family:var(--font-mono);font-size:.8rem;margin-top:.5rem;">
+            ${escapeHtml(err.message)}
+          </p>
+          <button class="btn-hero-primary" style="margin-top:1rem" onclick="YouTube.reload()">
+            <i class="fa-solid fa-rotate"></i> Retry
+          </button>
+        </div>`;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  // ═══ Open video (in new tab) ═══
+  function openVideo(id) {
+    window.open('https://www.youtube.com/watch?v=' + id, '_blank', 'noopener');
+  }
+
+  // ═══ Filter chips ═══
+  function bindFilters() {
+    document.querySelectorAll('#ytFilters .chip-cine').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#ytFilters .chip-cine').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentFilter = chip.dataset.filter || 'all';
+        renderVideos();
+      });
+    });
+
+    const searchInput = document.getElementById('ytSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', debounce((e) => {
+        searchTerm = e.target.value.trim();
+        renderVideos();
+      }, 300));
+    }
+
+    const loadMoreBtn = document.getElementById('ytLoadMoreBtn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => loadVideos(true));
+    }
+  }
+
+  // ═══ Init ═══
+  function init() {
+    if (!document.getElementById('ytVideosGrid')) return;
+    if (API_KEY.includes('XXXXX')) {
+      console.warn('⚠️ YouTube API key not configured');
+      const grid = document.getElementById('ytVideosGrid');
+      if (grid) {
+        grid.innerHTML = `
+          <div class="empty-state-cine" style="grid-column:1/-1">
+            <i class="fa-brands fa-youtube"></i>
+            <h4>YouTube API not configured</h4>
+            <p>Please add your YouTube API key in app.js</p>
+          </div>`;
+      }
+      return;
+    }
+    bindFilters();
+  }
+
+  function reload() {
+    try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+    allVideos = [];
+    nextPageToken = '';
+    uploadsPlaylistId = '';
+    loadVideos(false);
+  }
+
+  return {
+    init,
+    loadVideos,
+    reload,
+    openVideo,
+    // Lazy load when tab opens
+    ensureLoaded: function() {
+      if (!allVideos.length && !isLoading) {
+        loadVideos(false);
+      }
+    }
+  };
+})();
+
+// ═══ Hook into tab switch ═══
+const _prevSwitchToTabForYT = window.switchToTab;
+window.switchToTab = function(tabId) {
+  _prevSwitchToTabForYT(tabId);
+  if (tabId === 'freeCourses') {
+    YouTube.ensureLoaded();
+  }
+};
+
+// ═══ Init when app loads ═══
+const _prevInitAppForYT = initApp;
+initApp = function() {
+  _prevInitAppForYT();
+  try {
+    YouTube.init();
+  } catch (err) {
+    console.error('YouTube init error:', err);
+  }
+};
+
+// Expose to window for onclick handlers
+window.YouTube = YouTube;
+
+console.log('📺 YouTube Free Courses Loaded');
