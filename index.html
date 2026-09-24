@@ -1042,6 +1042,52 @@
             <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
           </button>
         </li>
+          <ul class="nav-links">
+        <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> <span class="nav-text">Home</span></button></li>
+        <li><button class="nav-item" data-tab="python" id="navPython"><i class="fa-brands fa-python"></i> <span class="nav-text">Practice</span></button></li>
+        <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
+        <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Experts</span></button></li>
+        <li><button class="nav-item" data-tab="leaderboard"><i class="fa-solid fa-trophy"></i> <span class="nav-text">Leaderboard</span></button></li>
+        <li>
+          <button class="nav-item" data-tab="community" id="navCommunity">
+            <i class="fa-solid fa-comments"></i>
+            <span class="nav-text">Community</span>
+            <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
+          </button>
+        </li>
+           <li>
+  <button class="nav-item" data-tab="freeCourses" id="navFreeCourses">
+    <i class="fa-solid fa-graduation-cap"></i>
+    <span class="nav-text">FREE Courses</span>
+  </button>
+</li>
+        <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support</span></button></li>
+      </ul>
+
+      <div class="user-menu">
+        <button class="user-avatar-btn" id="userMenuBtn">
+          <img id="navUserAvatar" src="" alt="">
+          <span class="user-name-nav" id="navUserName">User</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dropdown-header">
+            <img id="ddUserAvatar" src="" alt="">
+            <div>
+              <div class="dd-name" id="ddUserName">User</div>
+              <div class="dd-email" id="ddUserEmail">email@example.com</div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
+          <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
+          <button class="dropdown-item" data-goto="doubts"><i class="fa-solid fa-circle-question"></i> My Doubts</button>
+          <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+        </div>
+      </div>
+    </div>
         <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support</span></button></li>
       </ul>
 
@@ -1615,7 +1661,78 @@
         </div>
       </div>
     </section>
+<!-- ═══════════════════════════════════════════════════════
+     FREE COURSES — YouTube Videos
+     ═══════════════════════════════════════════════════════ -->
+<section id="freeCourses" class="tab-content">
+  <div class="section-head-cinematic">
+    <div class="section-tag">
+      <i class="fa-brands fa-youtube"></i> Free Content
+    </div>
+    <h2 class="section-title-cine">FREE Courses</h2>
+    <p class="section-sub-cine">
+      सारी videos from <strong style="color:var(--gold-primary);">The Chairman Show</strong> YouTube channel
+    </p>
+  </div>
 
+  <!-- Channel Banner -->
+  <div class="yt-channel-banner">
+    <div class="yt-channel-info">
+      <div class="yt-channel-avatar">
+        <i class="fa-brands fa-youtube"></i>
+      </div>
+      <div class="yt-channel-meta">
+        <h3>THE CHAIRMAN SHOW</h3>
+        <p id="ytSubscriberCount">Loading…</p>
+      </div>
+    </div>
+    <a href="https://www.youtube.com/@THE_CHAIRMAN_SHOW?sub_confirmation=1" 
+       target="_blank" 
+       rel="noopener" 
+       class="yt-subscribe-btn">
+      <i class="fa-brands fa-youtube"></i>
+      <span>Subscribe</span>
+    </a>
+  </div>
+
+  <!-- Filter Chips -->
+  <div class="yt-filter-bar">
+    <div class="filter-chips-cine" id="ytFilters">
+      <button class="chip-cine active" data-filter="all">
+        <i class="fa-solid fa-layer-group"></i> All Videos
+      </button>
+      <button class="chip-cine" data-filter="latest">
+        <i class="fa-solid fa-clock"></i> Latest
+      </button>
+      <button class="chip-cine" data-filter="popular">
+        <i class="fa-solid fa-fire"></i> Most Popular
+      </button>
+      <button class="chip-cine" data-filter="long">
+        <i class="fa-solid fa-hourglass"></i> Full Courses
+      </button>
+    </div>
+    <div class="filter-search-cine">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="ytSearch" placeholder="Search videos...">
+    </div>
+  </div>
+
+  <!-- Videos Grid -->
+  <div class="yt-videos-grid" id="ytVideosGrid">
+    <div class="loading-cine">
+      <div class="loading-spinner-cine"></div>
+      <p>Loading videos from YouTube…</p>
+    </div>
+  </div>
+
+  <!-- Load More -->
+  <div class="yt-load-more-wrap" id="ytLoadMoreWrap" style="display:none;">
+    <button class="btn-hero-ghost" id="ytLoadMoreBtn">
+      <i class="fa-solid fa-rotate"></i>
+      <span>Load More Videos</span>
+    </button>
+  </div>
+</section>
     <!-- ═══════════════════════════════════════════════════════
          DONATE TAB
          ═══════════════════════════════════════════════════════ -->
