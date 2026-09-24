@@ -1112,3 +1112,1186 @@ window.addEventListener('load', () => {
 });
 
 console.log('🚀 The Chairman Show — Cinematic Platform Loaded');
+/* ══════════════════════════════════════════════════════════════
+   SECTION 24: REAL-TIME COMMUNITY CHAT
+   ══════════════════════════════════════════════════════════════ */
+
+const rtdb = firebase.database();
+
+const Chat = (function() {
+  // ═══ CONFIG ═══
+  const ROOMS = [
+    { id: 'general', name: 'general', icon: 'fa-hashtag', desc: 'Anything & everything' },
+    { id: 'dsa', name: 'dsa-help', icon: 'fa-code', desc: 'Algorithms & Data Structures' },
+    { id: 'python', name: 'python', icon: 'fa-brands fa-python', desc: 'Python discussion' },
+    { id: 'projects', name: 'projects', icon: 'fa-rocket', desc: 'Show off your work' },
+    { id: 'off-topic', name: 'off-topic', icon: 'fa-mug-hot', desc: 'Fun, memes, chill' }
+  ];
+
+  const QUICK_REACTIONS = ['👍','❤️','😂','🔥','👏','😮'];
+
+  const EMOJI_SET = [
+    '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩',
+    '😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤗','🤭','🤫','🤔','🤐','😐',
+    '😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕',
+    '🤢','🤮','🥵','🥶','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯',
+    '😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩',
+    '😫','🥱','😤','😡','😠','🤬','😈','👿','💀','🤡','👋','🤚','✋','🖖','👌','🤌',
+    '✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜',
+    '👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','❤️','🧡','💛','💚','💙',
+    '💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✨','⭐','🌟',
+    '🔥','💥','💫','⚡','🎉','🎊','🎁','🏆','🥇','🎯','🚀','🌈','☀️','🌙','☁️','❄️'
+  ];
+
+  const GROUP_WINDOW_MS = 5 * 60 * 1000;
+  const MAX_MESSAGES = 250;
+  const TYPING_TIMEOUT = 2600;
+
+  // ═══ STATE ═══
+  const state = {
+    uid: null,
+    name: '',
+    color: '',
+    room: 'general',
+    messages: [],
+    roomListeners: [],
+    online: {},
+    typing: {},
+    unread: 0,
+    soundOn: false,
+    replyTarget: null,
+    editingKey: null,
+    searchTerm: '',
+    firstLoadDone: false,
+    ready: false
+  };
+
+  const el = {};
+
+  // ═══ HELPERS ═══
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  function formatMsgText(text) {
+    let out = escapeHtml(text);
+    out = out.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+    out = out.replace(/(https?:\/\/[^\s<]+)/g, (url) => '<a href="'+url+'" target="_blank" rel="noopener">'+url+'</a>');
+    out = out.replace(/\n/g, '<br>');
+    return out;
+  }
+
+  function hashStr(str) {
+    let h = 0;
+    const s = String(str || 'x');
+    for (let i = 0; i < s.length; i++) {
+      h = (h << 5) - h + s.charCodeAt(i);
+      h |= 0;
+    }
+    return h;
+  }
+
+  function initialOf(name) {
+    const n = String(name || '?').trim();
+    return n ? n.charAt(0).toUpperCase() : '?';
+  }
+
+  function dayKey(ts) {
+    const d = new Date(ts || Date.now());
+    return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  }
+
+  function formatDayLabel(ts) {
+    const d = new Date(ts || Date.now());
+    const today = new Date();
+    const yest = new Date();
+    yest.setDate(today.getDate() - 1);
+
+    if (dayKey(d) === dayKey(today)) return 'Today';
+    if (dayKey(d) === dayKey(yest)) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function formatClock(ts) {
+    return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function debounce(fn, wait) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  }
+
+  // ═══ IDENTITY ═══
+  function loadIdentity() {
+    let uid = localStorage.getItem('tcs_uid');
+    if (!uid) {
+      uid = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      localStorage.setItem('tcs_uid', uid);
+    }
+    state.uid = uid;
+    state.name = localStorage.getItem('tcs_chat_name') || '';
+    state.color = localStorage.getItem('tcs_chat_color') || '';
+
+    const savedRoom = localStorage.getItem('tcs_chat_room');
+    if (savedRoom && ROOMS.some(r => r.id === savedRoom)) {
+      state.room = savedRoom;
+    }
+  }
+
+  function saveIdentity() {
+    localStorage.setItem('tcs_chat_name', state.name);
+    localStorage.setItem('tcs_chat_color', state.color);
+    localStorage.setItem('tcs_chat_room', state.room);
+  }
+
+  // ═══ CACHE DOM ═══
+  function cacheDom() {
+    el.shell = document.getElementById('chatShell') || document.querySelector('.chat-shell-cine');
+    el.sidebar = document.getElementById('chatSidebar');
+    el.sideOpen = document.getElementById('cmMenuBtn');
+    el.sideClose = document.getElementById('csCloseBtn');
+    el.meAvatar = document.getElementById('csMeAvatar');
+    el.meName = document.getElementById('csMeName');
+    el.roomList = document.getElementById('csRooms');
+    el.userList = document.getElementById('csUsers');
+    el.onlineTotal = document.getElementById('csOnlineCount');
+    el.chatSearch = document.getElementById('csSearchInput');
+    el.roomTitle = document.getElementById('cmRoomName');
+    el.roomSub = document.getElementById('cmRoomSub');
+    el.soundBtn = document.getElementById('cmSoundBtn');
+    el.messages = document.getElementById('cmBody');
+    el.typingBar = document.getElementById('cmTyping');
+    el.replyPrev = document.getElementById('cmReplyPreview');
+    el.rpName = document.getElementById('cmRpName');
+    el.rpText = document.getElementById('cmRpText');
+    el.rpCancel = document.getElementById('cmRpCancel');
+    el.emojiPanel = document.getElementById('cmEmojiPanel');
+    el.emojiBtn = document.getElementById('cmEmojiBtn');
+    el.imageBtn = document.getElementById('cmImageBtn');
+    el.imageInput = document.getElementById('cmImageInput');
+    el.imgPreview = document.getElementById('cmImgPreview');
+    el.imgPreviewEl = document.getElementById('cmImgPreviewEl');
+    el.imgRemove = document.getElementById('cmImgRemove');
+    el.form = document.getElementById('cmComposer');
+    el.input = document.getElementById('cmInput');
+    el.sendBtn = document.getElementById('cmSendBtn');
+    el.jumpBtn = document.getElementById('cmJumpBtn');
+    el.jumpBadge = document.getElementById('cmJumpBadge');
+    el.joinOverlay = document.getElementById('cmJoinOverlay');
+    el.joinName = document.getElementById('cmJoinName');
+    el.joinColors = document.getElementById('cmJoinColors');
+    el.joinBtn = document.getElementById('cmJoinBtn');
+    el.joinError = document.getElementById('cmJoinError');
+    el.navBadge = document.getElementById('navChatBadge');
+  }
+
+  // ═══ RENDER ROOMS ═══
+  function renderRooms() {
+    if (!el.roomList) return;
+    el.roomList.innerHTML = '';
+    ROOMS.forEach(r => {
+      const btn = document.createElement('button');
+      btn.className = 'cs-room' + (r.id === state.room ? ' active' : '');
+      btn.type = 'button';
+      btn.innerHTML = `
+        <div class="cs-room-ico"><i class="${r.icon.startsWith('fa-brands') ? r.icon : 'fa-solid ' + r.icon}"></i></div>
+        <div class="cs-room-meta">
+          <div class="cs-room-name">#${escapeHtml(r.name)}</div>
+        </div>
+        <span class="cs-room-count" data-room="${r.id}">0</span>
+      `;
+      btn.addEventListener('click', () => switchRoom(r.id));
+      el.roomList.appendChild(btn);
+    });
+  }
+
+  function updateRoomCounts() {
+    // Just placeholder — you could query message count per room for accuracy
+  }
+
+  // ═══ RENDER PROFILE ═══
+  function renderProfile() {
+    if (el.meName) el.meName.textContent = state.name || 'Guest';
+    if (el.meAvatar) {
+      el.meAvatar.textContent = state.name ? initialOf(state.name) : '?';
+      el.meAvatar.style.background = state.color || 'linear-gradient(135deg,#00d4ff,#7c3aed)';
+      el.meAvatar.style.display = 'flex';
+      el.meAvatar.style.alignItems = 'center';
+      el.meAvatar.style.justifyContent = 'center';
+      el.meAvatar.style.fontWeight = '800';
+      el.meAvatar.style.color = '#000';
+      el.meAvatar.src = '';
+    }
+  }
+
+  // ═══ RENDER ONLINE USERS ═══
+  function renderOnlineUsers() {
+    if (!el.userList) return;
+    const list = Object.entries(state.online)
+      .map(([uid, u]) => ({ uid, ...u }))
+      .sort((a, b) => {
+        if (a.uid === state.uid) return -1;
+        if (b.uid === state.uid) return 1;
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      });
+
+    if (el.onlineTotal) el.onlineTotal.textContent = list.length;
+
+    if (!list.length) {
+      el.userList.innerHTML = '<div class="cs-loading">No one online</div>';
+    } else {
+      el.userList.innerHTML = list.map(u => `
+        <div class="cs-user">
+          <div class="cs-user-av" style="background:${u.color || '#00d4ff'}">${escapeHtml(initialOf(u.name))}</div>
+          <span class="cs-user-name">${escapeHtml(u.name || 'Anonymous')}</span>
+          ${u.uid === state.uid ? '<span class="cs-user-you">you</span>' : ''}
+        </div>
+      `).join('');
+    }
+
+    if (el.roomSub) {
+      const n = list.length;
+      el.roomSub.textContent = n + (n === 1 ? ' member online' : ' members online');
+    }
+  }
+
+  // ═══ SCROLL ═══
+  function scrollNearBottom(threshold) {
+    const t = threshold === undefined ? 140 : threshold;
+    return (el.messages.scrollHeight - el.messages.scrollTop - el.messages.clientHeight) < t;
+  }
+
+  function scrollToBottom(smooth) {
+    if (smooth === undefined) smooth = true;
+    try {
+      el.messages.scrollTo({ top: el.messages.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    } catch (e) {
+      el.messages.scrollTop = el.messages.scrollHeight;
+    }
+    state.unread = 0;
+    updateJumpBtn();
+  }
+
+  function updateJumpBtn() {
+    if (!el.jumpBtn) return;
+    if (state.unread > 0) {
+      el.jumpBadge.style.display = 'flex';
+      el.jumpBadge.textContent = state.unread > 99 ? '99+' : String(state.unread);
+      el.jumpBtn.classList.add('show');
+    } else {
+      el.jumpBtn.classList.remove('show');
+      el.jumpBadge.style.display = 'none';
+    }
+  }
+
+  function clearUnread() {
+    state.unread = 0;
+    updateJumpBtn();
+    if (el.navBadge) el.navBadge.style.display = 'none';
+  }
+
+  function bumpUnread() {
+    if (activeTab === 'community' && !document.hidden) return;
+    state.unread++;
+    updateJumpBtn();
+    if (el.navBadge) {
+      el.navBadge.style.display = 'flex';
+      el.navBadge.textContent = state.unread > 99 ? '99+' : String(state.unread);
+    }
+  }
+
+  // ═══ MESSAGE NODE ═══
+  function buildMessageNode(m, grouped) {
+    const mine = m.uid === state.uid;
+    const row = document.createElement('div');
+    row.className = 'cm-msg' + (mine ? ' mine' : '') + (grouped ? ' grouped' : '');
+    row.dataset.key = m.key;
+
+    const av = document.createElement('div');
+    av.className = 'cm-msg-avatar' + (grouped ? ' hidden' : '');
+    if (!grouped) {
+      av.textContent = initialOf(m.name);
+      av.style.background = m.color || '#00d4ff';
+      av.title = m.name || 'Anonymous';
+    }
+
+    const col = document.createElement('div');
+    col.className = 'cm-msg-col';
+
+    if (!grouped && !mine) {
+      const author = document.createElement('div');
+      author.className = 'cm-msg-author';
+      const hue = Math.abs(hashStr(m.name)) % 360;
+      author.style.color = 'hsl(' + hue + ', 80%, 65%)';
+      author.textContent = m.name || 'Anonymous';
+      col.appendChild(author);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'cm-bubble';
+    bubble.dataset.key = m.key;
+
+    if (m.reply && m.reply.text) {
+      const q = document.createElement('div');
+      q.className = 'cm-quote';
+      q.innerHTML = `
+        <div class="cm-quote-body">
+          <div class="cm-quote-name">${escapeHtml(m.reply.name || 'User')}</div>
+          <div class="cm-quote-text">${escapeHtml(m.reply.text)}</div>
+        </div>`;
+      q.addEventListener('click', () => {
+        const target = el.messages.querySelector('.cm-msg[data-key="' + m.reply.key + '"]');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.style.transition = 'background .4s';
+          target.style.background = 'rgba(0,212,255,.14)';
+          setTimeout(() => { target.style.background = ''; }, 900);
+        }
+      });
+      bubble.appendChild(q);
+    }
+
+    // Image
+    if (m.imageUrl) {
+      const img = document.createElement('img');
+      img.className = 'cm-chat-img';
+      img.src = m.imageUrl;
+      img.alt = 'shared';
+      img.loading = 'lazy';
+      img.addEventListener('click', () => {
+        if (window.openImageViewer) window.openImageViewer(m.imageUrl);
+      });
+      bubble.appendChild(img);
+    }
+
+    // Text
+    if (m.text) {
+      const textEl = document.createElement('div');
+      textEl.className = 'cm-text';
+      let html = formatMsgText(m.text);
+      if (state.searchTerm) {
+        const safeTerm = state.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        html = html.replace(new RegExp('(' + safeTerm + ')', 'gi'), '<mark style="background:rgba(245,158,11,.4);color:#fff;border-radius:3px;padding:0 2px;">$1</mark>');
+      }
+      textEl.innerHTML = html;
+      bubble.appendChild(textEl);
+    }
+
+    // Meta
+    const meta = document.createElement('div');
+    meta.className = 'cm-bubble-meta';
+    let metaHtml = '';
+    if (m.edited) metaHtml += '<span class="cm-edited-tag">edited</span>';
+    metaHtml += '<span>' + formatClock(m.ts) + '</span>';
+    if (mine) metaHtml += '<i class="fa-solid fa-check"></i>';
+    meta.innerHTML = metaHtml;
+    bubble.appendChild(meta);
+
+    col.appendChild(bubble);
+
+    // Reactions
+    if (m.reactions && typeof m.reactions === 'object') {
+      const entries = Object.entries(m.reactions)
+        .map(([emoji, users]) => ({
+          emoji,
+          users: users && typeof users === 'object' ? Object.keys(users) : []
+        }))
+        .filter(r => r.users.length > 0);
+
+      if (entries.length) {
+        const bar = document.createElement('div');
+        bar.className = 'cm-reactions';
+        entries.forEach(({ emoji, users }) => {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'cm-reaction-chip' + (users.indexOf(state.uid) !== -1 ? ' mine' : '');
+          chip.innerHTML = '<span>' + emoji + '</span><span>' + users.length + '</span>';
+          chip.addEventListener('click', () => toggleReaction(m.key, emoji));
+          bar.appendChild(chip);
+        });
+        col.appendChild(bar);
+      }
+    }
+
+    // Actions
+    const actions = document.createElement('div');
+    actions.className = 'cm-msg-actions';
+
+    QUICK_REACTIONS.slice(0, 4).forEach(emoji => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = emoji;
+      b.title = 'React ' + emoji;
+      b.addEventListener('click', (ev) => { ev.stopPropagation(); toggleReaction(m.key, emoji); });
+      actions.appendChild(b);
+    });
+
+    const sep = document.createElement('div');
+    sep.className = 'cm-act-sep';
+    actions.appendChild(sep);
+
+    const replyBtn = document.createElement('button');
+    replyBtn.type = 'button';
+    replyBtn.innerHTML = '<i class="fa-solid fa-reply"></i>';
+    replyBtn.title = 'Reply';
+    replyBtn.addEventListener('click', (ev) => { ev.stopPropagation(); setReply(m); });
+    actions.appendChild(replyBtn);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+    copyBtn.title = 'Copy';
+    copyBtn.addEventListener('click', (ev) => { ev.stopPropagation(); copyText(m.text || ''); });
+    actions.appendChild(copyBtn);
+
+    if (mine) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+      editBtn.title = 'Edit';
+      editBtn.addEventListener('click', (ev) => { ev.stopPropagation(); startEdit(m); });
+      actions.appendChild(editBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+      delBtn.title = 'Delete';
+      delBtn.addEventListener('click', (ev) => { ev.stopPropagation(); deleteMessage(m.key); });
+      actions.appendChild(delBtn);
+    }
+
+    row.appendChild(av);
+    row.appendChild(col);
+    row.appendChild(actions);
+    return row;
+  }
+
+  // ═══ RENDER MESSAGES ═══
+  function renderMessages() {
+    const box = el.messages;
+    if (!box) return;
+    const wasAtBottom = scrollNearBottom(160);
+    const prevHeight = box.scrollHeight;
+    const prevTop = box.scrollTop;
+
+    box.innerHTML = '';
+
+    if (!state.messages.length) {
+      box.innerHTML = `
+        <div class="cm-empty">
+          <i class="fa-regular fa-comments"></i>
+          <h4>No messages yet</h4>
+          <p>Be the first to say hello in #${escapeHtml(roomName())}</p>
+        </div>`;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    let prev = null;
+
+    state.messages.forEach(m => {
+      if (!prev || dayKey(prev.ts) !== dayKey(m.ts)) {
+        const sep = document.createElement('div');
+        sep.className = 'cm-date-sep';
+        sep.innerHTML = '<span>' + formatDayLabel(m.ts) + '</span>';
+        frag.appendChild(sep);
+      }
+
+      const sameDay = prev && dayKey(prev.ts) === dayKey(m.ts);
+      const grouped = !!(prev && sameDay && prev.uid === m.uid && (m.ts - prev.ts) < GROUP_WINDOW_MS && !m.reply);
+
+      frag.appendChild(buildMessageNode(m, grouped));
+      prev = m;
+    });
+
+    box.appendChild(frag);
+
+    if (wasAtBottom) box.scrollTop = box.scrollHeight;
+    else box.scrollTop = prevTop + (box.scrollHeight - prevHeight);
+  }
+
+  function roomName() {
+    const r = ROOMS.find(x => x.id === state.room);
+    return r ? r.name : state.room;
+  }
+
+  // ═══ ROOM LISTENERS ═══
+  function detachRoomListeners() {
+    state.roomListeners.forEach(({ ref, ev, cb }) => ref.off(ev, cb));
+    state.roomListeners = [];
+  }
+
+  function attachRoom(roomId) {
+    detachRoomListeners();
+    state.messages = [];
+    state.typing = {};
+    state.firstLoadDone = false;
+    renderMessages();
+    renderTyping();
+
+    const msgRef = rtdb.ref('chat/' + roomId + '/messages').limitToLast(MAX_MESSAGES);
+
+    const onAdded = msgRef.on('child_added', (snap) => {
+      const msg = normalizeMessage(snap.key, snap.val() || {});
+      if (!state.messages.some(x => x.key === msg.key)) {
+        state.messages.push(msg);
+        state.messages.sort(compareMessages);
+        if (state.messages.length > MAX_MESSAGES) {
+          state.messages = state.messages.slice(-MAX_MESSAGES);
+        }
+      }
+      const atBottom = scrollNearBottom(180);
+      renderMessages();
+
+      const isNew = state.firstLoadDone && msg.uid !== state.uid;
+      if (isNew) {
+        if (atBottom) scrollToBottom(true);
+        else bumpUnread();
+        if (state.soundOn) playPing();
+      }
+      if (msg.uid === state.uid) scrollToBottom(true);
+    });
+
+    const onChanged = msgRef.on('child_changed', (snap) => {
+      const idx = state.messages.findIndex(x => x.key === snap.key);
+      if (idx !== -1) {
+        state.messages[idx] = normalizeMessage(snap.key, snap.val() || {});
+        renderMessages();
+      }
+    });
+
+    const onRemoved = msgRef.on('child_removed', (snap) => {
+      state.messages = state.messages.filter(x => x.key !== snap.key);
+      renderMessages();
+    });
+
+    state.roomListeners.push({ ref: msgRef, ev: 'child_added', cb: onAdded });
+    state.roomListeners.push({ ref: msgRef, ev: 'child_changed', cb: onChanged });
+    state.roomListeners.push({ ref: msgRef, ev: 'child_removed', cb: onRemoved });
+
+    setTimeout(() => {
+      state.firstLoadDone = true;
+      scrollToBottom(false);
+    }, 700);
+
+    attachTypingListener(roomId);
+  }
+
+  function normalizeMessage(key, val) {
+    return {
+      key,
+      uid: val.uid || 'anon',
+      name: val.name || 'Anonymous',
+      color: val.color || '#00d4ff',
+      text: val.text || '',
+      imageUrl: val.imageUrl || '',
+      ts: typeof val.ts === 'number' ? val.ts : Date.now(),
+      edited: !!val.edited,
+      reply: val.reply || null,
+      reactions: val.reactions || null
+    };
+  }
+
+  function compareMessages(a, b) {
+    return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+  }
+
+  // ═══ PRESENCE ═══
+  function attachPresence() {
+    const connRef = rtdb.ref('.info/connected');
+    connRef.on('value', (snap) => {
+      if (snap.val() !== true) return;
+      const myRef = rtdb.ref('chat/presence/' + state.uid);
+      myRef.onDisconnect().remove();
+      myRef.set({
+        name: state.name || 'Anonymous',
+        color: state.color || '#00d4ff',
+        ts: firebase.database.ServerValue.TIMESTAMP
+      });
+    });
+
+    const presRef = rtdb.ref('chat/presence');
+    const handler = presRef.on('value', (snap) => {
+      state.online = snap.val() || {};
+      renderOnlineUsers();
+    });
+    state.roomListeners.push({ ref: presRef, ev: 'value', cb: handler });
+  }
+
+  function refreshPresence() {
+    rtdb.ref('chat/presence/' + state.uid).update({
+      name: state.name,
+      color: state.color,
+      ts: firebase.database.ServerValue.TIMESTAMP
+    }).catch(() => {});
+  }
+
+  // ═══ TYPING ═══
+  let typingRef = null;
+  let typingStopTimer = null;
+  let amTyping = false;
+
+  function attachTypingListener(roomId) {
+    detachTypingListeners();
+    const ref = rtdb.ref('chat/typing/' + roomId);
+    const handler = ref.on('value', (snap) => {
+      const val = snap.val() || {};
+      const now = Date.now();
+      state.typing = {};
+      Object.entries(val).forEach(([uid, info]) => {
+        if (uid === state.uid) return;
+        if (!info || !info.ts || (now - info.ts) > 8000) return;
+        state.typing[uid] = info;
+      });
+      renderTyping();
+    });
+    state.roomListeners.push({ ref, ev: 'value', cb: handler });
+  }
+
+  function detachTypingListeners() {
+    // handled by detachRoomListeners
+  }
+
+  function renderTyping() {
+    if (!el.typingBar) return;
+    const names = Object.values(state.typing).map(t => t.name || 'Someone');
+    if (!names.length) {
+      el.typingBar.classList.remove('show');
+      el.typingBar.innerHTML = '';
+      return;
+    }
+
+    let label;
+    if (names.length === 1) label = names[0] + ' is typing';
+    else if (names.length === 2) label = names[0] + ' and ' + names[1] + ' are typing';
+    else label = names.length + ' people are typing';
+
+    el.typingBar.innerHTML = '<span class="cm-typing-dots"><i></i><i></i><i></i></span><span>' + escapeHtml(label) + '</span>';
+    el.typingBar.classList.add('show');
+  }
+
+  function signalTyping() {
+    if (!state.name) return;
+    if (!typingRef || typingRef.toString().indexOf('/chat/typing/' + state.room + '/') === -1) {
+      typingRef = rtdb.ref('chat/typing/' + state.room + '/' + state.uid);
+      typingRef.onDisconnect().remove();
+    }
+    if (!amTyping) {
+      amTyping = true;
+      typingRef.set({ name: state.name, ts: Date.now() }).catch(() => {});
+    } else {
+      typingRef.update({ ts: Date.now() }).catch(() => {});
+    }
+    clearTimeout(typingStopTimer);
+    typingStopTimer = setTimeout(stopTyping, TYPING_TIMEOUT);
+  }
+
+  function stopTyping() {
+    clearTimeout(typingStopTimer);
+    amTyping = false;
+    if (typingRef) typingRef.remove().catch(() => {});
+  }
+
+  // ═══ SEND MESSAGE ═══
+  let pendingImageUrl = '';
+
+  function sendMessage() {
+    const text = el.input.value.trim();
+    const hasImage = !!pendingImageUrl;
+
+    if (!text && !hasImage) return;
+    if (!state.name) { openJoin(); return; }
+
+    const msgRef = rtdb.ref('chat/' + state.room + '/messages');
+
+    if (state.editingKey) {
+      msgRef.child(state.editingKey).update({
+        text,
+        edited: true
+      }).catch(err => console.error('Edit failed:', err));
+      cancelEdit();
+      el.input.value = '';
+      autoResize();
+      updateSendState();
+      return;
+    }
+
+    const payload = {
+      uid: state.uid,
+      name: state.name,
+      color: state.color,
+      text: text || '',
+      ts: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    if (hasImage) {
+      payload.imageUrl = pendingImageUrl;
+    }
+
+    if (state.replyTarget) {
+      payload.reply = {
+        key: state.replyTarget.key,
+        name: state.replyTarget.name,
+        text: String(state.replyTarget.text || state.replyTarget.imageUrl ? '[image]' : '').slice(0, 140)
+      };
+    }
+
+    msgRef.push(payload).catch(err => {
+      console.error('Send failed:', err);
+      alert('Could not send message. Check connection.');
+    });
+
+    el.input.value = '';
+    pendingImageUrl = '';
+    if (el.imgPreview) el.imgPreview.style.display = 'none';
+    if (el.imgPreviewEl) el.imgPreviewEl.src = '';
+    autoResize();
+    cancelReply();
+    stopTyping();
+    updateSendState();
+    scrollToBottom(true);
+  }
+
+  function setReply(m) {
+    state.replyTarget = m;
+    el.rpName.textContent = m.name || 'Anonymous';
+    el.rpText.textContent = String(m.text || '[image]').slice(0, 120);
+    el.replyPrev.classList.add('show');
+    el.input.focus();
+    cancelEdit();
+  }
+
+  function cancelReply() {
+    state.replyTarget = null;
+    el.replyPrev.classList.remove('show');
+  }
+
+  function startEdit(m) {
+    state.editingKey = m.key;
+    el.input.value = m.text || '';
+    el.input.focus();
+    autoResize();
+    updateSendState();
+    el.sendBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+    el.input.placeholder = 'Editing message… (Esc to cancel)';
+    cancelReply();
+  }
+
+  function cancelEdit() {
+    state.editingKey = null;
+    el.sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    el.input.placeholder = 'Message #' + roomName() + '...';
+  }
+
+  function deleteMessage(key) {
+    if (!confirm('Delete this message?')) return;
+    rtdb.ref('chat/' + state.room + '/messages/' + key).remove().catch(err => console.error('Delete failed:', err));
+  }
+
+  function toggleReaction(key, emoji) {
+    if (!state.name) { openJoin(); return; }
+    const path = 'chat/' + state.room + '/messages/' + key + '/reactions/' + emoji + '/' + state.uid;
+    const ref = rtdb.ref(path);
+    ref.once('value').then(snap => {
+      if (snap.exists()) ref.remove();
+      else ref.set(true);
+    }).catch(err => console.error('Reaction failed:', err));
+  }
+
+  function copyText(text) {
+    if (!text) return;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => flashToast('Copied!')).catch(() => {});
+    }
+  }
+
+  let toastTimer = null;
+  function flashToast(msg) {
+    let t = document.getElementById('chatToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'chatToast';
+      t.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:#202024;border:1px solid rgba(255,255,255,.12);color:#fff;padding:10px 20px;border-radius:9999px;font-size:.85rem;z-index:5000;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.6);font-family:inherit;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    requestAnimationFrame(() => {
+      t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 1800);
+  }
+
+  function playPing() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.09);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.07, ctx.currentTime + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.28);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+      setTimeout(() => { try { ctx.close(); } catch (e) {} }, 600);
+    } catch (e) {}
+  }
+
+  // ═══ SWITCH ROOM ═══
+  function switchRoom(roomId) {
+    if (!ROOMS.some(r => r.id === roomId)) return;
+    if (roomId === state.room && state.ready) { closeSidebar(); return; }
+    stopTyping();
+    state.room = roomId;
+    saveIdentity();
+
+    const r = ROOMS.find(x => x.id === roomId);
+    if (el.roomTitle) el.roomTitle.textContent = r.name;
+    if (el.input) el.input.placeholder = 'Message #' + r.name + '...';
+
+    cancelReply();
+    cancelEdit();
+    closeEmoji();
+    closeSidebar();
+    clearUnread();
+    renderRooms();
+    attachRoom(roomId);
+  }
+
+  // ═══ EMOJI ═══
+  function buildEmojiPanel() {
+    if (!el.emojiPanel) return;
+    el.emojiPanel.innerHTML = '';
+    EMOJI_SET.forEach(e => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = e;
+      b.addEventListener('click', () => {
+        const input = el.input;
+        const start = input.selectionStart || input.value.length;
+        const end = input.selectionEnd || input.value.length;
+        input.value = input.value.slice(0, start) + e + input.value.slice(end);
+        input.selectionStart = input.selectionEnd = start + e.length;
+        input.focus();
+        autoResize();
+        updateSendState();
+      });
+      el.emojiPanel.appendChild(b);
+    });
+  }
+
+  function toggleEmoji() {
+    if (!el.emojiPanel) return;
+    el.emojiPanel.classList.toggle('show');
+    el.emojiBtn.classList.toggle('active', el.emojiPanel.classList.contains('show'));
+  }
+
+  function closeEmoji() {
+    if (el.emojiPanel) el.emojiPanel.classList.remove('show');
+    if (el.emojiBtn) el.emojiBtn.classList.remove('active');
+  }
+
+  function openSidebar() { el.sidebar?.classList.add('open'); }
+  function closeSidebar() { el.sidebar?.classList.remove('open'); }
+
+  function autoResize() {
+    if (!el.input) return;
+    el.input.style.height = 'auto';
+    el.input.style.height = Math.min(el.input.scrollHeight, 130) + 'px';
+  }
+
+  function updateSendState() {
+    if (!el.sendBtn || !el.input) return;
+    const hasText = el.input.value.trim().length > 0;
+    const hasImg = !!pendingImageUrl;
+    el.sendBtn.disabled = !(hasText || hasImg);
+  }
+
+  function focusInput() {
+    if (window.innerWidth > 640) el.input?.focus();
+  }
+
+  // ═══ JOIN ═══
+  const COLORS = [
+    '#00d4ff', '#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#84cc16', '#06b6d4'
+  ];
+  let selectedColor = COLORS[0];
+
+  function buildColorPicker() {
+    if (!el.joinColors) return;
+    el.joinColors.innerHTML = '';
+    COLORS.forEach(c => {
+      const s = document.createElement('div');
+      s.className = 'cm-color-swatch' + (c === selectedColor ? ' sel' : '');
+      s.style.background = c;
+      s.addEventListener('click', () => { selectedColor = c; buildColorPicker(); });
+      el.joinColors.appendChild(s);
+    });
+  }
+
+  function openJoin() {
+    el.joinOverlay?.classList.remove('hide');
+    setTimeout(() => el.joinName?.focus(), 150);
+  }
+
+  function closeJoin() {
+    el.joinOverlay?.classList.add('hide');
+  }
+
+  function handleJoin() {
+    const name = el.joinName.value.trim();
+    if (name.length < 2) {
+      el.joinError.style.display = 'block';
+      el.joinError.textContent = 'Please enter at least 2 characters.';
+      return;
+    }
+    if (name.length > 20) {
+      el.joinError.style.display = 'block';
+      el.joinError.textContent = 'Name must be 20 characters or fewer.';
+      return;
+    }
+    state.name = name;
+    state.color = selectedColor;
+    saveIdentity();
+    renderProfile();
+    refreshPresence();
+    closeJoin();
+    updateSendState();
+    focusInput();
+    flashToast('Welcome, ' + name + '!');
+  }
+
+  // ═══ SEARCH ═══
+  const onSearch = debounce(function(term) {
+    state.searchTerm = term.trim();
+    renderMessages();
+  }, 250);
+
+  // ═══ EVENTS ═══
+  function bindEvents() {
+    el.form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      sendMessage();
+    });
+
+    el.input?.addEventListener('input', function() {
+      autoResize();
+      updateSendState();
+      if (this.value.trim()) signalTyping();
+      else stopTyping();
+    });
+
+    el.input?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+      if (e.key === 'Escape') {
+        if (state.editingKey) {
+          cancelEdit();
+          el.input.value = '';
+          autoResize();
+          updateSendState();
+        } else if (state.replyTarget) {
+          cancelReply();
+        } else closeEmoji();
+      }
+    });
+
+    el.input?.addEventListener('blur', () => setTimeout(stopTyping, 400));
+
+    el.emojiBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleEmoji();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (el.emojiPanel?.classList.contains('show') &&
+          !el.emojiPanel.contains(e.target) &&
+          e.target !== el.emojiBtn &&
+          !el.emojiBtn?.contains(e.target)) {
+        closeEmoji();
+      }
+    });
+
+    el.rpCancel?.addEventListener('click', cancelReply);
+
+    el.messages?.addEventListener('scroll', () => {
+      if (scrollNearBottom(120) && state.unread > 0) clearUnread();
+    });
+
+    el.jumpBtn?.addEventListener('click', () => scrollToBottom(true));
+
+    el.soundBtn?.addEventListener('click', () => {
+      state.soundOn = !state.soundOn;
+      el.soundBtn.innerHTML = state.soundOn
+        ? '<i class="fa-solid fa-volume-high"></i>'
+        : '<i class="fa-solid fa-volume-xmark"></i>';
+      el.soundBtn.classList.toggle('active', state.soundOn);
+      localStorage.setItem('tcs_chat_sound', state.soundOn ? '1' : '0');
+      if (state.soundOn) playPing();
+    });
+
+    el.sideOpen?.addEventListener('click', openSidebar);
+    el.sideClose?.addEventListener('click', closeSidebar);
+
+    el.shell?.addEventListener('click', (e) => {
+      if (window.innerWidth <= 900 &&
+          el.sidebar?.classList.contains('open') &&
+          !el.sidebar.contains(e.target) &&
+          e.target !== el.sideOpen &&
+          !el.sideOpen?.contains(e.target)) {
+        closeSidebar();
+      }
+    });
+
+    el.chatSearch?.addEventListener('input', function() {
+      onSearch(this.value);
+    });
+
+    el.joinBtn?.addEventListener('click', handleJoin);
+    el.joinName?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleJoin();
+      }
+    });
+
+    // Image upload
+    el.imageBtn?.addEventListener('click', () => el.imageInput?.click());
+
+    el.imageInput?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        flashToast('Image too large (max 10MB)');
+        return;
+      }
+      try {
+        flashToast('Uploading image...');
+        const url = await uploadToImgBB(file);
+        pendingImageUrl = url;
+        if (el.imgPreview) el.imgPreview.style.display = 'inline-block';
+        if (el.imgPreviewEl) el.imgPreviewEl.src = url;
+        updateSendState();
+        flashToast('Image ready to send');
+      } catch (err) {
+        flashToast('Upload failed: ' + err.message);
+      } finally {
+        el.imageInput.value = '';
+      }
+    });
+
+    el.imgRemove?.addEventListener('click', () => {
+      pendingImageUrl = '';
+      if (el.imgPreview) el.imgPreview.style.display = 'none';
+      if (el.imgPreviewEl) el.imgPreviewEl.src = '';
+      updateSendState();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      try {
+        rtdb.ref('chat/presence/' + state.uid).remove();
+        if (typingRef) typingRef.remove();
+      } catch (e) {}
+    });
+
+    window.addEventListener('resize', debounce(() => {
+      if (window.innerWidth > 900) closeSidebar();
+    }, 150));
+
+    window.addEventListener('focus', () => {
+      if (activeTab === 'community') clearUnread();
+    });
+  }
+
+  // ═══ INIT ═══
+  function init() {
+    cacheDom();
+    loadIdentity();
+    state.soundOn = localStorage.getItem('tcs_chat_sound') === '1';
+
+    if (el.soundBtn) {
+      el.soundBtn.innerHTML = state.soundOn
+        ? '<i class="fa-solid fa-volume-high"></i>'
+        : '<i class="fa-solid fa-volume-xmark"></i>';
+      el.soundBtn.classList.toggle('active', state.soundOn);
+    }
+
+    renderProfile();
+    renderRooms();
+    buildEmojiPanel();
+    buildColorPicker();
+    bindEvents();
+    attachPresence();
+
+    const r = ROOMS.find(x => x.id === state.room);
+    if (el.roomTitle) el.roomTitle.textContent = r.name;
+    if (el.input) el.input.placeholder = 'Message #' + r.name + '...';
+
+    attachRoom(state.room);
+
+    if (!state.name) {
+      el.joinName.value = '';
+      selectedColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+      buildColorPicker();
+      openJoin();
+    } else {
+      closeJoin();
+    }
+
+    updateSendState();
+    autoResize();
+    state.ready = true;
+  }
+
+  return {
+    init,
+    scrollToBottom,
+    focusInput,
+    switchRoom,
+    clearUnread,
+    getState: () => state
+  };
+})();
+
+// ═══ Hook Chat into tab switch ═══
+const _prevSwitchToTabForChat = window.switchToTab;
+window.switchToTab = function(tabId) {
+  _prevSwitchToTabForChat(tabId);
+  if (tabId === 'community') {
+    Chat.clearUnread();
+    setTimeout(() => {
+      Chat.scrollToBottom(false);
+      Chat.focusInput();
+    }, 80);
+  }
+};
+
+// ═══ Init Chat when app loads ═══
+const _prevInitAppForChat = initApp;
+initApp = function() {
+  _prevInitAppForChat();
+  try {
+    Chat.init();
+  } catch (err) {
+    console.error('Chat init error:', err);
+  }
+};
+
+console.log('💬 Community Chat Loaded');
