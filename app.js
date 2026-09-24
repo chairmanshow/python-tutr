@@ -2388,3 +2388,81 @@ document.addEventListener('click', (e) => {
   }
   draw();
 })();
+/* ══════════════════════════════════════════════════════════════
+   PROBLEM NAVIGATION — Prev / Next / All Levels
+   ══════════════════════════════════════════════════════════════ */
+
+function updateProblemNavigation() {
+  if (!currentProblem) return;
+
+  const allProblems = window.PROBLEMS_DB || [];
+  const currentIndex = allProblems.findIndex(p => p.id === currentProblem.id);
+
+  const prevBtn = $('prevProblemBtn');
+  const nextBtn = $('nextProblemBtn');
+  const prevTitle = $('prevProblemTitle');
+  const nextTitle = $('nextProblemTitle');
+
+  // Previous
+  if (currentIndex > 0) {
+    const prev = allProblems[currentIndex - 1];
+    if (prevTitle) prevTitle.textContent = prev.title;
+    if (prevBtn) {
+      prevBtn.disabled = false;
+      prevBtn.onclick = () => openProblem(prev.id);
+    }
+  } else {
+    if (prevTitle) prevTitle.textContent = 'No previous';
+    if (prevBtn) prevBtn.disabled = true;
+  }
+
+  // Next
+  if (currentIndex < allProblems.length - 1) {
+    const next = allProblems[currentIndex + 1];
+    if (nextTitle) nextTitle.textContent = next.title;
+    if (nextBtn) {
+      nextBtn.disabled = false;
+      nextBtn.onclick = () => openProblem(next.id);
+    }
+  } else {
+    if (nextTitle) nextTitle.textContent = 'Completed! 🎉';
+    if (nextBtn) nextBtn.disabled = true;
+  }
+}
+
+// All Levels button
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#allLevelsBtn')) {
+    e.preventDefault();
+    switchToTab('python');
+  }
+});
+
+// Keyboard shortcut: ArrowLeft / ArrowRight for prev/next
+document.addEventListener('keydown', (e) => {
+  if (activeTab !== 'problemView') return;
+  
+  // Ignore if focus is in textarea
+  if (document.activeElement?.tagName === 'TEXTAREA') return;
+
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    const btn = $('prevProblemBtn');
+    if (btn && !btn.disabled) btn.click();
+  }
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    const btn = $('nextProblemBtn');
+    if (btn && !btn.disabled) btn.click();
+  }
+});
+
+// ═══ Hook into openProblem — update navigation when problem opens ═══
+const _originalOpenProblem = window.openProblem;
+window.openProblem = function(id) {
+  _originalOpenProblem(id);
+  // Give time for UI to render
+  setTimeout(updateProblemNavigation, 50);
+};
+
+console.log('🧭 Problem Navigation Loaded');
