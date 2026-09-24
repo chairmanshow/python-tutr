@@ -470,16 +470,23 @@
             </div>
             <div class="output-body" id="outputBody"></div>
           </div>
-
-          <div class="solution-card" id="solutionCard" style="display:none;">
-            <div class="solution-header">
-              <span><i class="fa-solid fa-lightbulb"></i> Official Solution</span>
-            </div>
-            <div class="solution-body">
-              <pre id="solutionCode"></pre>
-              <div class="solution-explanation" id="solutionExplanation"></div>
-            </div>
-          </div>
+<div class="solution-card" id="solutionCard" style="display:none;">
+  <div class="solution-header">
+    <span><i class="fa-solid fa-lightbulb"></i> Official Solution</span>
+    <div style="display:flex; gap:.4rem;">
+      <button class="editor-btn" id="copySolutionBtn" title="Copy solution">
+        <i class="fa-regular fa-copy"></i>
+      </button>
+      <button class="editor-btn" id="backToCodeBtn" title="Back to code">
+        <i class="fa-solid fa-code"></i>
+      </button>
+    </div>
+  </div>
+  <div class="solution-body">
+    <pre id="solutionCode"></pre>
+    <div class="solution-explanation" id="solutionExplanation"></div>
+  </div>
+</div>
         </div>
       </div>
     </section>
