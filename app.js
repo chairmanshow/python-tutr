@@ -22,7 +22,7 @@ const CONFIG = {
   UPI_ID: "chairman@upi",
   ADMIN_EMAIL: "overactingofficial7@gmail.com",
   IMGBB_KEY: "f1e5041PDx4Vtw4YF6XfduRwwS6nKZ6sPAC9nCeR",
-  GROQ_API_KEY: "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",
+  AI_PROXY: "https://tcs-ai-proxy.sumitshrivas24.workers.dev/"
   GOOGLE_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSfbAwC7rS2RHX1ICPUWSrbFK0VImAD36A9o6iG5glmsgKEZbQ/viewform"
 };
 
