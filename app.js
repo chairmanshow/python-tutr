@@ -23,7 +23,7 @@ const CONFIG = {
   TELEGRAM_PROXY: "https://tcs-telegram-proxy.sumitshrivas24.workers.dev",
   ADMIN_EMAIL: "overactingofficial7@gmail.com",
   IMGBB_KEY: "f1e5041PbWWqgKDBDorh525uecKaGZD21FGSoCeR",
-  PISTON_API: "https://emkc.org/api/v2/piston/execute"
+  PISTON_API: "https://emkc.org/api/v2/piston/execute",
   GROQ_API_KEY: "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"
 
 };
