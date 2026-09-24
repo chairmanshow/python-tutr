@@ -1015,110 +1015,97 @@
   <canvas id="confettiCanvas"></canvas>
   <button id="backToTop" title="Back to top"><i class="fa-solid fa-arrow-up"></i></button>
 
-  <!-- ═══ HEADER ═══ -->
-  <header>
-    <div class="nav-container">
-      <a href="#" class="logo" onclick="switchToTab('home'); return false;">
-        <div class="logo-mini">
-          <i class="fa-solid fa-crown logo-crown-mini"></i>
-          <span class="logo-text-mini">CS</span>
-        </div>
-        <div class="logo-brand">
-          <span class="logo-brand-the">THE</span>
-          <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
-        </div>
-      </a>
+ <!-- ═══ HEADER ═══ -->
+<header>
+  <div class="nav-container">
+    <a href="#" class="logo" onclick="switchToTab('home'); return false;">
+      <div class="logo-mini">
+        <i class="fa-solid fa-crown logo-crown-mini"></i>
+        <span class="logo-text-mini">CS</span>
+      </div>
+      <div class="logo-brand">
+        <span class="logo-brand-the">THE</span>
+        <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
+      </div>
+    </a>
 
-      <ul class="nav-links">
-        <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> <span class="nav-text">Home</span></button></li>
-        <li><button class="nav-item" data-tab="python" id="navPython"><i class="fa-brands fa-python"></i> <span class="nav-text">Practice</span></button></li>
-        <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
-        <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Experts</span></button></li>
-        <li><button class="nav-item" data-tab="leaderboard"><i class="fa-solid fa-trophy"></i> <span class="nav-text">Leaderboard</span></button></li>
-        <li>
-          <button class="nav-item" data-tab="community" id="navCommunity">
-            <i class="fa-solid fa-comments"></i>
-            <span class="nav-text">Community</span>
-            <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
-          </button>
-        </li>
-          <ul class="nav-links">
-        <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> <span class="nav-text">Home</span></button></li>
-        <li><button class="nav-item" data-tab="python" id="navPython"><i class="fa-brands fa-python"></i> <span class="nav-text">Practice</span></button></li>
-        <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
-        <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Experts</span></button></li>
-        <li><button class="nav-item" data-tab="leaderboard"><i class="fa-solid fa-trophy"></i> <span class="nav-text">Leaderboard</span></button></li>
-        <li>
-          <button class="nav-item" data-tab="community" id="navCommunity">
-            <i class="fa-solid fa-comments"></i>
-            <span class="nav-text">Community</span>
-            <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
-          </button>
-        </li>
-           <li>
-  <button class="nav-item" data-tab="freeCourses" id="navFreeCourses">
-    <i class="fa-solid fa-graduation-cap"></i>
-    <span class="nav-text">FREE Courses</span>
-  </button>
-</li>
-        <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support</span></button></li>
-      </ul>
-
-      <div class="user-menu">
-        <button class="user-avatar-btn" id="userMenuBtn">
-          <img id="navUserAvatar" src="" alt="">
-          <span class="user-name-nav" id="navUserName">User</span>
-          <i class="fa-solid fa-chevron-down"></i>
+    <ul class="nav-links">
+      <li>
+        <button class="nav-item active" data-tab="home">
+          <i class="fa-solid fa-house"></i>
+          <span class="nav-text">Home</span>
         </button>
-        <div class="user-dropdown" id="userDropdown">
-          <div class="dropdown-header">
-            <img id="ddUserAvatar" src="" alt="">
-            <div>
-              <div class="dd-name" id="ddUserName">User</div>
-              <div class="dd-email" id="ddUserEmail">email@example.com</div>
-            </div>
+      </li>
+      <li>
+        <button class="nav-item" data-tab="python" id="navPython">
+          <i class="fa-brands fa-python"></i>
+          <span class="nav-text">Practice</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-tab="doubts">
+          <i class="fa-solid fa-circle-question"></i>
+          <span class="nav-text">Doubts</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-tab="experts">
+          <i class="fa-solid fa-user-tie"></i>
+          <span class="nav-text">Experts</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-tab="leaderboard">
+          <i class="fa-solid fa-trophy"></i>
+          <span class="nav-text">Leaderboard</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-tab="community" id="navCommunity">
+          <i class="fa-solid fa-comments"></i>
+          <span class="nav-text">Community</span>
+          <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-tab="freeCourses" id="navFreeCourses">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span class="nav-text">FREE Courses</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-tab="donate">
+          <i class="fa-solid fa-heart"></i>
+          <span class="nav-text">Support</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="user-menu">
+      <button class="user-avatar-btn" id="userMenuBtn">
+        <img id="navUserAvatar" src="" alt="">
+        <span class="user-name-nav" id="navUserName">User</span>
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">
+          <img id="ddUserAvatar" src="" alt="">
+          <div>
+            <div class="dd-name" id="ddUserName">User</div>
+            <div class="dd-email" id="ddUserEmail">email@example.com</div>
           </div>
-          <div class="dropdown-divider"></div>
-          <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
-          <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
-          <button class="dropdown-item" data-goto="doubts"><i class="fa-solid fa-circle-question"></i> My Doubts</button>
-          <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
-          <div class="dropdown-divider"></div>
-          <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
         </div>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
+        <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
+        <button class="dropdown-item" data-goto="doubts"><i class="fa-solid fa-circle-question"></i> My Doubts</button>
+        <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
       </div>
     </div>
-        <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support</span></button></li>
-      </ul>
-
-      <div class="user-menu">
-        <button class="user-avatar-btn" id="userMenuBtn">
-          <img id="navUserAvatar" src="" alt="">
-          <span class="user-name-nav" id="navUserName">User</span>
-          <i class="fa-solid fa-chevron-down"></i>
-        </button>
-        <div class="user-dropdown" id="userDropdown">
-          <div class="dropdown-header">
-            <img id="ddUserAvatar" src="" alt="">
-            <div>
-              <div class="dd-name" id="ddUserName">User</div>
-              <div class="dd-email" id="ddUserEmail">email@example.com</div>
-            </div>
-          </div>
-          <div class="dropdown-divider"></div>
-          <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
-          <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
-          <button class="dropdown-item" data-goto="doubts"><i class="fa-solid fa-circle-question"></i> My Doubts</button>
-          <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
-          <div class="dropdown-divider"></div>
-          <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <main>
-
+  </div>
+</header>
     <!-- ═══════════════════════════════════════════════════════
          HOME TAB
          ═══════════════════════════════════════════════════════ -->
