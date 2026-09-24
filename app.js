@@ -2342,3 +2342,52 @@ document.addEventListener('click', (e) => {
 
   toast('success', 'Solution revealed!', 'Study it, then try on your own 💪');
 });
+/* ═══ COPY SOLUTION ═══ */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#copySolutionBtn');
+  if (!btn) return;
+  e.preventDefault();
+
+  if (!currentProblem) return;
+  const text = currentProblem.solution || '';
+  
+  if (!text) {
+    toast('warn', 'Nothing to copy');
+    return;
+  }
+
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--accent-green)"></i>';
+    toast('success', 'Solution copied!', 'Paste it in your editor');
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  }).catch(() => {
+    toast('warn', 'Copy failed');
+  });
+});
+
+/* ═══ BACK TO CODE EDITOR ═══ */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#backToCodeBtn');
+  if (!btn) return;
+  e.preventDefault();
+
+  const solutionCard = document.getElementById('solutionCard');
+  const codeBody = document.querySelector('.editor-body');
+  const editorFooter = document.querySelector('.editor-footer');
+
+  if (solutionCard) solutionCard.style.display = 'none';
+  if (codeBody) codeBody.style.display = 'flex';
+  if (editorFooter) editorFooter.style.display = 'flex';
+
+  // Switch tab visual
+  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+  const codeTab = document.getElementById('tabCode');
+  if (codeTab) codeTab.classList.add('active');
+
+  // Scroll back up
+  const editorCard = document.querySelector('.editor-card');
+  if (editorCard) {
+    editorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+});
