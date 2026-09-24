@@ -126,6 +126,13 @@
         <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Experts</span></button></li>
         <li><button class="nav-item" data-tab="leaderboard" id="navLeaderboard"><i class="fa-solid fa-trophy"></i> <span class="nav-text">Leaderboard</span></button></li>
         <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support Us</span></button></li>
+        <li>
+  <button class="nav-item" data-tab="community" id="navCommunity">
+    <i class="fa-solid fa-comments"></i>
+    <span class="nav-text">Community</span>
+    <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
+  </button>
+</li>         
       </ul>
 
       <div class="user-menu">
@@ -544,7 +551,155 @@
         </div>
       </div>
     </section>
+<!-- ═══════════════════════════════════════════════════════
+     COMMUNITY CHAT TAB — Real-time
+     ═══════════════════════════════════════════════════════ -->
+<section id="community" class="tab-content">
+  <div class="chat-shell-cine">
 
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="chat-sidebar-cine" id="chatSidebar">
+      <div class="cs-header">
+        <div class="cs-brand">
+          <i class="fa-solid fa-comments"></i>
+          <span>Community</span>
+        </div>
+        <button class="cs-close-btn" id="csCloseBtn">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="cs-me">
+        <img id="csMeAvatar" src="" alt="">
+        <div class="cs-me-info">
+          <div class="cs-me-name" id="csMeName">User</div>
+          <div class="cs-me-status">
+            <span class="online-dot"></span> Online
+          </div>
+        </div>
+      </div>
+
+      <div class="cs-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="csSearchInput" placeholder="Search messages...">
+      </div>
+
+      <div class="cs-scroll">
+        <div class="cs-label">Channels</div>
+        <div class="cs-rooms" id="csRooms"></div>
+
+        <div class="cs-label">
+          Online — <span id="csOnlineCount">0</span>
+        </div>
+        <div class="cs-users" id="csUsers">
+          <div class="cs-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══ MAIN CHAT ═══ -->
+    <div class="chat-main-cine">
+      <header class="cm-top">
+        <button class="cm-menu-btn" id="cmMenuBtn">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="cm-room-icon">
+          <i class="fa-solid fa-hashtag"></i>
+        </div>
+        <div class="cm-room-info">
+          <h3 id="cmRoomName">general</h3>
+          <div class="cm-room-sub">
+            <span class="online-dot"></span>
+            <span id="cmRoomSub">0 members online</span>
+          </div>
+        </div>
+        <button class="cm-icon-btn" id="cmSoundBtn" title="Toggle sound">
+          <i class="fa-solid fa-volume-xmark"></i>
+        </button>
+      </header>
+
+      <div class="cm-body" id="cmBody">
+        <div class="cm-empty">
+          <i class="fa-solid fa-comments"></i>
+          <h4>Welcome to Community Chat</h4>
+          <p>Say hello and start coding together!</p>
+        </div>
+      </div>
+
+      <div class="cm-typing" id="cmTyping"></div>
+
+      <div class="cm-composer-wrap">
+        <!-- Reply preview -->
+        <div class="cm-reply-preview" id="cmReplyPreview">
+          <div class="cm-rp-bar"></div>
+          <div class="cm-rp-body">
+            <div class="cm-rp-name" id="cmRpName"></div>
+            <div class="cm-rp-text" id="cmRpText"></div>
+          </div>
+          <button class="cm-icon-btn" id="cmRpCancel">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Emoji picker -->
+        <div class="cm-emoji-panel" id="cmEmojiPanel"></div>
+
+        <!-- Image preview -->
+        <div class="cm-img-preview" id="cmImgPreview" style="display:none;">
+          <img id="cmImgPreviewEl" src="" alt="">
+          <button class="cm-img-remove" id="cmImgRemove">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Composer -->
+        <form class="cm-composer" id="cmComposer">
+          <button type="button" class="cm-icon-btn" id="cmEmojiBtn" title="Emoji">
+            <i class="fa-regular fa-face-smile"></i>
+          </button>
+          <button type="button" class="cm-icon-btn" id="cmImageBtn" title="Image">
+            <i class="fa-regular fa-image"></i>
+          </button>
+          <input type="file" id="cmImageInput" accept="image/*" style="display:none;">
+          <textarea id="cmInput" rows="1" placeholder="Message..." autocomplete="off"></textarea>
+          <button type="submit" class="cm-send-btn" id="cmSendBtn" disabled>
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+
+      <button class="cm-jump-btn" id="cmJumpBtn">
+        <i class="fa-solid fa-arrow-down"></i>
+        <span class="cm-jump-badge" id="cmJumpBadge">0</span>
+      </button>
+    </div>
+
+    <!-- ═══ JOIN OVERLAY ═══ -->
+    <div class="cm-join-overlay" id="cmJoinOverlay">
+      <div class="cm-join-card">
+        <div class="cm-join-icon">
+          <i class="fa-solid fa-comments"></i>
+        </div>
+        <h3>Join the Community</h3>
+        <p>Pick a display name and avatar color</p>
+
+        <input type="text" id="cmJoinName" maxlength="20" placeholder="Your display name">
+
+        <div class="cm-join-colors" id="cmJoinColors"></div>
+
+        <button class="cm-join-submit" id="cmJoinBtn">
+          <span>Enter Chat</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <div id="cmJoinError" class="cm-join-error"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
     <!-- ═══════════════════════════════════════════════════════
          DONATE / SUPPORT TAB
          ═══════════════════════════════════════════════════════ -->
