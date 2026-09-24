@@ -802,37 +802,260 @@ $('postDoubtBtn')?.addEventListener('click', async () => {
   }
 });
 
+/* ══════════════════════════════════════════════════════════════
+   VIEW DOUBT + AI ANSWER — Full Featured
+   ══════════════════════════════════════════════════════════════ */
+
 window.viewDoubt = async function(id) {
+  const modalEl = $('doubtDetailsModal');
+  const bodyEl = $('doubtDetailsBody');
+  if (!modalEl || !bodyEl) return;
+
+  modalEl.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  bodyEl.innerHTML = `
+    <div style="text-align:center;padding:2rem;">
+      <div class="loading-spinner-cine" style="margin:0 auto 1rem;"></div>
+      <p style="color:var(--text-muted);">Loading doubt...</p>
+    </div>`;
+
   try {
     const doc = await db.collection('doubts').doc(id).get();
-    if (!doc.exists) return;
+    if (!doc.exists) {
+      bodyEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Doubt not found</div>';
+      return;
+    }
+
     const d = doc.data();
 
-    const body = $('doubtDetailsBody');
-    if (!body) return;
+    // Check if answer already exists
+    let existingAnswer = null;
+    try {
+      const ansSnap = await db.collection('doubts').doc(id).collection('answers')
+        .orderBy('createdAt', 'desc').limit(1).get();
+      if (!ansSnap.empty) {
+        existingAnswer = ansSnap.docs[0].data();
+      }
+    } catch (e) {
+      console.warn('Answers fetch error:', e);
+    }
 
-    body.innerHTML = `
-      <div class="problem-card-cine" style="margin-bottom:1rem;">
-        <div class="problem-title-row">
-          <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;">${escapeHtml(d.subject)} — Doubt</h3>
-          <span class="dc-status ${d.status}">${d.status}</span>
+    // Build doubt display
+    bodyEl.innerHTML = `
+      <div style="padding:1.2rem;background:#16161d;border-radius:12px;margin-bottom:1rem;border:1px solid rgba(212,175,55,.15);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;gap:.5rem;flex-wrap:wrap;">
+          <span style="padding:.25rem .7rem;background:rgba(212,175,55,.12);color:#D4AF37;border-radius:9999px;font-size:.72rem;font-weight:700;font-family:var(--font-mono);">
+            ${escapeHtml(d.subject || 'Code')}
+          </span>
+          <span style="padding:.25rem .7rem;border-radius:9999px;font-size:.68rem;font-weight:700;background:rgba(245,158,11,.12);color:#fcd34d;text-transform:uppercase;">
+            ${d.status || 'open'}
+          </span>
         </div>
-        <div class="problem-desc" style="margin-top:.8rem;">${escapeHtml(d.question)}</div>
-        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:12px;margin-top:.8rem;border:1px solid var(--border-mid);cursor:pointer;" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
-        <div style="margin-top:1rem;font-size:.75rem;color:var(--text-muted);font-family:var(--font-mono);">
+        <div style="font-size:.92rem;line-height:1.7;color:#f4f4f7;white-space:pre-wrap;font-family:var(--font-mono);">${escapeHtml(d.question || '')}</div>
+        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer;border:1px solid rgba(255,255,255,.1);" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+        <div style="margin-top:.8rem;font-size:.72rem;color:#6b7280;font-family:var(--font-mono);">
           <i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.()?.getTime())}
         </div>
       </div>
-      <div style="text-align:center;padding:2rem;color:var(--text-muted);">
-        <i class="fa-solid fa-hourglass-half" style="font-size:2rem;opacity:.4;display:block;margin-bottom:1rem;"></i>
-        <p style="font-size:.88rem;">Waiting for expert answer...</p>
-      </div>
+      <div id="answerArea"></div>
     `;
 
-    openModal('doubtDetailsModal');
+    const answerArea = document.getElementById('answerArea');
+
+    // Show existing answer OR generate new
+    if (existingAnswer) {
+      showAnswerInArea(answerArea, existingAnswer, id);
+    } else {
+      generateAndShowAnswer(answerArea, id, d);
+    }
+
   } catch (err) {
-    toast('warn', 'Error', err.message);
+    console.error('viewDoubt error:', err);
+    bodyEl.innerHTML = `<div style="text-align:center;padding:2rem;color:#fca5a5;">Error: ${escapeHtml(err.message)}</div>`;
   }
+};
+
+/* ═══ Generate AI Answer ═══ */
+async function generateAndShowAnswer(area, doubtId, doubtData) {
+  // Thinking animation
+  area.innerHTML = `
+    <div style="padding:1.2rem;background:#16161d;border-radius:12px;border:1px solid rgba(212,175,55,.15);">
+      <div style="display:flex;align-items:center;gap:10px;color:#9ca3af;font-size:.9rem;">
+        <i class="fa-solid fa-brain" style="color:#D4AF37;font-size:1.1rem;"></i>
+        <span>An expert is thinking</span>
+        <span style="display:inline-flex;gap:4px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#D4AF37;display:inline-block;animation:dotBounce 1.4s infinite;"></span>
+          <span style="width:6px;height:6px;border-radius:50%;background:#D4AF37;display:inline-block;animation:dotBounce 1.4s infinite .2s;"></span>
+          <span style="width:6px;height:6px;border-radius:50%;background:#D4AF37;display:inline-block;animation:dotBounce 1.4s infinite .4s;"></span>
+        </span>
+      </div>
+    </div>
+    <style>
+      @keyframes dotBounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+        30% { transform: translateY(-6px); opacity: 1; }
+      }
+    </style>
+  `;
+
+  try {
+    console.log('🤖 Calling AI proxy...');
+
+    const res = await fetch(CONFIG.AI_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: doubtData.question,
+        subject: doubtData.subject,
+        class: doubtData.class || 'General'
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error('AI service returned ' + res.status);
+    }
+
+    const data = await res.json();
+
+    if (!data.ok || !data.answer) {
+      throw new Error(data.error || 'No answer received');
+    }
+
+    const answerObj = {
+      expertName: 'Chairman AI',
+      expertTitle: 'AI Coding Mentor',
+      expert: { name: 'Chairman AI', title: 'AI Coding Mentor', exp: '∞', color: '#D4AF37' },
+      text: data.answer,
+      createdAt: new Date()
+    };
+
+    // Show with typewriter
+    showAnswerInArea(area, answerObj, doubtId, true);
+
+    // Save to Firestore
+    try {
+      await db.collection('doubts').doc(doubtId).collection('answers').add({
+        expertName: 'Chairman AI',
+        expertTitle: 'AI Coding Mentor',
+        expert: answerObj.expert,
+        text: data.answer,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        helpful: 0
+      });
+
+      await db.collection('doubts').doc(doubtId).update({
+        status: 'answered',
+        answeredBy: 'Chairman AI',
+        answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+        answerCount: firebase.firestore.FieldValue.increment(1)
+      });
+
+      console.log('✅ Answer saved to Firestore');
+    } catch (saveErr) {
+      console.warn('Save failed:', saveErr);
+    }
+
+  } catch (err) {
+    console.error('AI answer error:', err);
+    area.innerHTML = `
+      <div style="padding:1rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;color:#fca5a5;font-size:.88rem;">
+        <div style="font-weight:700;margin-bottom:.5rem;">
+          <i class="fa-solid fa-triangle-exclamation"></i> Could not generate answer
+        </div>
+        <div style="font-size:.78rem;color:#9ca3af;margin-bottom:.8rem;font-family:var(--font-mono);word-break:break-all;">
+          ${escapeHtml(err.message)}
+        </div>
+        <button onclick="retryAnswer('${doubtId}')" style="padding:.5rem 1rem;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.4);border-radius:9999px;color:#D4AF37;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">
+          <i class="fa-solid fa-rotate-right"></i> Retry
+        </button>
+      </div>
+    `;
+  }
+}
+
+/* ═══ Retry Handler ═══ */
+window.retryAnswer = async function(doubtId) {
+  const area = document.getElementById('answerArea');
+  if (!area) return;
+  const doc = await db.collection('doubts').doc(doubtId).get();
+  if (doc.exists) generateAndShowAnswer(area, doubtId, doc.data());
+};
+
+/* ═══ Render Answer ═══ */
+function showAnswerInArea(area, answer, doubtId, withTypewriter) {
+  const expert = answer.expert || {
+    name: answer.expertName || 'Chairman AI',
+    title: answer.expertTitle || 'AI Coding Mentor',
+    exp: '∞',
+    color: '#D4AF37'
+  };
+
+  const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=D4AF37&color=000&bold=true&size=128`;
+  const when = answer.createdAt?.toDate?.()
+    ? formatTime(answer.createdAt.toDate().getTime())
+    : answer.createdAt instanceof Date
+      ? formatTime(answer.createdAt.getTime())
+      : 'Just now';
+
+  area.innerHTML = `
+    <div style="padding:1.2rem;background:linear-gradient(135deg,rgba(212,175,55,.05),rgba(124,58,237,.03));border:1px solid rgba(212,175,55,.25);border-radius:12px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,.06);">
+        <img src="${avatar}" style="width:44px;height:44px;border-radius:50%;border:2px solid rgba(212,175,55,.5);" alt="">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:.94rem;color:#D4AF37;">${escapeHtml(expert.name)}</div>
+          <div style="font-size:.75rem;color:#9ca3af;font-family:var(--font-mono);">${escapeHtml(expert.title)}</div>
+        </div>
+        <span style="padding:.25rem .7rem;background:rgba(16,185,129,.15);color:#6ee7b7;border-radius:9999px;font-size:.68rem;font-weight:700;">
+          <i class="fa-solid fa-shield-halved"></i> Verified
+        </span>
+      </div>
+      <div id="answerText" style="font-size:.92rem;line-height:1.8;color:#f4f4f7;white-space:pre-wrap;word-wrap:break-word;font-family:var(--font-mono);"></div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06);flex-wrap:wrap;">
+        <button onclick="copyAnswerText(${JSON.stringify(answer.text || '').replace(/"/g, '&quot;')})" style="padding:.5rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:9999px;color:#f4f4f7;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">
+          <i class="fa-regular fa-copy"></i> Copy
+        </button>
+        <button onclick="markAnswerHelpful('${doubtId}')" style="padding:.5rem 1rem;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:9999px;color:#6ee7b7;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">
+          <i class="fa-regular fa-thumbs-up"></i> Helpful
+        </button>
+      </div>
+      <div style="margin-top:.8rem;font-size:.7rem;color:#6b7280;font-family:var(--font-mono);text-align:right;">
+        <i class="fa-solid fa-clock"></i> ${when}
+      </div>
+    </div>
+  `;
+
+  const textEl = document.getElementById('answerText');
+
+  if (withTypewriter && textEl) {
+    // Simple typewriter — no markdown parsing to avoid bugs
+    let i = 0;
+    const fullText = answer.text || '';
+    textEl.textContent = '';
+
+    function type() {
+      if (i < fullText.length) {
+        textEl.textContent += fullText.charAt(i);
+        i++;
+        // Auto-scroll modal
+        const modalBody = textEl.closest('.modal-body-cine');
+        if (modalBody) modalBody.scrollTop = modalBody.scrollHeight;
+        setTimeout(type, 8);
+      }
+    }
+    type();
+  } else if (textEl) {
+    textEl.textContent = answer.text || '';
+  }
+}
+
+window.copyAnswerText = function(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    toast('success', 'Copied!', 'Answer copied to clipboard');
+  }).catch(() => toast('warn', 'Copy failed'));
+};
+
+window.markAnswerHelpful = function(doubtId) {
+  toast('success', 'Thanks!', 'Marked as helpful');
 };
 
 window.openImageViewer = function(url) {
