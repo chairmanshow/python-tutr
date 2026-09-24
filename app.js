@@ -569,19 +569,7 @@ $('copyCodeBtn')?.addEventListener('click', () => {
   }).catch(() => toast('warn', 'Copy failed'));
 });
 
-/* ─────────────── SECTION 11: RUN CODE (Piston API) ─────────────── */
-$('runCodeBtn')?.addEventListener('click', async () => {
-  if (!codeEditor || !currentProblem) return;
-  const code = codeEditor.value.trim();
-  if (!code) {
-    toast('warn', 'Write some code first');
-    return;
-  }
 
-  const btn = $('runCodeBtn');
-  const origHtml = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running...';
 
   // Show output card
   if ($('outputCard')) $('outputCard').style.display = 'block';
@@ -2297,3 +2285,60 @@ initApp = function() {
 };
 
 console.log('💬 Community Chat Loaded');
+/* ══════════════════════════════════════════════════════════════
+   SHOW SOLUTION — Clean, no API needed
+   ══════════════════════════════════════════════════════════════ */
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#showSolutionBtn');
+  if (!btn) return;
+  e.preventDefault();
+
+  if (!currentProblem) {
+    toast('warn', 'No problem loaded');
+    return;
+  }
+
+  const solutionCard = document.getElementById('solutionCard');
+  const codeBody = document.querySelector('.editor-body');
+  const editorFooter = document.querySelector('.editor-footer');
+  const solutionCode = document.getElementById('solutionCode');
+  const solutionExplanation = document.getElementById('solutionExplanation');
+
+  if (!solutionCard) {
+    toast('warn', 'Solution card missing');
+    return;
+  }
+
+  // Fill solution content
+  if (solutionCode) {
+    solutionCode.textContent = currentProblem.solution || '# Solution not available';
+  }
+
+  if (solutionExplanation) {
+    const exp = currentProblem.explanation || 'No explanation available for this problem.';
+    solutionExplanation.innerHTML = `
+      <div style="margin-bottom:.6rem; font-weight:700; color:var(--accent-cyan);">
+        <i class="fa-solid fa-lightbulb"></i> Explanation
+      </div>
+      <div>${escapeHtml(exp).replace(/\n/g, '<br>')}</div>
+    `;
+  }
+
+  // Hide code editor, show solution
+  if (codeBody) codeBody.style.display = 'none';
+  if (editorFooter) editorFooter.style.display = 'none';
+  solutionCard.style.display = 'block';
+
+  // Switch to Solution tab (visual)
+  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+  const solTab = document.getElementById('tabSolution');
+  if (solTab) solTab.classList.add('active');
+
+  // Scroll to solution
+  setTimeout(() => {
+    solutionCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+
+  toast('success', 'Solution revealed!', 'Study it, then try on your own 💪');
+});
