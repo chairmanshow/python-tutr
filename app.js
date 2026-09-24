@@ -560,7 +560,6 @@ $('resetCodeBtn')?.addEventListener('click', () => {
   updateLineNumbers();
   toast('info', 'Code reset');
 });
-
 /* Copy code */
 $('copyCodeBtn')?.addEventListener('click', () => {
   if (!codeEditor) return;
@@ -569,64 +568,10 @@ $('copyCodeBtn')?.addEventListener('click', () => {
   }).catch(() => toast('warn', 'Copy failed'));
 });
 
+/* ══════════════════════════════════════════════════════════════
+   NOTE: Run Code (Piston API) removed — we use "Show Solution" instead
+   ══════════════════════════════════════════════════════════════ */
 
-
-  // Show output card
-  if ($('outputCard')) $('outputCard').style.display = 'block';
-  if ($('outputBody')) {
-    $('outputBody').innerHTML = '<span class="out-prompt">$</span> Executing your code...\n';
-  }
-
-  try {
-    const res = await fetch(CONFIG.PISTON_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        language: 'python',
-        version: '3.10.0',
-        files: [{ content: code }],
-        stdin: ''
-      })
-    });
-
-    if (!res.ok) {
-      throw new Error('Code execution service unavailable. Try again.');
-    }
-
-    const data = await res.json();
-    const run = data.run || {};
-    const stdout = run.stdout || '';
-    const stderr = run.stderr || '';
-
-    let outputHtml = '<span class="out-prompt">$</span> python main.py\n\n';
-    if (stdout) {
-      outputHtml += escapeHtml(stdout);
-    }
-    if (stderr) {
-      outputHtml += '<span class="out-error">' + escapeHtml(stderr) + '</span>';
-    }
-    if (!stdout && !stderr) {
-      outputHtml += '<span style="color:var(--text-muted)">(no output)</span>';
-    }
-
-    if ($('outputBody')) $('outputBody').innerHTML = outputHtml;
-
-    if (!stderr) {
-      toast('success', 'Code executed!', 'Check the output panel');
-    } else {
-      toast('warn', 'Runtime error', 'Check the output panel');
-    }
-  } catch (err) {
-    console.error('Run error:', err);
-    if ($('outputBody')) {
-      $('outputBody').innerHTML = '<span class="out-error">❌ ' + escapeHtml(err.message) + '</span>';
-    }
-    toast('warn', 'Execution failed', err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = origHtml;
-  }
-});
 
 /* ─────────────── SECTION 12: MARK SOLVED ─────────────── */
 function updateMarkSolvedBtn() {
