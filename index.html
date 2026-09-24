@@ -3,38 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Chairman Show | Doubt Solving Platform</title>
-<meta name="theme-color" content="#ffffff">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232563eb'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3ECS%3C/text%3E%3C/svg%3E">
+<title>The Chairman Show | Learn Python. Master DSA. Get Hired.</title>
+<meta name="description" content="Learn Python from Level 1 to 100. Get doubts solved by experts. Free coding platform for Indian students.">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300d4ff'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='58' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ═══ BOOT LOADER ═══ -->
+<!-- ═══════════════════════════════════════════════════════════
+     BOOT LOADER — Cinematic
+     ═══════════════════════════════════════════════════════════ -->
 <div id="bootLoader">
-  <div class="boot-logo"><i class="fa-solid fa-graduation-cap"></i> The Chairman <span>Show</span></div>
-  <div class="boot-bar"><div class="boot-bar-fill"></div></div>
-  <div class="boot-tag">Loading your workspace…</div>
+  <div class="boot-terminal">
+    <div class="boot-line">
+      <span class="boot-prompt">$</span>
+      <span class="boot-cmd">initializing <span class="boot-name">the_chairman_show</span>...</span>
+    </div>
+    <div class="boot-line delay-1">
+      <span class="boot-ok">✓</span> Firebase connected
+    </div>
+    <div class="boot-line delay-2">
+      <span class="boot-ok">✓</span> Python engine ready
+    </div>
+    <div class="boot-line delay-3">
+      <span class="boot-ok">✓</span> Loading 100 levels...
+    </div>
+    <div class="boot-bar">
+      <div class="boot-bar-fill"></div>
+    </div>
+    <div class="boot-cursor">█</div>
+  </div>
 </div>
 
-<!-- ═══ LOGIN SCREEN ═══ -->
+<!-- ═══════════════════════════════════════════════════════════
+     LOGIN SCREEN
+     ═══════════════════════════════════════════════════════════ -->
 <div id="loginScreen" class="login-screen">
-  <div class="login-bg"></div>
+  <div class="login-grid-bg"></div>
+  <div class="login-glow"></div>
+
   <div class="login-card">
     <div class="login-logo">
-      <i class="fa-solid fa-graduation-cap"></i>
+      <div class="logo-mark">
+        <span class="bracket">&lt;</span>
+        <span class="logo-text">CS</span>
+        <span class="bracket">/&gt;</span>
+      </div>
       <h1>The Chairman <span>Show</span></h1>
-      <p>India's student-first doubt solving platform</p>
+      <p class="login-tagline">
+        <span class="terminal-text">&gt; Learn Python. Master DSA. Get Hired.</span>
+        <span class="blink">_</span>
+      </p>
     </div>
+
     <div class="login-features">
-      <div class="login-feat"><i class="fa-solid fa-bolt"></i> Instant doubt solving</div>
-      <div class="login-feat"><i class="fa-solid fa-user-tie"></i> Verified experts</div>
-      <div class="login-feat"><i class="fa-solid fa-comments"></i> Live chat & voice</div>
-      <div class="login-feat"><i class="fa-solid fa-indian-rupee-sign"></i> Earn as expert</div>
+      <div class="login-feat">
+        <i class="fa-solid fa-code"></i>
+        <span>100 Python Levels</span>
+      </div>
+      <div class="login-feat">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Expert Doubt Solving</span>
+      </div>
+      <div class="login-feat">
+        <i class="fa-solid fa-trophy"></i>
+        <span>Track Your Progress</span>
+      </div>
+      <div class="login-feat">
+        <i class="fa-solid fa-bolt"></i>
+        <span>100% Free Forever</span>
+      </div>
     </div>
+
     <button id="googleSignInBtn" class="google-btn">
       <svg width="20" height="20" viewBox="0 0 48 48">
         <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -42,14 +87,19 @@
         <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
         <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
       </svg>
-      Continue with Google
+      <span>Continue with Google</span>
     </button>
-    <p class="login-terms">By signing in, you agree to our Terms & Privacy Policy</p>
+
+    <p class="login-terms">
+      By signing in, you agree to our Terms & Privacy Policy
+    </p>
     <div id="loginError" class="login-error"></div>
   </div>
 </div>
 
-<!-- ═══ MAIN APP ═══ -->
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN APP
+     ═══════════════════════════════════════════════════════════ -->
 <div id="app" style="display:none;">
 
   <div id="scrollProgress"></div>
@@ -57,23 +107,25 @@
   <canvas id="confettiCanvas"></canvas>
   <button id="backToTop" title="Back to top"><i class="fa-solid fa-arrow-up"></i></button>
 
-  <!-- HEADER -->
+  <!-- ═══ HEADER ═══ -->
   <header>
     <div class="nav-container">
       <a href="#" class="logo" onclick="switchToTab('home'); return false;">
-        <i class="fa-solid fa-graduation-cap"></i>
-        The Chairman <span>Show</span>
+        <span class="logo-mark-small">
+          <span class="bracket">&lt;</span>
+          <span class="logo-text">CS</span>
+          <span class="bracket">/&gt;</span>
+        </span>
+        <span class="logo-name">The Chairman <em>Show</em></span>
       </a>
 
       <ul class="nav-links">
         <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> <span class="nav-text">Home</span></button></li>
+        <li><button class="nav-item" data-tab="python" id="navPython"><i class="fa-brands fa-python"></i> <span class="nav-text">Python Practice</span></button></li>
         <li><button class="nav-item" data-tab="doubts"><i class="fa-solid fa-circle-question"></i> <span class="nav-text">Doubts</span></button></li>
-        <li><button class="nav-item" data-tab="expertDashboard" id="navExpertDashboard" style="display:none;"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Expert Panel</span></button></li>
-        <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-users"></i> <span class="nav-text">Experts</span></button></li>
-        <li><button class="nav-item" data-tab="admin" id="navAdmin" style="display:none;"><i class="fa-solid fa-shield-halved"></i> <span class="nav-text">Admin</span></button></li>
-        <li><button class="nav-item" data-tab="community"><i class="fa-solid fa-earth-americas"></i> <span class="nav-text">Community</span><span class="nav-badge" id="navBadge" style="display:none;">0</span></button></li>
-        <li><button class="nav-item" data-tab="subscription"><i class="fa-solid fa-heart"></i> <span class="nav-text">Donate</span></button></li>
-        <li><button class="nav-item" data-tab="support"><i class="fa-solid fa-envelope"></i> <span class="nav-text">Support</span></button></li>
+        <li><button class="nav-item" data-tab="experts"><i class="fa-solid fa-user-tie"></i> <span class="nav-text">Experts</span></button></li>
+        <li><button class="nav-item" data-tab="leaderboard" id="navLeaderboard"><i class="fa-solid fa-trophy"></i> <span class="nav-text">Leaderboard</span></button></li>
+        <li><button class="nav-item" data-tab="donate"><i class="fa-solid fa-heart"></i> <span class="nav-text">Support Us</span></button></li>
       </ul>
 
       <div class="user-menu">
@@ -92,8 +144,9 @@
           </div>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
-          <button class="dropdown-item" data-goto="subscription"><i class="fa-solid fa-heart"></i> Support Us</button>
-          <button class="dropdown-item" id="becomeExpertBtn"><i class="fa-solid fa-user-tie"></i> Become an Expert</button>
+          <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
+          <button class="dropdown-item" data-goto="doubts"><i class="fa-solid fa-circle-question"></i> My Doubts</button>
+          <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
         </div>
@@ -103,250 +156,452 @@
 
   <main>
 
-    <!-- ═══ HOME TAB ═══ -->
+    <!-- ═══════════════════════════════════════════════════════
+         HOME TAB — Cinematic Hero + Python Practice
+         ═══════════════════════════════════════════════════════ -->
     <section id="home" class="tab-content active">
-      <div class="hero">
-        <div class="hero-eyebrow"><i class="fa-solid fa-bolt"></i> India's Student-First Platform</div>
-        <h1>Get your doubts solved by <span class="grad">real experts</span></h1>
-        <p class="sub">Post a doubt, get answers within minutes. Or become an expert and earn money by helping students.</p>
-        <div class="hero-ctas">
-          <button class="btn-primary" data-goto="doubts"><i class="fa-solid fa-plus"></i> Ask a Doubt</button>
-          <button class="btn-ghost" data-goto="experts"><i class="fa-solid fa-user-tie"></i> Browse Experts</button>
+
+      <!-- HERO -->
+      <div class="hero-cinematic">
+        <div class="hero-grid-bg"></div>
+        <div class="hero-orbs">
+          <div class="orb orb-1"></div>
+          <div class="orb orb-2"></div>
+          <div class="orb orb-3"></div>
         </div>
-      </div>
 
-      <div class="home-stats" id="homeStats">
-        <div class="home-stat"><div class="num" id="statDoubts">0</div><div class="lbl">Doubts Solved</div></div>
-        <div class="home-stat"><div class="num" id="statExperts">0</div><div class="lbl">Active Experts</div></div>
-        <div class="home-stat"><div class="num" id="statStudents">0</div><div class="lbl">Happy Students</div></div>
-        <div class="home-stat"><div class="num" id="statAvgTime">0m</div><div class="lbl">Avg Response</div></div>
-      </div>
-
-      <div class="home-grid">
-        <div class="feature-section">
-          <h3><i class="fa-solid fa-compass"></i> How it works</h3>
-          <div class="steps">
-            <div class="step-card"><div class="step-num">1</div><h4>Post your doubt</h4><p>Type your question or upload an image of your problem</p></div>
-            <div class="step-card"><div class="step-num">2</div><h4>Expert gets notified</h4><p>Verified experts in your subject see your doubt instantly</p></div>
-            <div class="step-card"><div class="step-num">3</div><h4>Get solution</h4><p>Receive step-by-step solution with explanation</p></div>
-            <div class="step-card"><div class="step-num">4</div><h4>Rate & learn</h4><p>Rate your expert and save the solution for later</p></div>
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="badge-dot"></span>
+            <span>India's Student-First Coding Platform</span>
           </div>
-        </div>
 
-        <div class="side-panel">
-          <div class="panel-title"><i class="fa-solid fa-fire"></i> Your Activity</div>
-          <div class="mini-stats">
-            <div class="mini-stat"><div class="v" id="miniDoubts">0</div><div class="l">Doubts Asked</div></div>
-            <div class="mini-stat"><div class="v" id="miniSolved">0</div><div class="l">Solved</div></div>
-            <div class="mini-stat"><div class="v" id="miniRating">—</div><div class="l">Rating</div></div>
-          </div>
-          <div class="sub-status" id="subStatus">
-            <i class="fa-solid fa-circle-info"></i>
-            <span>All features are free for everyone</span>
-          </div>
-        </div>
-      </div>
+          <h1 class="hero-title">
+            <span class="title-line line-1">Learn Python.</span>
+            <span class="title-line line-2">Master DSA.</span>
+            <span class="title-line line-3"><span class="gradient-text">Get Hired.</span></span>
+          </h1>
 
-      <!-- ═══ TASKS WIDGET ═══ -->
-      <div class="tasks-widget" id="tasksWidget">
-        <div class="tasks-header">
-          <h3><i class="fa-solid fa-list-check"></i> Write Your Tasks</h3>
-          <p>Plan your study — break big goals into steps</p>
-        </div>
-
-        <div class="tasks-input-row">
-          <input type="text" id="taskInput" placeholder="e.g., Complete Physics Chapter 5..." maxlength="120">
-          <button class="btn-primary" id="addTaskBtn"><i class="fa-solid fa-plus"></i> Add</button>
-        </div>
-
-        <div class="tasks-list" id="tasksList">
-          <div class="empty-state">
-            <i class="fa-solid fa-clipboard-list"></i>
-            <h4>No tasks yet</h4>
-            <p>Add your first task above to get started</p>
-          </div>
-        </div>
-
-        <div class="tasks-actions">
-          <button class="btn-primary" id="startTasksBtn" disabled>
-            <i class="fa-solid fa-play"></i> Start Task Mode
-          </button>
-          <button class="btn-ghost" id="clearTasksBtn">
-            <i class="fa-solid fa-trash"></i> Clear All
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ DOUBTS TAB ═══ -->
-    <section id="doubts" class="tab-content">
-      <div class="section-header">
-        <h1>My Doubts</h1>
-        <p>Ask questions and track their solutions</p>
-      </div>
-
-      <div class="live-experts-bar" id="liveExpertsBar">
-        <div class="live-pulse"></div>
-        <div class="live-text">
-          <strong id="liveCount">12</strong> experts online now
-        </div>
-        <div class="live-avatars" id="liveAvatars"></div>
-      </div>
-
-      <div class="doubts-toolbar">
-        <button class="btn-primary" id="newDoubtBtn"><i class="fa-solid fa-plus"></i> Ask New Doubt</button>
-        <div class="filter-chips" id="doubtFilters">
-          <button class="chip active" data-status="all">All</button>
-          <button class="chip" data-status="open">Open</button>
-          <button class="chip" data-status="answered">Answered</button>
-          <button class="chip" data-status="closed">Closed</button>
-        </div>
-      </div>
-
-      <div class="doubts-grid" id="doubtsGrid">
-        <div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No doubts yet</h4><p>Click "Ask New Doubt" to get started</p></div>
-      </div>
-    </section>
-
-    <!-- ═══ EXPERT DASHBOARD TAB ═══ -->
-    <section id="expertDashboard" class="tab-content">
-      <div class="section-header">
-        <h1>Expert Dashboard</h1>
-        <p>Answer student doubts and earn money</p>
-      </div>
-      <div class="expert-stats-row">
-        <div class="expert-stat-card"><i class="fa-solid fa-inbox" style="color:#3b82f6"></i><div><div class="es-num" id="esOpenCount">0</div><div class="es-lbl">Open Doubts</div></div></div>
-        <div class="expert-stat-card"><i class="fa-solid fa-circle-check" style="color:#10b981"></i><div><div class="es-num" id="esAnsweredCount">0</div><div class="es-lbl">Answered</div></div></div>
-        <div class="expert-stat-card"><i class="fa-solid fa-star" style="color:#f59e0b"></i><div><div class="es-num" id="esRating">—</div><div class="es-lbl">Your Rating</div></div></div>
-        <div class="expert-stat-card"><i class="fa-solid fa-indian-rupee-sign" style="color:#7c3aed"></i><div><div class="es-num" id="esEarnings">₹0</div><div class="es-lbl">Earnings</div></div></div>
-      </div>
-      <div class="doubts-toolbar">
-        <div class="filter-chips" id="expertDoubtFilters">
-          <button class="chip active" data-status="open">Open</button>
-          <button class="chip" data-status="answered">My Answers</button>
-          <button class="chip" data-status="all">All</button>
-        </div>
-      </div>
-      <div class="expert-doubts-list" id="expertDoubtsList">
-        <div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading doubts…</p></div>
-      </div>
-    </section>
-
-    <!-- ═══ EXPERTS TAB ═══ -->
-  <section id="experts" class="tab-content">
-  <div class="section-header">
-    <h1>Our Experts</h1>
-    <p>Verified subject experts ready to help you</p>
-  </div>
-
-  <!-- ═══ LIVE WORKSHOPS SECTION ═══ -->
-  <div class="workshops-section" id="workshopsSection">
-    <div class="workshops-header">
-      <h2><i class="fa-solid fa-video"></i> Live Workshops</h2>
-      <p>Join live sessions with expert teachers</p>
-    </div>
-    <div class="workshops-grid" id="workshopsGrid">
-      <div class="empty-state">
-        <i class="fa-solid fa-spinner fa-spin"></i>
-        <p>Loading workshops…</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ EXPERTS SECTIONS ═══ -->
-  <div class="expert-sections" id="expertSections">
-    <div class="empty-state">
-      <i class="fa-solid fa-spinner fa-spin"></i>
-      <p>Loading experts…</p>
-    </div>
-  </div>
-</section>
-
-    <!-- ═══ COMMUNITY TAB ═══ -->
-    <section id="community" class="tab-content">
-      <div class="section-header">
-        <h1>Community Chat</h1>
-        <p>Real-time chat with images, voice notes, and reactions</p>
-      </div>
-      <div class="chat-shell" id="chatShell">
-        <div class="empty-state">
-          <i class="fa-solid fa-comments"></i>
-          <h4>Community Chat Coming Soon</h4>
-          <p>We're building real-time chat with images and voice notes. Stay tuned!</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ DONATE TAB ═══ -->
-    <section id="subscription" class="tab-content">
-      <div class="section-header">
-        <h1>Support Us ❤️</h1>
-        <p>Your small contribution keeps quality education free for every student</p>
-      </div>
-
-      <div class="donate-wrapper">
-        <div class="donate-message-card">
-          <div class="donate-icon">
-            <i class="fa-solid fa-heart"></i>
-          </div>
-          <h2>We're Building This For You</h2>
-          <p>
-            Hum aapke liye bahut mehnat se <strong>quality education</strong> provide kar rahe hain.
-            Humne koi subscription ya paid plan nahi rakha — <strong>sab kuch free hai</strong>.
+          <p class="hero-sub">
+            100 levels of handpicked Python problems. Real-time expert doubt solving.
+            Progress tracking that actually matters. <strong>100% free — forever.</strong>
           </p>
-          <p>
-            Agar aapko hamara platform pasand aaye aur aap chahte ho ki hum aur bhi
-            students tak pahunche, to aap hume <strong>support kar sakte ho</strong>.
-          </p>
-          <p class="donate-tagline">
-            <i class="fa-solid fa-quote-left"></i>
-            Every rupee helps us reach one more student
-            <i class="fa-solid fa-quote-right"></i>
-          </p>
-        </div>
 
-        <div class="donate-payment-card">
-          <div class="donate-qr-box">
-            <div class="qr-placeholder" id="qrPlaceholder">
-              <i class="fa-solid fa-qrcode"></i>
-              <p>Scan to donate</p>
-            </div>
-          </div>
-
-          <div class="donate-upi-box">
-            <div class="donate-upi-label">
-              <i class="fa-solid fa-indian-rupee-sign"></i> UPI ID
-            </div>
-            <div class="donate-upi-id" id="upiIdDisplay">chairman@upi</div>
-            <button class="donate-copy-btn" id="copyUpiBtn">
-              <i class="fa-regular fa-copy"></i> Copy UPI ID
+          <div class="hero-ctas">
+            <button class="btn-hero-primary" data-goto="python">
+              <i class="fa-brands fa-python"></i>
+              <span>Start Python Practice</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <button class="btn-hero-ghost" data-goto="doubts">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Ask a Doubt</span>
             </button>
           </div>
 
-          <div class="donate-thanks">
-            <i class="fa-solid fa-hands-praying"></i>
-            Thank you for supporting our mission
+          <!-- Live terminal -->
+          <div class="hero-terminal">
+            <div class="terminal-header">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+              <span class="terminal-title">~/the_chairman_show/main.py</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line">
+                <span class="t-prompt">&gt;&gt;&gt;</span>
+                <span class="t-code">print(<span class="t-string">"Welcome, Coder"</span>)</span>
+              </div>
+              <div class="terminal-line">
+                <span class="t-output">Welcome, Coder</span>
+              </div>
+              <div class="terminal-line">
+                <span class="t-prompt">&gt;&gt;&gt;</span>
+                <span class="t-code">challenges.solve(<span class="t-number">100</span>)</span>
+                <span class="t-cursor-blink">_</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS STRIP -->
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="stat-icon icon-blue"><i class="fa-solid fa-code"></i></div>
+          <div class="stat-info">
+            <div class="stat-num" id="statLevels">100</div>
+            <div class="stat-lbl">Levels</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-purple"><i class="fa-solid fa-users"></i></div>
+          <div class="stat-info">
+            <div class="stat-num" id="statStudents">0</div>
+            <div class="stat-lbl">Students</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-orange"><i class="fa-solid fa-fire"></i></div>
+          <div class="stat-info">
+            <div class="stat-num" id="statSolvedGlobal">0</div>
+            <div class="stat-lbl">Solved Today</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-green"><i class="fa-solid fa-trophy"></i></div>
+          <div class="stat-info">
+            <div class="stat-num" id="statYourRank">—</div>
+            <div class="stat-lbl">Your Rank</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PYTHON PRACTICE PREVIEW (Homepage) -->
+      <div class="python-preview">
+        <div class="section-head-cinematic">
+          <div class="section-tag">
+            <i class="fa-brands fa-python"></i> Featured
+          </div>
+          <h2 class="section-title-cine">Python Practice Arena</h2>
+          <p class="section-sub-cine">
+            100 levels. <span class="text-blue">Easy to Hard.</span> Real interview patterns.
+          </p>
+        </div>
+
+        <div class="level-track-preview" id="levelTrackPreview">
+          <!-- JS renders preview: 10 levels shown -->
+        </div>
+
+        <div class="preview-cta">
+          <button class="btn-hero-primary" data-goto="python">
+            <span>Explore All 100 Levels</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- FEATURES GRID -->
+      <div class="features-cinematic">
+        <div class="feature-cine-card">
+          <div class="fc-icon" style="--fc-color: #00d4ff">
+            <i class="fa-solid fa-terminal"></i>
+          </div>
+          <h3>Real Code Editor</h3>
+          <p>Write Python code, run it, get instant feedback. No setup needed — works in your browser.</p>
+        </div>
+        <div class="feature-cine-card">
+          <div class="fc-icon" style="--fc-color: #7c3aed">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <h3>Learn by Doing</h3>
+          <p>Not just videos — solve real problems. Every concept backed by practice.</p>
+        </div>
+        <div class="feature-cine-card">
+          <div class="fc-icon" style="--fc-color: #f59e0b">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <h3>Expert Help</h3>
+          <p>Stuck? Ask a doubt. Verified experts and AI help you understand, not just copy answers.</p>
+        </div>
+        <div class="feature-cine-card">
+          <div class="fc-icon" style="--fc-color: #10b981">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <h3>Track Progress</h3>
+          <p>See your growth daily. Streaks, XP, badges — the dopamine you need to keep going.</p>
+        </div>
+      </div>
+
+      <!-- CTA BANNER -->
+      <div class="cta-banner">
+        <div class="cta-banner-bg"></div>
+        <div class="cta-banner-content">
+          <h2>Ready to start your coding journey?</h2>
+          <p>Join thousands of Indian students mastering Python — one problem at a time.</p>
+          <button class="btn-hero-primary" data-goto="python">
+            <i class="fa-solid fa-play"></i> Start Level 1 Now
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PYTHON PRACTICE TAB
+         ═══════════════════════════════════════════════════════ -->
+    <section id="python" class="tab-content">
+
+      <!-- Practice Header -->
+      <div class="python-header-cinematic">
+        <div class="python-header-bg"></div>
+        <div class="python-header-content">
+          <div class="python-icon-big">
+            <i class="fa-brands fa-python"></i>
+          </div>
+          <div>
+            <h1>Python Practice Arena</h1>
+            <p>100 levels · Beginner to Interview-Ready</p>
+          </div>
+        </div>
+        <div class="python-progress-bar-wrap">
+          <div class="ppb-labels">
+            <span>Your Progress</span>
+            <span><strong id="pythonProgressLabel">0 / 100</strong></span>
+          </div>
+          <div class="ppb-track">
+            <div class="ppb-fill" id="pythonProgressFill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="python-filter-bar">
+        <div class="filter-chips-cine" id="pythonFilters">
+          <button class="chip-cine active" data-diff="all">
+            <i class="fa-solid fa-layer-group"></i> All Levels
+          </button>
+          <button class="chip-cine" data-diff="Easy">
+            <i class="fa-solid fa-seedling"></i> Easy
+          </button>
+          <button class="chip-cine" data-diff="Medium">
+            <i class="fa-solid fa-fire"></i> Medium
+          </button>
+          <button class="chip-cine" data-diff="Hard">
+            <i class="fa-solid fa-skull"></i> Hard
+          </button>
+          <button class="chip-cine" data-diff="solved">
+            <i class="fa-solid fa-circle-check"></i> Solved
+          </button>
+        </div>
+        <div class="filter-search-cine">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="pythonSearch" placeholder="Search problems...">
+        </div>
+      </div>
+
+      <!-- Levels Grid -->
+      <div class="levels-grid-cine" id="levelsGrid">
+        <div class="loading-cine">
+          <div class="loading-spinner-cine"></div>
+          <p>Loading levels...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PROBLEM VIEW (opened when clicking a problem)
+         ═══════════════════════════════════════════════════════ -->
+    <section id="problemView" class="tab-content">
+      <div class="problem-view-header">
+        <button class="back-btn-cine" onclick="switchToTab('python')">
+          <i class="fa-solid fa-arrow-left"></i> Back to Levels
+        </button>
+        <div class="problem-view-meta" id="problemViewMeta"></div>
+      </div>
+
+      <div class="problem-layout">
+        <!-- Left: Description -->
+        <div class="problem-left">
+          <div class="problem-card-cine">
+            <div class="problem-title-row">
+              <h1 id="pvTitle">Problem Title</h1>
+              <span class="badge-diff" id="pvDifficulty">Easy</span>
+            </div>
+            <div class="problem-tags" id="pvTags"></div>
+            <div class="problem-desc" id="pvDescription"></div>
+
+            <div class="examples-section">
+              <h3><i class="fa-solid fa-flask"></i> Examples</h3>
+              <div id="pvExamples"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Code Editor -->
+        <div class="problem-right">
+          <div class="editor-card">
+            <div class="editor-header">
+              <div class="editor-tabs">
+                <button class="editor-tab active" id="tabCode">
+                  <i class="fa-solid fa-code"></i> Code
+                </button>
+                <button class="editor-tab" id="tabSolution">
+                  <i class="fa-solid fa-lightbulb"></i> Solution
+                </button>
+              </div>
+              <div class="editor-actions">
+                <button class="editor-btn" id="resetCodeBtn" title="Reset code">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button class="editor-btn" id="copyCodeBtn" title="Copy code">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="editor-body">
+              <div class="editor-line-numbers" id="editorLineNumbers"></div>
+              <textarea id="codeEditor" class="code-textarea" spellcheck="false" 
+                placeholder="# Write your Python code here..."></textarea>
+            </div>
+
+            <div class="editor-footer">
+              <button class="btn-run-cine" id="runCodeBtn">
+                <i class="fa-solid fa-play"></i> Run Code
+              </button>
+              <button class="btn-mark-solved" id="markSolvedBtn">
+                <i class="fa-regular fa-circle-check"></i> Mark as Solved
+              </button>
+            </div>
+          </div>
+
+          <div class="output-card" id="outputCard" style="display:none;">
+            <div class="output-header">
+              <span><i class="fa-solid fa-terminal"></i> Output</span>
+              <button class="editor-btn" onclick="document.getElementById('outputCard').style.display='none'">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div class="output-body" id="outputBody"></div>
+          </div>
+
+          <div class="solution-card" id="solutionCard" style="display:none;">
+            <div class="solution-header">
+              <span><i class="fa-solid fa-lightbulb"></i> Official Solution</span>
+            </div>
+            <div class="solution-body">
+              <pre id="solutionCode"></pre>
+              <div class="solution-explanation" id="solutionExplanation"></div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ═══ PROFILE TAB ═══ -->
-    <section id="profile" class="tab-content">
-      <div class="section-header">
-        <h1>My Profile</h1>
-        <p>Manage your account settings</p>
+    <!-- ═══════════════════════════════════════════════════════
+         DOUBTS TAB — Programming-specific
+         ═══════════════════════════════════════════════════════ -->
+    <section id="doubts" class="tab-content">
+      <div class="section-head-cinematic">
+        <div class="section-tag"><i class="fa-solid fa-circle-question"></i> Help</div>
+        <h2 class="section-title-cine">Code Doubts</h2>
+        <p class="section-sub-cine">Stuck in code? Ask. Get answered by experts + AI.</p>
       </div>
-      <div class="profile-card">
-        <img id="profileAvatar" src="" alt="">
+
+      <div class="doubts-toolbar-cine">
+        <button class="btn-hero-primary" id="newDoubtBtn">
+          <i class="fa-solid fa-plus"></i> Ask New Doubt
+        </button>
+        <div class="filter-chips-cine" id="doubtFilters">
+          <button class="chip-cine active" data-status="all">All</button>
+          <button class="chip-cine" data-status="open">Open</button>
+          <button class="chip-cine" data-status="answered">Answered</button>
+        </div>
+      </div>
+
+      <div class="doubts-grid-cine" id="doubtsGrid">
+        <div class="empty-state-cine">
+          <i class="fa-solid fa-inbox"></i>
+          <h4>No doubts yet</h4>
+          <p>Click "Ask New Doubt" to get started</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         EXPERTS TAB
+         ═══════════════════════════════════════════════════════ -->
+    <section id="experts" class="tab-content">
+      <div class="section-head-cinematic">
+        <div class="section-tag"><i class="fa-solid fa-user-tie"></i> Experts</div>
+        <h2 class="section-title-cine">Learn from the Best</h2>
+        <p class="section-sub-cine">Verified programming experts ready to help.</p>
+      </div>
+
+      <div class="expert-sections-cine" id="expertSections">
+        <div class="loading-cine">
+          <div class="loading-spinner-cine"></div>
+          <p>Loading experts...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         LEADERBOARD TAB
+         ═══════════════════════════════════════════════════════ -->
+    <section id="leaderboard" class="tab-content">
+      <div class="section-head-cinematic">
+        <div class="section-tag"><i class="fa-solid fa-trophy"></i> Leaderboard</div>
+        <h2 class="section-title-cine">Top Coders This Week</h2>
+        <p class="section-sub-cine">Solve more, rank higher.</p>
+      </div>
+
+      <div class="lb-podium-cine" id="lbPodium"></div>
+      <div class="lb-list-cine" id="lbList">
+        <div class="loading-cine">
+          <div class="loading-spinner-cine"></div>
+          <p>Loading leaderboard...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         DONATE / SUPPORT TAB
+         ═══════════════════════════════════════════════════════ -->
+    <section id="donate" class="tab-content">
+      <div class="section-head-cinematic">
+        <div class="section-tag"><i class="fa-solid fa-heart"></i> Support</div>
+        <h2 class="section-title-cine">Keep It Free ❤️</h2>
+        <p class="section-sub-cine">Your support keeps this platform 100% free for every student.</p>
+      </div>
+
+      <div class="donate-wrapper-cine">
+        <div class="donate-message-cine">
+          <div class="dm-icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
+          <h3>Built by a Student, For Students</h3>
+          <p>
+            <strong>No subscriptions. No paywalls. No premium.</strong> Just free,
+            high-quality Python practice and doubt solving for every Indian student.
+          </p>
+          <p>If this platform helped you, you can support us with any amount. Every rupee keeps the servers running.</p>
+        </div>
+
+        <div class="donate-payment-cine">
+          <div class="upi-block-cine">
+            <div class="upi-label-cine"><i class="fa-solid fa-indian-rupee-sign"></i> UPI ID</div>
+            <div class="upi-id-cine" id="upiIdDisplay">chairman@upi</div>
+            <button class="btn-copy-upi" id="copyUpiBtn">
+              <i class="fa-regular fa-copy"></i> Copy UPI ID
+            </button>
+          </div>
+          <div class="thanks-cine">
+            <i class="fa-solid fa-hands-praying"></i>
+            Thank you for believing in free education
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PROFILE TAB
+         ═══════════════════════════════════════════════════════ -->
+    <section id="profile" class="tab-content">
+      <div class="section-head-cinematic">
+        <div class="section-tag"><i class="fa-solid fa-user"></i> Profile</div>
+        <h2 class="section-title-cine">My Account</h2>
+      </div>
+
+      <div class="profile-card-cine">
+        <img id="profileAvatar" src="" alt="" class="profile-avatar-cine">
         <h3 id="profileName">User</h3>
         <p id="profileEmail">email@example.com</p>
-        <div class="profile-form">
-          <div class="form-group">
+
+        <div class="profile-form-cine">
+          <div class="form-group-cine">
             <label>Display Name</label>
             <input type="text" id="profileDisplayName" placeholder="Your name">
           </div>
-          <div class="form-group">
+          <div class="form-group-cine">
             <label>Class / Level</label>
             <select id="profileClass">
               <option value="">Select</option>
@@ -357,324 +612,98 @@
               <option value="college">College Student</option>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group-cine">
             <label>Bio</label>
             <textarea id="profileBio" placeholder="Tell us about yourself"></textarea>
           </div>
-          <button class="btn-primary" id="saveProfileBtn"><i class="fa-solid fa-check"></i> Save Changes</button>
+          <button class="btn-hero-primary" id="saveProfileBtn" style="width:100%;justify-content:center;">
+            <i class="fa-solid fa-check"></i> Save Changes
+          </button>
         </div>
       </div>
     </section>
 
-    <!-- ═══ SUPPORT TAB ═══ -->
-<section id="support" class="tab-content">
-  <div class="section-header">
-    <h1>Support</h1>
-    <p>Fill the form below and we'll get back to you within 24 hours</p>
-  </div>
-  <div class="support-wrapper">
-    <div class="support-card" style="padding: 0; overflow: hidden;">
-      <iframe
-        src="https://docs.google.com/forms/d/e/1FAIpQLSfbAwC7rS2RHX1ICPUWSrbFK0VImAD36A9o6iG5glmsgKEZbQ/viewform?embedded=true"
-        width="100%"
-        height="900"
-        frameborder="0"
-        marginheight="0"
-        marginwidth="0"
-        style="display: block; border: none; min-height: 900px;"
-        title="Support Form">
-        Loading…
-      </iframe>
-    </div>
-  </div>
-</section>
-<!-- ═══ ADMIN TAB ═══ -->
-<section id="admin" class="tab-content">
-  <div class="section-header">
-    <h1>Admin Dashboard</h1>
-    <p>Manage workshops, users, and access requests</p>
-  </div>
+  </main>
 
-  <!-- Admin Tabs -->
-  <div class="admin-tabs">
-    <button class="admin-tab active" data-atab="workshops">
-      <i class="fa-solid fa-video"></i> Workshops
-    </button>
-    <button class="admin-tab" data-atab="requests">
-      <i class="fa-solid fa-bell"></i> Requests
-      <span class="admin-badge" id="pendingCount" style="display:none;">0</span>
-    </button>
-  </div>
+  <!-- ═══════════════════════════════════════════════════════
+       MODALS
+       ═══════════════════════════════════════════════════════ -->
 
-  <!-- WORKSHOPS PANEL -->
-  <div class="admin-panel active" id="adminPanelWorkshops">
-    <div class="admin-toolbar">
-      <button class="btn-primary" id="createWorkshopBtn">
-        <i class="fa-solid fa-plus"></i> Create Workshop
-      </button>
-    </div>
-    <div class="admin-workshops-list" id="adminWorkshopsList">
-      <div class="empty-state">
-        <i class="fa-solid fa-video"></i>
-        <h4>No workshops yet</h4>
-        <p>Click "Create Workshop" to get started</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- REQUESTS PANEL -->
-  <div class="admin-panel" id="adminPanelRequests">
-    <div class="admin-requests-list" id="adminRequestsList">
-      <div class="empty-state">
-        <i class="fa-solid fa-inbox"></i>
-        <h4>No pending requests</h4>
-        <p>Access requests from students will appear here</p>
-      </div>
-    </div>
-  </div>
-</section>
-  <!-- ═══ NEW DOUBT MODAL ═══ -->
-  <div class="modal-overlay" id="newDoubtModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-circle-question"></i> Ask a New Doubt</h3>
-        <button class="close-modal" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Subject</label>
-          <select id="doubtSubject">
-            <option value="Mathematics">Mathematics</option>
-            <option value="Physics">Physics</option>
-            <option value="Chemistry">Chemistry</option>
-            <option value="Biology">Biology</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="English">English</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Class / Level</label>
-          <select id="doubtClass">
-            <option value="1-10">Class 1-10</option>
-            <option value="11-12">Class 11-12</option>
-            <option value="jee">JEE</option>
-            <option value="neet">NEET</option>
-            <option value="college">College</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Your Question</label>
-          <textarea id="doubtQuestion" rows="5" placeholder="Type your doubt here..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>Attach Image (optional)</label>
-          <input type="file" id="doubtImage" accept="image/*">
-          <div id="doubtImagePreview"></div>
-        </div>
-        <button class="btn-primary" id="postDoubtBtn"><i class="fa-solid fa-paper-plane"></i> Post Doubt</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ ANSWER DOUBT MODAL ═══ -->
-  <div class="modal-overlay" id="answerDoubtModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-pen"></i> Answer Doubt</h3>
-        <button class="close-modal" onclick="closeModal('answerDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="original-doubt" id="originalDoubt">
-          <div class="od-header">
-            <span class="doubt-subject" id="odSubject">Subject</span>
-            <span class="doubt-status" id="odStatus">open</span>
-          </div>
-          <div class="od-question" id="odQuestion">Question here…</div>
-          <div id="odImage"></div>
-          <div class="od-meta" id="odMeta"></div>
-        </div>
-        <div class="form-group">
-          <label>Your Answer</label>
-          <textarea id="answerText" rows="8" placeholder="Explain step by step..." style="font-family: var(--font-mono); font-size: .88rem;"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Attach Image (optional — solution photo)</label>
-          <input type="file" id="answerImage" accept="image/*">
-          <div id="answerImagePreview"></div>
-        </div>
-        <button class="btn-primary" id="submitAnswerBtn" style="width:100%">
-          <i class="fa-solid fa-paper-plane"></i> Submit Answer
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ DOUBT DETAILS MODAL (Student View) ═══ -->
-  <div class="modal-overlay" id="doubtDetailsModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-circle-question"></i> Doubt Details</h3>
-        <button class="close-modal" onclick="closeModal('doubtDetailsModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body" id="doubtDetailsBody"></div>
-    </div>
-  </div>
-
-  <!-- ═══ EXPERT PROFILE MODAL ═══ -->
-  <div class="modal-overlay" id="expertProfileModal">
-    <div class="modal-content" style="max-width: 480px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-user-tie"></i> Expert Profile</h3>
-        <button class="close-modal" onclick="closeModal('expertProfileModal')">
+  <!-- New Doubt Modal -->
+  <div class="modal-overlay-cine" id="newDoubtModal">
+    <div class="modal-content-cine">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-circle-question"></i> Ask a Code Doubt</h3>
+        <button class="close-modal-cine" onclick="closeModal('newDoubtModal')">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="modal-body" id="expertProfileBody"></div>
+      <div class="modal-body-cine">
+        <div class="form-group-cine">
+          <label>Topic / Language</label>
+          <select id="doubtSubject">
+            <option value="Python">Python</option>
+            <option value="JavaScript">JavaScript</option>
+            <option value="C++">C++</option>
+            <option value="Java">Java</option>
+            <option value="DSA">Data Structures & Algorithms</option>
+            <option value="SQL">SQL / Databases</option>
+            <option value="Web Dev">HTML / CSS / React</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group-cine">
+          <label>Your Code / Question</label>
+          <textarea id="doubtQuestion" rows="6" placeholder="Describe your problem. Paste your code here..." style="font-family: var(--font-mono); font-size: 0.85rem;"></textarea>
+        </div>
+        <div class="form-group-cine">
+          <label>Attach Screenshot (optional)</label>
+          <input type="file" id="doubtImage" accept="image/*">
+          <div id="doubtImagePreview"></div>
+        </div>
+        <button class="btn-hero-primary" id="postDoubtBtn" style="width:100%;justify-content:center;">
+          <i class="fa-solid fa-paper-plane"></i> Post Doubt
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- ═══ IMAGE VIEWER MODAL ═══ -->
-  <div class="modal-overlay" id="imageViewerModal">
-    <div class="image-viewer-content">
-      <button class="close-modal" onclick="closeModal('imageViewerModal')"><i class="fa-solid fa-xmark"></i></button>
+  <!-- Doubt Details Modal -->
+  <div class="modal-overlay-cine" id="doubtDetailsModal">
+    <div class="modal-content-cine" style="max-width: 720px;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-code"></i> Doubt Details</h3>
+        <button class="close-modal-cine" onclick="closeModal('doubtDetailsModal')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body-cine" id="doubtDetailsBody"></div>
+    </div>
+  </div>
+
+  <!-- Image Viewer -->
+  <div class="modal-overlay-cine" id="imageViewerModal">
+    <div class="image-viewer-cine">
+      <button class="close-modal-cine" onclick="closeModal('imageViewerModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
       <img id="viewerImage" src="" alt="">
     </div>
   </div>
-<!-- ═══ CREATE WORKSHOP MODAL ═══ -->
-<div class="modal-overlay" id="createWorkshopModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fa-solid fa-video"></i> Create Workshop</h3>
-      <button class="close-modal" onclick="closeModal('createWorkshopModal')">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Workshop Title *</label>
-        <input type="text" id="cwTitle" placeholder="e.g., JEE Physics — Rotational Motion" maxlength="100">
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="cwDescription" rows="2" placeholder="Short description..." maxlength="200"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Expert Name *</label>
-        <input type="text" id="cwExpert" placeholder="e.g., Dr. Vikram Mehta">
-      </div>
-      <div class="form-group">
-        <label>Subject *</label>
-        <select id="cwSubject">
-          <option value="Mathematics">Mathematics</option>
-          <option value="Physics">Physics</option>
-          <option value="Chemistry">Chemistry</option>
-          <option value="Biology">Biology</option>
-          <option value="Computer Science">Computer Science</option>
-          <option value="English">English</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Meeting Link *</label>
-        <input type="url" id="cwLink" placeholder="https://meet.google.com/abc-defg-hij">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Scheduled Date *</label>
-          <input type="date" id="cwDate">
-        </div>
-        <div class="form-group">
-          <label>Scheduled Time *</label>
-          <input type="time" id="cwTime">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Duration (minutes) *</label>
-        <input type="number" id="cwDuration" value="60" min="15" max="300">
-      </div>
-      <button class="btn-primary" id="saveWorkshopBtn" style="width:100%;justify-content:center;margin-top:.5rem">
-        <i class="fa-solid fa-check"></i> Create Workshop
-      </button>
-    </div>
-  </div>
-</div>
 
-<!-- ═══ MANAGE ACCESS MODAL ═══ -->
-<div class="modal-overlay" id="manageAccessModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fa-solid fa-users-gear"></i> Manage Access</h3>
-      <button class="close-modal" onclick="closeModal('manageAccessModal')">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+  <footer class="footer-cine">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <span class="logo-mark-small">
+          <span class="bracket">&lt;</span>
+          <span class="logo-text">CS</span>
+          <span class="bracket">/&gt;</span>
+        </span>
+        <span>The Chairman Show</span>
+      </div>
+      <p class="footer-tagline">Made with <i class="fa-solid fa-heart" style="color:#ef4444"></i> in India · 100% Free Forever</p>
+      <p class="footer-copy">© 2026 The Chairman Show. Built by Sumit Shrivas.</p>
     </div>
-    <div class="modal-body">
-      <div class="manage-info" id="manageInfo"></div>
-
-      <div class="form-group">
-        <label>Add User by Email</label>
-        <div class="input-with-btn">
-          <input type="email" id="accessEmail" placeholder="student@example.com">
-          <button class="btn-primary" id="addAccessBtn">
-            <i class="fa-solid fa-plus"></i> Add
-          </button>
-        </div>
-      </div>
-
-      <div class="access-list-header">
-        <strong>Allowed Users</strong>
-        <span id="accessCount">0</span>
-      </div>
-      <div class="access-list" id="accessList">
-        <div class="empty-state" style="padding:1rem;">
-          <p style="font-size:.82rem;">No users allowed yet</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-  <!-- ═══ TASK FOCUS MODE OVERLAY ═══ -->
-  <div class="task-focus-overlay" id="taskFocusOverlay">
-    <div class="task-focus-card">
-      <div class="task-step-indicator">
-        Step <span id="currentStepNum">1</span> of <span id="totalStepNum">1</span>
-      </div>
-      <div class="task-timer-ring">
-        <svg viewBox="0 0 200 200">
-          <circle class="timer-track" cx="100" cy="100" r="90"/>
-          <circle class="timer-fill" id="timerFill" cx="100" cy="100" r="90"/>
-        </svg>
-        <div class="task-timer-text" id="taskTimerText">00:00</div>
-      </div>
-      <div class="task-current-text" id="taskCurrentText">Task goes here</div>
-      <div class="task-focus-actions">
-        <button class="btn-ghost" id="prevTaskBtn"><i class="fa-solid fa-arrow-left"></i> Prev</button>
-        <button class="btn-primary" id="nextTaskBtn">Next <i class="fa-solid fa-arrow-right"></i></button>
-      </div>
-      <button class="task-focus-close" id="closeFocusBtn"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-  </div>
-
-  <!-- ═══ VICTORY OVERLAY ═══ -->
-  <div class="victory-overlay" id="victoryOverlay">
-    <canvas id="victoryConfetti"></canvas>
-    <div class="victory-content">
-      <div class="victory-emoji">🏆</div>
-      <h1>Victory!</h1>
-      <p>You completed all your tasks</p>
-      <div class="victory-time">
-        <i class="fa-solid fa-clock"></i>
-        <span>Total time: <strong id="victoryTotalTime">00:00</strong></span>
-      </div>
-      <button class="btn-primary" id="victoryCloseBtn">
-        <i class="fa-solid fa-rocket"></i> Awesome!
-      </button>
-    </div>
-  </div>
-
-  <footer>
-    <p>&copy; 2026 The Chairman Show. Built by Sumit Shrivas.</p>
   </footer>
 </div>
 
@@ -683,17 +712,21 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- ═══ APP SCRIPTS ═══ -->
+<script src="problems.js"></script>
 <script src="app.js"></script>
 
 <script>
-  setTimeout(function() {
-    var loader = document.getElementById('bootLoader');
+  // Boot loader safety net
+  setTimeout(() => {
+    const loader = document.getElementById('bootLoader');
     if (loader) loader.classList.add('hide');
-  }, 5000);
+  }, 4000);
 
-  window.addEventListener('error', function(e) {
-    console.error('JS Error:', e.message);
-    var loader = document.getElementById('bootLoader');
+  window.addEventListener('error', (e) => {
+    console.error('Global error:', e.message);
+    const loader = document.getElementById('bootLoader');
     if (loader) loader.classList.add('hide');
   });
 </script>
