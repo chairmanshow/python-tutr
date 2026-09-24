@@ -3556,3 +3556,56 @@ Failed to load resource: the tcs-telegram-proxy.sumitshrivas24.workers.dev serve
     max-width: none;
   }
 }
+/* ══════════════════════════════════════════════════════════════
+   FIX: Main content should not hide under fixed header
+   ══════════════════════════════════════════════════════════════ */
+
+/* Adjust main top margin to account for fixed header */
+main {
+  margin-top: 96px !important;
+  padding-top: 1rem;
+}
+
+/* For mobile screens */
+@media (max-width: 640px) {
+  main {
+    margin-top: 160px !important;
+  }
+}
+
+/* Ensure header doesn't overlap content */
+header {
+  height: auto;
+  min-height: 76px;
+}
+
+/* Chat and other sections should not overflow */
+.tab-content {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent body from having unexpected scroll behavior */
+body {
+  overflow-x: hidden;
+}
+
+/* Fix any z-index issues */
+main {
+  position: relative;
+  z-index: 2;
+}
+
+header {
+  z-index: 1000;
+}
+
+/* Specific fix for problem view page */
+#problemView .problem-view-header {
+  padding-top: .5rem;
+}
+
+/* Specific fix for FREE Courses section */
+#freeCourses .section-head-cinematic {
+  padding-top: .5rem;
+}
