@@ -2726,7 +2726,7 @@ document.addEventListener('click', (e) => {
 
 const YouTube = (function() {
   // ⚠️ अपनी YouTube API Key यहाँ डालो
-  const API_KEY = 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXX';   // ⚠️ YAHAN APNI KEY
+  const API_KEY = 'AIzaSyBdHiNJ6VOskm_KAWnZVb53XWJv662fDgw';   // ⚠️ YAHAN APNI KEY
 
   // तुम्हारा channel ID
   const CHANNEL_ID = 'UCkxoxW7yaoQri2HW_37FqLQ';
