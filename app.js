@@ -20,12 +20,10 @@ const db = firebase.firestore();
 
 const CONFIG = {
   UPI_ID: "chairman@upi",
-  TELEGRAM_PROXY: "https://tcs-telegram-proxy.sumitshrivas24.workers.dev",
   ADMIN_EMAIL: "overactingofficial7@gmail.com",
-  IMGBB_KEY: "f1e5041PbWWqgKDBDorh525uecKaGZD21FGSoCeR",
-  PISTON_API: "https://emkc.org/api/v2/piston/execute",
-  GROQ_API_KEY: "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"
-
+  IMGBB_KEY: "f1e5041PDx4Vtw4YF6XfduRwwS6nKZ6sPAC9nCeR",
+  GROQ_API_KEY: "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",
+  GOOGLE_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSfbAwC7rS2RHX1ICPUWSrbFK0VImAD36A9o6iG5glmsgKEZbQ/viewform"
 };
 
 let currentUser = null;
@@ -965,19 +963,12 @@ $('copyUpiBtn')?.addEventListener('click', () => {
   }).catch(() => toast('warn', 'Copy failed'));
 });
 
-/* ─────────────── SECTION 18: TELEGRAM ─────────────── */
-async function notifyTelegram(message) {
-  try {
-    await fetch(CONFIG.TELEGRAM_PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'System', email: 'system@tcs', msg: message })
-    });
-  } catch (err) {
-    console.warn('Telegram notify failed:', err);
-  }
+/* ─────────────── SECTION 18: NOTIFICATIONS (Disabled) ─────────────── */
+// Telegram notifications removed — replaced with Google Form
+function notifyTelegram(message) {
+  // Silent no-op — Telegram removed
+  console.log('[notification]', message);
 }
-
 /* ─────────────── SECTION 19: HOME PREVIEW ─────────────── */
 function renderHomePreview() {
   const container = $('levelTrackPreview');
