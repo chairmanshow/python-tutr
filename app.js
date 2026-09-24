@@ -1,5 +1,6 @@
 /* ══════════════════════════════════════════════════════════════
-   THE CHAIRMAN SHOW — Full Platform Logic (Final Version)
+   THE CHAIRMAN SHOW — Cinematic Coding Platform
+   Complete App Logic
    ══════════════════════════════════════════════════════════════ */
 
 /* ─────────────── SECTION 1: CONFIG ─────────────── */
@@ -16,28 +17,19 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const rtdb = firebase.database();
 
 const CONFIG = {
-  UPI_ID: "Please Mail on overactingofficial7@gmail.com",
+  UPI_ID: "chairman@upi",
   TELEGRAM_PROXY: "https://tcs-telegram-proxy.sumitshrivas24.workers.dev",
-  ADMIN_EMAIL: "overactingofficial7@gmail.com"
+  ADMIN_EMAIL: "overactingofficial7@gmail.com",
+  IMGBB_KEY: "f1e5041PbWWqgKDBDorh525uecKaGZD21FGSoCeR",
+  PISTON_API: "https://emkc.org/api/v2/piston/execute"
 };
-
-const AI_CONFIG = {
-  PROXY_URL: "https://tcs-ai-proxy.sumitshrivas24.workers.dev",
-  MAX_WORDS: 40
-};
-
-const IMGBB_KEY = '42eeb26299ccd04102779f92f5db31cf';
 
 let currentUser = null;
 let userProfile = null;
 let activeTab = 'home';
-let userDoubts = [];
-let doubtFilter = 'all';
-let currentAnswerDoubtId = null;
-let expertDoubtFilter = 'open';
+let currentProblem = null;
 
 /* ─────────────── SECTION 2: UTILITIES ─────────────── */
 const $ = (id) => document.getElementById(id);
@@ -65,15 +57,15 @@ function toast(type, title, sub) {
   setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 300); }, 4000);
 }
 
-window.closeModal = function(id) {
-  const el = $(id);
-  if (el) el.classList.remove('show');
-  document.body.style.overflow = '';
-};
 window.openModal = function(id) {
   const el = $(id);
   if (el) el.classList.add('show');
   document.body.style.overflow = 'hidden';
+};
+window.closeModal = function(id) {
+  const el = $(id);
+  if (el) el.classList.remove('show');
+  document.body.style.overflow = '';
 };
 
 function formatTime(ts) {
@@ -81,12 +73,10 @@ function formatTime(ts) {
   return new Date(ts).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-/* ══════════════════════════════════════════════════════════════
-   IMAGE UPLOAD — ImgBB
-   ══════════════════════════════════════════════════════════════ */
+/* ─────────────── SECTION 3: IMGBB UPLOAD ─────────────── */
 async function compressImage(file, maxWidth = 1200, quality = 0.8) {
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) return reject(new Error('Not an image file'));
+    if (!file || !file.type.startsWith('image/')) return reject(new Error('Not an image'));
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -99,20 +89,16 @@ async function compressImage(file, maxWidth = 1200, quality = 0.8) {
         }
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error('Compression failed'));
-            resolve(new File([blob], 'image.jpg', { type: 'image/jpeg' }));
-          },
-          'image/jpeg', quality
-        );
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) return reject(new Error('Compression failed'));
+          resolve(new File([blob], 'image.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', quality);
       };
       img.onerror = () => reject(new Error('Image load failed'));
       img.src = e.target.result;
     };
-    reader.onerror = () => reject(new Error('File read failed'));
+    reader.onerror = () => reject(new Error('Read failed'));
     reader.readAsDataURL(file);
   });
 }
@@ -129,29 +115,23 @@ function fileToBase64(file) {
 async function uploadToImgBB(file) {
   if (!file) return '';
   if (file.size > 10 * 1024 * 1024) throw new Error('Image too large (max 10MB)');
-  try {
-    const compressed = await compressImage(file, 1200, 0.8);
-    const base64 = await fileToBase64(compressed);
-    const base64Data = base64.split(',')[1];
+  const compressed = await compressImage(file, 1200, 0.8);
+  const base64 = await fileToBase64(compressed);
+  const base64Data = base64.split(',')[1];
 
-    const formData = new FormData();
-    formData.append('image', base64Data);
+  const formData = new FormData();
+  formData.append('image', base64Data);
 
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error?.message || 'Upload failed');
-    console.log('✅ Uploaded to ImgBB:', data.data.url);
-    return data.data.url;
-  } catch (err) {
-    console.error('❌ ImgBB upload error:', err);
-    throw new Error('Image upload failed: ' + err.message);
-  }
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${CONFIG.IMGBB_KEY}`, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Upload failed');
+  return data.data.url;
 }
 
-/* ─────────────── SECTION 3: AUTH ─────────────── */
+/* ─────────────── SECTION 4: AUTH ─────────────── */
 $('googleSignInBtn')?.addEventListener('click', async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -160,15 +140,16 @@ $('googleSignInBtn')?.addEventListener('click', async () => {
     await auth.signInWithPopup(provider);
   } catch (err) {
     console.error('Sign in error:', err);
-    $('loginError').textContent = err.message;
-    $('loginError').style.display = 'block';
+    if ($('loginError')) {
+      $('loginError').textContent = err.message;
+      $('loginError').style.display = 'block';
+    }
   }
 });
 
 $('signOutBtn')?.addEventListener('click', () => {
   if (confirm('Sign out?')) {
     userProfile = null;
-    userDoubts = [];
     currentUser = null;
     auth.signOut();
   }
@@ -179,9 +160,9 @@ const authTimeout = setTimeout(() => {
     const loader = $('bootLoader');
     if (loader) loader.classList.add('hide');
     const ls = $('loginScreen');
-    if (ls) { ls.style.display = 'flex'; ls.classList.remove('hide'); }
+    if (ls) ls.style.display = 'flex';
   }
-}, 3000);
+}, 4000);
 
 auth.onAuthStateChanged(async (user) => {
   clearTimeout(authTimeout);
@@ -204,24 +185,23 @@ auth.onAuthStateChanged(async (user) => {
 
 function showApp() {
   const ls = $('loginScreen');
-  if (ls) { ls.classList.add('hide'); }
+  if (ls) ls.style.display = 'none';
   const app = $('app');
   if (app) app.style.display = 'block';
-  setTimeout(() => { if (ls) ls.style.display = 'none'; }, 500);
   const loader = $('bootLoader');
-  if (loader) loader.classList.add('hide');
+  if (loader) setTimeout(() => loader.classList.add('hide'), 300);
 }
+
 function showLogin() {
   const ls = $('loginScreen');
   const app = $('app');
   if (ls) ls.style.display = 'flex';
   if (app) app.style.display = 'none';
-  setTimeout(() => { if (ls) ls.classList.remove('hide'); }, 50);
   const loader = $('bootLoader');
-  if (loader) loader.classList.add('hide');
+  if (loader) setTimeout(() => loader.classList.add('hide'), 500);
 }
 
-/* ─────────────── SECTION 4: USER PROFILE ─────────────── */
+/* ─────────────── SECTION 5: USER PROFILE ─────────────── */
 async function ensureUserProfile(user) {
   const ref = db.collection('users').doc(user.uid);
   const snap = await ref.get();
@@ -229,15 +209,16 @@ async function ensureUserProfile(user) {
     const profile = {
       uid: user.uid,
       email: user.email,
-      name: user.displayName || 'User',
+      name: user.displayName || 'Coder',
       photoURL: user.photoURL || '',
       role: 'student',
       class: '',
       bio: '',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      doubtsAsked: 0,
-      doubtsSolved: 0,
-      rating: 0
+      solvedCount: 0,
+      xp: 0,
+      streak: 0,
+      lastSolveDate: null
     };
     await ref.set(profile);
     userProfile = profile;
@@ -250,8 +231,8 @@ async function ensureUserProfile(user) {
 
 function updateUserUI() {
   if (!userProfile) return;
-  const name = userProfile.name || 'User';
-  const avatar = userProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff`;
+  const name = userProfile.name || 'Coder';
+  const avatar = userProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00d4ff&color=000&bold=true`;
 
   if ($('navUserName')) $('navUserName').textContent = name.split(' ')[0];
   if ($('navUserAvatar')) $('navUserAvatar').src = avatar;
@@ -264,18 +245,13 @@ function updateUserUI() {
   if ($('profileDisplayName')) $('profileDisplayName').value = name;
   if ($('profileClass')) $('profileClass').value = userProfile.class || '';
   if ($('profileBio')) $('profileBio').value = userProfile.bio || '';
-
-  updateExpertPanelVisibility();
 }
 
 $('userMenuBtn')?.addEventListener('click', (e) => {
   e.stopPropagation();
   $('userDropdown')?.classList.toggle('show');
 });
-document.addEventListener('click', () => {
-  const dd = $('userDropdown');
-  if (dd) dd.classList.remove('show');
-});
+document.addEventListener('click', () => $('userDropdown')?.classList.remove('show'));
 $('userDropdown')?.addEventListener('click', (e) => e.stopPropagation());
 
 $('saveProfileBtn')?.addEventListener('click', async () => {
@@ -294,7 +270,7 @@ $('saveProfileBtn')?.addEventListener('click', async () => {
   }
 });
 
-/* ─────────────── SECTION 5: TAB SWITCHING ─────────────── */
+/* ─────────────── SECTION 6: TAB SWITCHING ─────────────── */
 window.switchToTab = function(tabId) {
   $$('.tab-content').forEach(t => t.classList.remove('active'));
   $$('.nav-item').forEach(b => b.classList.remove('active'));
@@ -305,9 +281,13 @@ window.switchToTab = function(tabId) {
   activeTab = tabId;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  if (tabId === 'doubts') { loadDoubts(); updateLiveExperts(); }
+  if (tabId === 'python') renderLevelsGrid();
+  if (tabId === 'doubts') loadDoubts();
   if (tabId === 'experts') loadExperts();
-  if (tabId === 'expertDashboard') loadExpertDashboard();
+  if (tabId === 'leaderboard') loadLeaderboard();
+  if (tabId === 'donate') {
+    if ($('upiIdDisplay')) $('upiIdDisplay').textContent = CONFIG.UPI_ID;
+  }
 };
 
 document.addEventListener('click', (e) => {
@@ -316,161 +296,487 @@ document.addEventListener('click', (e) => {
   const gotoBtn = e.target.closest('[data-goto]');
   if (gotoBtn) {
     switchToTab(gotoBtn.dataset.goto);
-    const dd = $('userDropdown');
-    if (dd) dd.classList.remove('show');
+    $('userDropdown')?.classList.remove('show');
   }
 });
 
-/* ─────────────── SECTION 6: EXPERTS ─────────────── */
-const EXPERT_SECTIONS = [
-  { id:'school', title:'Class 1 to 10', icon:'fa-school', color:'linear-gradient(135deg,#3b82f6,#2563eb)', desc:'Foundation subjects: Maths, Science, English' },
-  { id:'senior', title:'Class 11 to 12', icon:'fa-book-open', color:'linear-gradient(135deg,#8b5cf6,#7c3aed)', desc:'PCM, PCB, Commerce, Arts' },
-  { id:'jee-neet', title:'JEE & NEET', icon:'fa-bullseye', color:'linear-gradient(135deg,#f59e0b,#d97706)', desc:'Competitive exam preparation' },
-  { id:'college', title:'College & Advanced', icon:'fa-graduation-cap', color:'linear-gradient(135deg,#10b981,#059669)', desc:'B.Tech, BSc, MSc, advanced topics' }
-];
+/* ─────────────── SECTION 7: PROGRESS TRACKER ─────────────── */
+const Progress = (function() {
+  const STORAGE_KEY = 'tcs_python_progress_v1';
 
-async function loadExperts() {
-  const container = $('expertSections');
-  if (!container) return;
-  container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading experts…</p></div>';
-
-  try {
-    const snap = await db.collection('experts').where('verified', '==', true).limit(100).get();
-    const experts = [];
-    snap.forEach(d => experts.push({ id: d.id, ...d.data() }));
-
-    container.innerHTML = EXPERT_SECTIONS.map(section => {
-      const sectionExperts = experts.filter(e => e.section === section.id);
-      const expertsHtml = sectionExperts.length
-        ? sectionExperts.map(e => expertCardHtml(e)).join('')
-        : '<div class="empty-state" style="padding:1.5rem;grid-column:1/-1;"><p style="font-size:.82rem;color:var(--text-muted);">No experts yet in this section. <button class="btn-ghost" style="padding:.3rem .8rem;font-size:.78rem;margin-left:.5rem;" onclick="becomeExpert(\''+section.id+'\')">Become one</button></p></div>';
-
-      return `
-        <div class="expert-section">
-          <div class="expert-section-header">
-            <div class="expert-section-title">
-              <div class="expert-section-icon" style="background:${section.color}">
-                <i class="fa-solid ${section.icon}"></i>
-              </div>
-              <div>
-                <div>${section.title}</div>
-                <div class="expert-section-meta">${section.desc}</div>
-              </div>
-            </div>
-            <div class="expert-section-meta">${sectionExperts.length} expert${sectionExperts.length !== 1 ? 's' : ''}</div>
-          </div>
-          <div class="experts-grid">${expertsHtml}</div>
-        </div>`;
-    }).join('');
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Could not load experts</h4><p>' + escapeHtml(err.message) + '</p></div>';
+  function load() {
+    try {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (data && typeof data === 'object') return data;
+    } catch (e) {}
+    return { solved: [] };
   }
-}
-window.loadExperts = loadExperts;
 
-function expertCardHtml(e) {
-  const avatar = e.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name || 'Expert')}&background=2563eb&color=fff`;
-  const rating = e.rating ? e.rating.toFixed(1) : 'New';
-  const subjects = (e.subjects || []).slice(0, 3);
-  return `
-    <div class="expert-card">
-      <div class="expert-top">
-        <img class="expert-avatar" src="${escapeHtml(avatar)}" alt="">
-        <div>
-          <div class="expert-name">${escapeHtml(e.name || 'Expert')}</div>
-          <div class="expert-title">${escapeHtml(e.title || 'Subject Expert')}</div>
+  function save(data) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+  }
+
+  const state = load();
+
+  function isSolved(id) { return state.solved.indexOf(id) !== -1; }
+
+  function markSolved(id) {
+    if (state.solved.indexOf(id) === -1) {
+      state.solved.push(id);
+      save(state);
+      syncToFirestore();
+      return true;
+    }
+    return false;
+  }
+
+  function unmarkSolved(id) {
+    const i = state.solved.indexOf(id);
+    if (i !== -1) {
+      state.solved.splice(i, 1);
+      save(state);
+      syncToFirestore();
+    }
+  }
+
+  function totalSolved() { return state.solved.length; }
+
+  function syncToFirestore() {
+    if (!currentUser) return;
+    db.collection('users').doc(currentUser.uid).update({
+      solvedCount: state.solved.length,
+      xp: state.solved.length * 10,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {});
+  }
+
+  return { isSolved, markSolved, unmarkSolved, totalSolved, state };
+})();
+
+/* ─────────────── SECTION 8: LEVELS GRID (Python) ─────────────── */
+let currentPythonFilter = 'all';
+let currentPythonSearch = '';
+
+function renderLevelsGrid() {
+  const grid = $('levelsGrid');
+  if (!grid) return;
+
+  // Update progress bar
+  updatePythonProgress();
+
+  let problems = window.PROBLEMS_DB || [];
+
+  // Filter
+  if (currentPythonFilter === 'solved') {
+    problems = problems.filter(p => Progress.isSolved(p.id));
+  } else if (currentPythonFilter !== 'all') {
+    problems = problems.filter(p => p.difficulty === currentPythonFilter);
+  }
+
+  // Search
+  if (currentPythonSearch) {
+    const q = currentPythonSearch.toLowerCase();
+    problems = problems.filter(p =>
+      p.title.toLowerCase().includes(q) ||
+      (p.tags || []).some(t => t.toLowerCase().includes(q))
+    );
+  }
+
+  if (!problems.length) {
+    grid.innerHTML = `
+      <div class="empty-state-cine">
+        <i class="fa-solid fa-inbox"></i>
+        <h4>No problems found</h4>
+        <p>Try a different filter or search term</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = problems.map(p => {
+    const solved = Progress.isSolved(p.id);
+    const meta = window.getLevelMeta ? window.getLevelMeta(p.level) : { name:'', icon:'fa-code', color:'#00d4ff' };
+    return `
+      <div class="level-card-cine ${solved ? 'solved' : ''}" onclick="openProblem(${p.id})">
+        <div class="lc-header">
+          <div class="lc-level">
+            <i class="fa-solid ${meta.icon} lc-level-icon" style="color:${meta.color}"></i>
+            <span>LVL ${p.level}</span>
+          </div>
+          ${solved ? '<div class="lc-check-big pop-in"><i class="fa-solid fa-check"></i></div>' : ''}
+        </div>
+        <div class="lc-title">${escapeHtml(p.title)}</div>
+        <div class="lc-desc">${escapeHtml((p.description || '').slice(0, 110))}...</div>
+        <div class="lc-footer">
+          <span class="lc-diff-badge ${p.difficulty}">${p.difficulty}</span>
+          <i class="fa-solid fa-arrow-right lc-arrow"></i>
         </div>
       </div>
-      <div class="expert-rating"><i class="fa-solid fa-star"></i> ${rating} ${e.totalRatings ? `(${e.totalRatings})` : ''}</div>
-      <div class="expert-subjects">
-        ${subjects.map(s => `<span class="expert-subject-tag">${escapeHtml(s)}</span>`).join('')}
-      </div>
-      <div class="expert-actions">
-        <button onclick="requestDoubt('${e.id}')">Ask Doubt</button>
-      </div>
-    </div>`;
+    `;
+  }).join('');
 }
 
-window.becomeExpert = function(sectionId) {
-  const section = EXPERT_SECTIONS.find(s => s.id === sectionId);
-  if (!section) return;
-  if (!confirm(`Apply as an expert for "${section.title}"?`)) return;
+function updatePythonProgress() {
+  const total = (window.PROBLEMS_DB || []).length;
+  const solved = Progress.totalSolved();
+  const pct = total ? Math.round((solved / total) * 100) : 0;
+  if ($('pythonProgressLabel')) $('pythonProgressLabel').textContent = `${solved} / ${total}`;
+  if ($('pythonProgressFill')) $('pythonProgressFill').style.width = pct + '%';
+}
 
-  db.collection('experts').doc(currentUser.uid).set({
-    uid: currentUser.uid,
-    name: userProfile.name,
-    email: userProfile.email,
-    photoURL: userProfile.photoURL,
-    section: sectionId,
-    title: 'Subject Expert',
-    subjects: [],
-    rating: 0,
-    totalRatings: 0,
-    verified: false,
-    status: 'pending',
-    appliedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    toast('success', 'Application submitted!', 'Admin will verify you within 24 hours.');
-  }).catch(err => toast('warn', 'Failed', err.message));
-};
-
-window.requestDoubt = function(expertId) {
-  switchToTab('doubts');
-  setTimeout(() => openModal('newDoubtModal'), 300);
-};
-
-const becomeExpertBtn = $('becomeExpertBtn');
-if (becomeExpertBtn) {
-  becomeExpertBtn.addEventListener('click', () => {
-    if (userProfile?.role === 'expert') {
-      toast('info', 'You are already an expert!');
-      switchToTab('expertDashboard');
-      return;
-    }
-    switchToTab('experts');
-    toast('info', 'Pick a section', 'Click "Become one" under the section you want to teach.');
+// Filter chips
+$$('#pythonFilters .chip-cine').forEach(chip => {
+  chip.addEventListener('click', () => {
+    $$('#pythonFilters .chip-cine').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentPythonFilter = chip.dataset.diff;
+    renderLevelsGrid();
   });
+});
+
+$('pythonSearch')?.addEventListener('input', debounce((e) => {
+  currentPythonSearch = e.target.value.trim();
+  renderLevelsGrid();
+}, 250));
+
+function debounce(fn, wait) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  };
 }
 
-/* ─────────────── SECTION 7: DOUBTS ─────────────── */
+/* ─────────────── SECTION 9: PROBLEM VIEW ─────────────── */
+window.openProblem = function(id) {
+  const prob = (window.PROBLEMS_DB || []).find(p => p.id === id);
+  if (!prob) return;
+
+  currentProblem = prob;
+  switchToTab('problemView');
+
+  // Meta
+  const meta = window.getLevelMeta ? window.getLevelMeta(prob.level) : { name:'', icon:'fa-code', color:'#00d4ff' };
+  if ($('problemViewMeta')) {
+    $('problemViewMeta').innerHTML = `
+      <span><i class="fa-solid ${meta.icon}" style="color:${meta.color}"></i> ${meta.name}</span>
+      <span>•</span>
+      <span>LEVEL ${prob.level}</span>
+    `;
+  }
+
+  // Title, difficulty, tags
+  if ($('pvTitle')) $('pvTitle').textContent = prob.title;
+  if ($('pvDifficulty')) {
+    $('pvDifficulty').textContent = prob.difficulty;
+    $('pvDifficulty').className = 'badge-diff ' + prob.difficulty;
+  }
+  if ($('pvTags')) {
+    $('pvTags').innerHTML = (prob.tags || []).map(t =>
+      `<span class="problem-tag">#${escapeHtml(t)}</span>`
+    ).join('');
+  }
+
+  // Description
+  if ($('pvDescription')) {
+    $('pvDescription').innerHTML = escapeHtml(prob.description).replace(/`([^`]+)`/g, '<code>$1</code>');
+  }
+
+  // Examples
+  if ($('pvExamples')) {
+    if (prob.examples && prob.examples.length) {
+      $('pvExamples').innerHTML = prob.examples.map(ex => `
+        <div class="example-block">
+          <div class="example-row">
+            <span class="label">Input:</span>
+            <span class="value">${escapeHtml(ex.input)}</span>
+          </div>
+          <div class="example-row">
+            <span class="label">Output:</span>
+            <span class="value output">${escapeHtml(ex.output)}</span>
+          </div>
+          ${ex.explanation ? `<div class="example-explanation">💡 ${escapeHtml(ex.explanation)}</div>` : ''}
+        </div>
+      `).join('');
+    } else {
+      $('pvExamples').innerHTML = '<p style="color:var(--text-muted);font-size:.85rem;">No examples provided</p>';
+    }
+  }
+
+  // Code editor
+  if ($('codeEditor')) {
+    $('codeEditor').value = prob.starter || '# Write your Python code here\n';
+    updateLineNumbers();
+  }
+
+  // Mark solved state
+  updateMarkSolvedBtn();
+
+  // Hide output & solution
+  if ($('outputCard')) $('outputCard').style.display = 'none';
+  if ($('solutionCard')) $('solutionCard').style.display = 'none';
+
+  // Reset tabs
+  $$('.editor-tab').forEach(t => t.classList.remove('active'));
+  $('tabCode')?.classList.add('active');
+};
+
+/* ─────────────── SECTION 10: CODE EDITOR ─────────────── */
+const codeEditor = $('codeEditor');
+const editorLineNumbers = $('editorLineNumbers');
+
+function updateLineNumbers() {
+  if (!codeEditor || !editorLineNumbers) return;
+  const lines = codeEditor.value.split('\n').length;
+  let html = '';
+  for (let i = 1; i <= lines; i++) {
+    html += `<span>${i}</span>`;
+  }
+  editorLineNumbers.innerHTML = html;
+}
+
+codeEditor?.addEventListener('input', updateLineNumbers);
+codeEditor?.addEventListener('scroll', () => {
+  if (editorLineNumbers) editorLineNumbers.scrollTop = codeEditor.scrollTop;
+});
+codeEditor?.addEventListener('keydown', (e) => {
+  // Tab support
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const start = codeEditor.selectionStart;
+    const end = codeEditor.selectionEnd;
+    codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
+    codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+    updateLineNumbers();
+  }
+});
+
+/* Reset code */
+$('resetCodeBtn')?.addEventListener('click', () => {
+  if (!currentProblem) return;
+  if (!confirm('Reset code to starter template?')) return;
+  codeEditor.value = currentProblem.starter || '# Write your Python code here\n';
+  updateLineNumbers();
+  toast('info', 'Code reset');
+});
+
+/* Copy code */
+$('copyCodeBtn')?.addEventListener('click', () => {
+  if (!codeEditor) return;
+  navigator.clipboard.writeText(codeEditor.value).then(() => {
+    toast('success', 'Copied!', 'Code copied to clipboard');
+  }).catch(() => toast('warn', 'Copy failed'));
+});
+
+/* ─────────────── SECTION 11: RUN CODE (Piston API) ─────────────── */
+$('runCodeBtn')?.addEventListener('click', async () => {
+  if (!codeEditor || !currentProblem) return;
+  const code = codeEditor.value.trim();
+  if (!code) {
+    toast('warn', 'Write some code first');
+    return;
+  }
+
+  const btn = $('runCodeBtn');
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running...';
+
+  // Show output card
+  if ($('outputCard')) $('outputCard').style.display = 'block';
+  if ($('outputBody')) {
+    $('outputBody').innerHTML = '<span class="out-prompt">$</span> Executing your code...\n';
+  }
+
+  try {
+    const res = await fetch(CONFIG.PISTON_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: 'python',
+        version: '3.10.0',
+        files: [{ content: code }],
+        stdin: ''
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error('Code execution service unavailable. Try again.');
+    }
+
+    const data = await res.json();
+    const run = data.run || {};
+    const stdout = run.stdout || '';
+    const stderr = run.stderr || '';
+
+    let outputHtml = '<span class="out-prompt">$</span> python main.py\n\n';
+    if (stdout) {
+      outputHtml += escapeHtml(stdout);
+    }
+    if (stderr) {
+      outputHtml += '<span class="out-error">' + escapeHtml(stderr) + '</span>';
+    }
+    if (!stdout && !stderr) {
+      outputHtml += '<span style="color:var(--text-muted)">(no output)</span>';
+    }
+
+    if ($('outputBody')) $('outputBody').innerHTML = outputHtml;
+
+    if (!stderr) {
+      toast('success', 'Code executed!', 'Check the output panel');
+    } else {
+      toast('warn', 'Runtime error', 'Check the output panel');
+    }
+  } catch (err) {
+    console.error('Run error:', err);
+    if ($('outputBody')) {
+      $('outputBody').innerHTML = '<span class="out-error">❌ ' + escapeHtml(err.message) + '</span>';
+    }
+    toast('warn', 'Execution failed', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+});
+
+/* ─────────────── SECTION 12: MARK SOLVED ─────────────── */
+function updateMarkSolvedBtn() {
+  const btn = $('markSolvedBtn');
+  if (!btn || !currentProblem) return;
+  const solved = Progress.isSolved(currentProblem.id);
+  if (solved) {
+    btn.classList.add('solved');
+    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Solved';
+  } else {
+    btn.classList.remove('solved');
+    btn.innerHTML = '<i class="fa-regular fa-circle-check"></i> Mark as Solved';
+  }
+}
+
+$('markSolvedBtn')?.addEventListener('click', () => {
+  if (!currentProblem) return;
+  const solved = Progress.isSolved(currentProblem.id);
+
+  if (solved) {
+    Progress.unmarkSolved(currentProblem.id);
+    toast('info', 'Unmarked', 'Problem removed from solved list');
+  } else {
+    Progress.markSolved(currentProblem.id);
+    launchConfetti();
+    toast('success', '🎉 Solved!', 'Great job, keep going!');
+  }
+
+  updateMarkSolvedBtn();
+  updatePythonProgress();
+});
+
+/* Solution tab */
+$('tabCode')?.addEventListener('click', () => {
+  $$('.editor-tab').forEach(t => t.classList.remove('active'));
+  $('tabCode')?.classList.add('active');
+  if ($('solutionCard')) $('solutionCard').style.display = 'none';
+});
+
+$('tabSolution')?.addEventListener('click', () => {
+  $$('.editor-tab').forEach(t => t.classList.remove('active'));
+  $('tabSolution')?.classList.add('active');
+  if (!currentProblem) return;
+  if ($('solutionCode')) $('solutionCode').textContent = currentProblem.solution || '(no solution)';
+  if ($('solutionExplanation')) {
+    $('solutionExplanation').innerHTML = '<strong>💡 Explanation:</strong><br>' + escapeHtml(currentProblem.explanation || 'No explanation provided.');
+  }
+  if ($('solutionCard')) $('solutionCard').style.display = 'block';
+});
+
+/* ─────────────── SECTION 13: CONFETTI ─────────────── */
+function launchConfetti() {
+  const canvas = $('confettiCanvas');
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const colors = ['#00d4ff', '#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#ef4444'];
+  const particles = Array.from({ length: 100 }, () => ({
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    vx: (Math.random() - 0.5) * 16,
+    vy: (Math.random() - 1.5) * 16,
+    size: Math.random() * 8 + 4,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    rot: Math.random() * 360,
+    vr: (Math.random() - 0.5) * 25,
+    life: 0
+  }));
+
+  let frame = 0;
+  function tick() {
+    frame++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.vy += 0.4;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life++;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - frame / 100);
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    });
+    if (frame < 100) requestAnimationFrame(tick);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  tick();
+}
+
+/* ─────────────── SECTION 14: DOUBTS SYSTEM ─────────────── */
 async function loadDoubts() {
   const grid = $('doubtsGrid');
   if (!grid) return;
-  grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
+  grid.innerHTML = `
+    <div class="empty-state-cine" style="grid-column:1/-1">
+      <div class="loading-spinner-cine" style="margin: 0 auto 1rem;"></div>
+      <p>Loading your doubts...</p>
+    </div>`;
 
   try {
     const snap = await db.collection('doubts')
       .where('userId', '==', currentUser.uid)
-      .limit(100)
+      .limit(50)
       .get();
 
-    userDoubts = [];
-    snap.forEach(d => userDoubts.push({ id: d.id, ...d.data() }));
+    const doubts = [];
+    snap.forEach(d => doubts.push({ id: d.id, ...d.data() }));
 
-    userDoubts.sort((a, b) => {
+    doubts.sort((a, b) => {
       const ta = a.createdAt?.toDate?.()?.getTime() || 0;
       const tb = b.createdAt?.toDate?.()?.getTime() || 0;
       return tb - ta;
     });
 
-    if (doubtFilter !== 'all') {
-      userDoubts = userDoubts.filter(d => d.status === doubtFilter);
-    }
+    const filter = document.querySelector('#doubtFilters .chip-cine.active')?.dataset.status || 'all';
+    const filtered = filter === 'all' ? doubts : doubts.filter(d => d.status === filter);
 
-    if (!userDoubts.length) {
-      grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No doubts yet</h4><p>Click "Ask New Doubt" to get started</p></div>';
+    if (!filtered.length) {
+      grid.innerHTML = `
+        <div class="empty-state-cine" style="grid-column:1/-1">
+          <i class="fa-solid fa-code"></i>
+          <h4>No doubts yet</h4>
+          <p>Ask your first coding doubt to get help from experts</p>
+        </div>`;
       return;
     }
 
-    grid.innerHTML = userDoubts.map(d => `
-      <div class="doubt-card" onclick="viewDoubt('${d.id}')">
-        <div class="doubt-header">
-          <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject)}</span>
-          <span class="doubt-status ${d.status}">${d.status}</span>
+    grid.innerHTML = filtered.map(d => `
+      <div class="doubt-card-cine" onclick="viewDoubt('${d.id}')">
+        <div class="dc-header">
+          <span class="dc-topic">${escapeHtml(d.subject || 'Code')}</span>
+          <span class="dc-status ${d.status}">${d.status}</span>
         </div>
-        <div class="doubt-question">${escapeHtml(d.question)}</div>
-        <div class="doubt-meta">
+        <div class="dc-question">${escapeHtml((d.question || '').slice(0, 200))}</div>
+        <div class="dc-meta">
           <span><i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.()?.getTime())}</span>
           ${d.answerCount ? `<span><i class="fa-solid fa-comments"></i> ${d.answerCount} answers</span>` : ''}
         </div>
@@ -478,16 +784,19 @@ async function loadDoubts() {
     `).join('');
   } catch (err) {
     console.error(err);
-    grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Error loading doubts</h4><p>' + escapeHtml(err.message) + '</p></div>';
+    grid.innerHTML = `
+      <div class="empty-state-cine" style="grid-column:1/-1">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <h4>Error loading doubts</h4>
+        <p>${escapeHtml(err.message)}</p>
+      </div>`;
   }
 }
-window.loadDoubts = loadDoubts;
 
-$$('#doubtFilters .chip').forEach(chip => {
+$$('#doubtFilters .chip-cine').forEach(chip => {
   chip.addEventListener('click', () => {
-    $$('#doubtFilters .chip').forEach(c => c.classList.remove('active'));
+    $$('#doubtFilters .chip-cine').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
-    doubtFilter = chip.dataset.status;
     loadDoubts();
   });
 });
@@ -501,1534 +810,305 @@ $('doubtImage')?.addEventListener('change', (e) => {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (ev) => {
-    $('doubtImagePreview').innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;">`;
+    const preview = $('doubtImagePreview');
+    if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;border:1px solid var(--border-mid);">`;
   };
   reader.readAsDataURL(file);
 });
 
 $('postDoubtBtn')?.addEventListener('click', async () => {
   const subject = $('doubtSubject').value;
-  const doubtClass = $('doubtClass').value;
   const question = $('doubtQuestion').value.trim();
   const imageFile = $('doubtImage').files[0];
 
-  if (!question) { toast('warn', 'Please type your question'); return; }
+  if (!question) {
+    toast('warn', 'Please describe your problem');
+    return;
+  }
 
   const btn = $('postDoubtBtn');
+  const origHtml = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading…';
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
 
   try {
     let imageUrl = '';
     if (imageFile) {
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading image…';
       imageUrl = await uploadToImgBB(imageFile);
     }
 
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting…';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...';
 
-    const newDoc = await db.collection('doubts').add({
+    await db.collection('doubts').add({
       userId: currentUser.uid,
       userName: userProfile.name,
       userPhoto: userProfile.photoURL || '',
-      subject, class: doubtClass, question, imageUrl,
+      subject,
+      question,
+      imageUrl,
       status: 'open',
       answerCount: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    await db.collection('users').doc(currentUser.uid).update({
-      doubtsAsked: firebase.firestore.FieldValue.increment(1)
-    }).catch(() => {});
+    notifyTelegram(`🆕 New Code Doubt!\nFrom: ${userProfile.name}\nTopic: ${subject}\n\n${question.slice(0, 250)}`);
 
-    toast('success', 'Doubt posted!', 'An expert will answer soon.');
+    toast('success', 'Doubt posted!', 'Experts will answer soon');
     closeModal('newDoubtModal');
-    $('doubtQuestion').value = '';
-    $('doubtImage').value = '';
-    $('doubtImagePreview').innerHTML = '';
-    loadDoubts();
+    if ($('doubtQuestion')) $('doubtQuestion').value = '';
+    if ($('doubtImage')) $('doubtImage').value = '';
+    if ($('doubtImagePreview')) $('doubtImagePreview').innerHTML = '';
 
-    // Auto-open the doubt + trigger AI answer
-    setTimeout(() => viewDoubt(newDoc.id), 400);
+    loadDoubts();
   } catch (err) {
     console.error(err);
     toast('warn', 'Failed to post', err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Post Doubt';
+    btn.innerHTML = origHtml;
   }
 });
 
-/* ─────────────── SECTION 8: STATS ─────────────── */
-async function loadStats() {
-  try {
-    const [doubtsCount, expertsCount, usersCount] = await Promise.all([
-      db.collection('doubts').count().get(),
-      db.collection('experts').where('verified', '==', true).count().get(),
-      db.collection('users').count().get()
-    ]);
-    if ($('statDoubts')) $('statDoubts').textContent = doubtsCount.data().count;
-    if ($('statExperts')) $('statExperts').textContent = expertsCount.data().count;
-    if ($('statStudents')) $('statStudents').textContent = usersCount.data().count;
-  } catch (err) {
-    console.warn('Stats error:', err);
-  }
-
-  if ($('miniDoubts')) $('miniDoubts').textContent = userProfile?.doubtsAsked || 0;
-  if ($('miniSolved')) $('miniSolved').textContent = userProfile?.doubtsSolved || 0;
-  if ($('miniRating')) $('miniRating').textContent = userProfile?.rating ? userProfile.rating.toFixed(1) : '—';
-}
-
-/* ─────────────── SECTION 9: EXPERT DASHBOARD ─────────────── */
-function updateExpertPanelVisibility() {
-  const isExpert = userProfile?.role === 'expert' || userProfile?.role === 'admin';
-  const btn = $('navExpertDashboard');
-  if (btn) btn.style.display = isExpert ? 'flex' : 'none';
-}
-
-async function loadExpertDashboard() {
-  if (userProfile?.role !== 'expert' && userProfile?.role !== 'admin') {
-    toast('warn', 'Access denied', 'Only experts can access this panel.');
-    switchToTab('home');
-    return;
-  }
-
-  try {
-    const snap = await db.collection('doubts').limit(500).get();
-    let openCount = 0, answeredCount = 0;
-    snap.forEach(d => {
-      const data = d.data();
-      if (data.status === 'open') openCount++;
-      if (data.answeredBy === currentUser.uid) answeredCount++;
-    });
-    if ($('esOpenCount')) $('esOpenCount').textContent = openCount;
-    if ($('esAnsweredCount')) $('esAnsweredCount').textContent = answeredCount;
-    if ($('esRating')) $('esRating').textContent = userProfile.rating ? userProfile.rating.toFixed(1) : '—';
-    if ($('esEarnings')) $('esEarnings').textContent = '₹' + (userProfile.earnings || 0);
-  } catch (err) {
-    console.warn('Stats failed:', err);
-  }
-
-  loadExpertDoubts();
-}
-window.loadExpertDashboard = loadExpertDashboard;
-
-async function loadExpertDoubts() {
-  const list = $('expertDoubtsList');
-  if (!list) return;
-  list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
-
-  try {
-    let snap;
-    if (expertDoubtFilter === 'open') {
-      snap = await db.collection('doubts').where('status', '==', 'open').limit(50).get();
-    } else if (expertDoubtFilter === 'answered') {
-      snap = await db.collection('doubts').where('answeredBy', '==', currentUser.uid).limit(50).get();
-    } else {
-      snap = await db.collection('doubts').limit(50).get();
-    }
-
-    const doubts = [];
-    snap.forEach(d => doubts.push({ id: d.id, ...d.data() }));
-
-    doubts.sort((a, b) => {
-      const ta = a.createdAt?.toDate?.()?.getTime() || 0;
-      const tb = b.createdAt?.toDate?.()?.getTime() || 0;
-      return tb - ta;
-    });
-
-    if (!doubts.length) {
-      list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No doubts found</h4><p>Check back later!</p></div>';
-      return;
-    }
-
-    list.innerHTML = doubts.map(d => expertDoubtCardHtml(d)).join('');
-  } catch (err) {
-    console.error(err);
-    list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Error loading</h4><p>' + escapeHtml(err.message) + '</p></div>';
-  }
-}
-
-function expertDoubtCardHtml(d) {
-  const avatar = d.userPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.userName || 'Student')}&background=2563eb&color=fff`;
-  const when = d.createdAt?.toDate?.() ? formatTime(d.createdAt.toDate().getTime()) : 'Just now';
-  const isAnswered = d.status === 'answered';
-  const isMine = d.answeredBy === currentUser.uid;
-
-  return `
-    <div class="expert-doubt-card">
-      <div class="doubt-header">
-        <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject || 'General')}</span>
-        <span class="doubt-status ${d.status}">${d.status}</span>
-      </div>
-      <div class="student-info">
-        <img src="${escapeHtml(avatar)}" alt="">
-        <span>${escapeHtml(d.userName || 'Student')}</span>
-        <span style="margin-left:auto;font-size:.72rem;color:var(--text-muted)">${when}</span>
-      </div>
-      <div class="edc-question">${escapeHtml(d.question || '')}</div>
-      ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-bottom:.7rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
-      <div class="edc-actions">
-        ${!isAnswered ? `
-          <button class="primary" onclick="viewDoubt('${d.id}')">
-            <i class="fa-solid fa-eye"></i> View
-          </button>
-        ` : isMine ? `
-          <button disabled style="cursor:default">
-            <i class="fa-solid fa-check" style="color:var(--success)"></i> You answered
-          </button>
-        ` : `
-          <button disabled style="cursor:default;opacity:.6">
-            <i class="fa-solid fa-check"></i> Answered
-          </button>
-        `}
-      </div>
-    </div>
-  `;
-}
-
-document.addEventListener('click', (e) => {
-  const chip = e.target.closest('#expertDoubtFilters .chip');
-  if (chip) {
-    $$('#expertDoubtFilters .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    expertDoubtFilter = chip.dataset.status;
-    loadExpertDoubts();
-  }
-});
-
-/* ══════════════════════════════════════════════════════════════
-   AI EXPERT SYSTEM
-   ══════════════════════════════════════════════════════════════ */
-const EXPERT_POOL = [
-  { name: 'Dr. Rajesh Sharma', title: 'Physics & Mathematics', exp: 12, subject: 'PCM' },
-  { name: 'Prof. Anjali Verma', title: 'Chemistry Specialist', exp: 9, subject: 'Chemistry' },
-  { name: 'Dr. Vikram Mehta', title: 'IIT-JEE Physics', exp: 15, subject: 'Physics' },
-  { name: 'Ms. Priya Nair', title: 'Biology & NEET Expert', exp: 7, subject: 'Biology' },
-  { name: 'Mr. Arun Patel', title: 'Mathematics Professor', exp: 11, subject: 'Mathematics' },
-  { name: 'Dr. Sneha Reddy', title: 'Organic Chemistry', exp: 10, subject: 'Chemistry' },
-  { name: 'Prof. Karan Singh', title: 'Computer Science', exp: 8, subject: 'CS' },
-  { name: 'Ms. Meera Iyer', title: 'English Literature', exp: 6, subject: 'English' },
-  { name: 'Dr. Aditya Joshi', title: 'Physics Olympiad Coach', exp: 14, subject: 'Physics' },
-  { name: 'Prof. Neha Gupta', title: 'NEET Biology', exp: 9, subject: 'Biology' },
-  { name: 'Mr. Rohan Malhotra', title: 'JEE Mathematics', exp: 13, subject: 'Mathematics' },
-  { name: 'Dr. Kavita Desai', title: 'Inorganic Chemistry', exp: 12, subject: 'Chemistry' },
-  { name: 'Prof. Suresh Kumar', title: 'Physics & Math', exp: 18, subject: 'PCM' },
-  { name: 'Ms. Ananya Bose', title: 'Science & English', exp: 5, subject: 'General' },
-  { name: 'Dr. Harsh Vardhan', title: 'Advanced Mathematics', exp: 16, subject: 'Mathematics' },
-  { name: 'Prof. Ritu Agarwal', title: 'Biology & Zoology', exp: 10, subject: 'Biology' },
-  { name: 'Mr. Nikhil Chopra', title: 'Physics IIT', exp: 8, subject: 'Physics' },
-  { name: 'Dr. Pooja Saxena', title: 'Chemistry PhD', exp: 11, subject: 'Chemistry' },
-  { name: 'Prof. Manish Tiwari', title: 'Maths & Stats', exp: 13, subject: 'Mathematics' },
-  { name: 'Dr. Sunita Kapoor', title: 'Senior Biology Expert', exp: 17, subject: 'Biology' }
-];
-
-function getRandomExperts(count = 20) {
-  return [...EXPERT_POOL].sort(() => Math.random() - 0.5).slice(0, count);
-}
-
-function getSessionExperts() {
-  const key = 'tcs_experts_' + (currentUser?.uid || 'guest');
-  let stored = null;
-  try { stored = JSON.parse(sessionStorage.getItem(key)); } catch(e) {}
-  if (!stored || !Array.isArray(stored) || stored.length < 15) {
-    stored = getRandomExperts(20);
-    try { sessionStorage.setItem(key, JSON.stringify(stored)); } catch(e) {}
-  }
-  return stored;
-}
-
-function pickExpertForDoubt() {
-  const sessionExperts = getSessionExperts();
-  return sessionExperts[Math.floor(Math.random() * sessionExperts.length)];
-}
-
-function expertAvatarUrl(expert) {
-  const colors = ['2563eb', '7c3aed', '059669', 'd97706', 'dc2626', '0891b2'];
-  const color = colors[Math.abs(hashCode(expert.name)) % colors.length];
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=${color}&color=fff&bold=true&size=128`;
-}
-function hashCode(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
-  return h;
-}
-
-async function getAIAnswer(question, subject, cls) {
-  const expert = pickExpertForDoubt();
-
-  const res = await fetch(AI_CONFIG.PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      question: question,
-      subject: subject,
-      class: cls,
-      expertName: expert.name,
-      expertExp: expert.exp
-    })
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error('AI service error: ' + errText.slice(0, 150));
-  }
-
-  const data = await res.json();
-  if (!data.ok || !data.answer) {
-    throw new Error(data.error || 'No answer received');
-  }
-
-  let answer = data.answer.trim();
-
-
-  return { answer, expert };
-}
-
-function typeWriter(element, text, speed = 22) {
-  return new Promise(resolve => {
-    element.innerHTML = '';
-    const cursor = document.createElement('span');
-    cursor.className = 'ai-cursor';
-    element.appendChild(cursor);
-
-    let i = 0;
-    const textNode = document.createTextNode('');
-    element.insertBefore(textNode, cursor);
-
-    function type() {
-      if (i < text.length) {
-        textNode.textContent += text.charAt(i);
-        i++;
-        setTimeout(type, speed);
-      } else {
-        setTimeout(() => {
-          cursor.remove();
-          resolve();
-        }, 400);
-      }
-    }
-    type();
-  });
-}
-
-/* ─── View Doubt + AI Answer ─── */
 window.viewDoubt = async function(id) {
-  const modalEl = $('doubtDetailsModal');
-  const bodyEl = $('doubtDetailsBody');
-  if (!modalEl || !bodyEl) {
-    toast('warn', 'Error', 'Modal not found. Please refresh.');
-    return;
-  }
-
-  modalEl.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  bodyEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
-
   try {
     const doc = await db.collection('doubts').doc(id).get();
-    if (!doc.exists) {
-      bodyEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Doubt not found</h4></div>';
-      return;
-    }
+    if (!doc.exists) return;
     const d = doc.data();
 
-    let answersSnap;
-    try {
-      answersSnap = await db.collection('doubts').doc(id).collection('answers')
-        .orderBy('createdAt', 'asc').get();
-    } catch (e) {
-      answersSnap = { empty: true, size: 0, docs: [] };
-    }
+    const body = $('doubtDetailsBody');
+    if (!body) return;
 
-    let answersHtml = '';
-    if (!answersSnap.empty) {
-      answersHtml = answersSnap.docs.map(ansDoc => {
-        const a = ansDoc.data();
-        const expert = a.expert || { name: a.expertName || 'Expert', title: 'Subject Expert', exp: 10 };
-        const avatar = expertAvatarUrl(expert);
-        return `
-          <div class="ai-answer-card">
-            <div class="ai-answer-header">
-              <img src="${avatar}" alt="" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp || 10}, '${escapeHtml(expert.title || '')}')" style="cursor:pointer">
-              <div>
-                <div class="name" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp || 10}, '${escapeHtml(expert.title || '')}')" style="cursor:pointer;color:var(--accent-primary)">${escapeHtml(expert.name)}</div>
-                <div class="title">${escapeHtml(expert.title)} • ${expert.exp || 10}+ yrs exp</div>
-              </div>
-              <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-shield-halved"></i> Trusted</span>
-            </div>
-            <div class="ai-answer-text">${escapeHtml(a.text || '')}</div>
-            ${a.imageUrl ? `<img src="${escapeHtml(a.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(a.imageUrl)}')">` : ''}
-            <div class="ai-answer-footer">
-              <button onclick="copyAnswer(this, ${JSON.stringify(a.text || '')})"><i class="fa-regular fa-copy"></i> Copy</button>
-              <button onclick="markHelpful('${id}')"><i class="fa-regular fa-thumbs-up"></i> Helpful</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    bodyEl.innerHTML = `
-      <div class="original-doubt">
-        <div class="od-header">
-          <span class="doubt-subject"><i class="fa-solid fa-book"></i> ${escapeHtml(d.subject || 'General')}</span>
-          <span class="doubt-status ${d.status || 'open'}">${d.status || 'open'}</span>
+    body.innerHTML = `
+      <div class="problem-card-cine" style="margin-bottom:1rem;">
+        <div class="problem-title-row">
+          <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;">${escapeHtml(d.subject)} — Doubt</h3>
+          <span class="dc-status ${d.status}">${d.status}</span>
         </div>
-        <div class="od-question">${escapeHtml(d.question || '')}</div>
-        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.6rem;cursor:pointer" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+        <div class="problem-desc" style="margin-top:.8rem;">${escapeHtml(d.question)}</div>
+        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:12px;margin-top:.8rem;border:1px solid var(--border-mid);cursor:pointer;" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+        <div style="margin-top:1rem;font-size:.75rem;color:var(--text-muted);font-family:var(--font-mono);">
+          <i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.()?.getTime())}
+        </div>
       </div>
-      <h4 style="margin-bottom:.8rem;display:flex;align-items:center;gap:8px;">
-        <i class="fa-solid fa-comments" style="color:var(--accent-primary)"></i>
-        Expert Answer
-      </h4>
-      <div id="answerArea">${answersHtml}</div>
+      <div style="text-align:center;padding:2rem;color:var(--text-muted);">
+        <i class="fa-solid fa-hourglass-half" style="font-size:2rem;opacity:.4;display:block;margin-bottom:1rem;"></i>
+        <p style="font-size:.88rem;">Waiting for expert answer...</p>
+      </div>
     `;
 
-    if (answersSnap.empty) {
-      setTimeout(() => generateAndShowAIAnswer(id, d), 400);
-    }
+    openModal('doubtDetailsModal');
   } catch (err) {
-    console.error('viewDoubt error:', err);
-    bodyEl.innerHTML = `
-      <div class="empty-state">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <h4>Could not load doubt</h4>
-        <p>${escapeHtml(err.message)}</p>
-        <button class="btn-primary" style="margin-top:1rem" onclick="closeModal('doubtDetailsModal')">Close</button>
-      </div>
-    `;
+    toast('warn', 'Error', err.message);
   }
 };
 
-async function generateAndShowAIAnswer(doubtId, doubtData) {
-  const area = $('answerArea');
-  if (!area) return;
-
-  area.innerHTML = `
-    <div class="ai-answer-card">
-      <div class="ai-thinking">
-        <i class="fa-solid fa-brain" style="color:var(--accent-secondary)"></i>
-        <span>An expert is thinking</span>
-        <span class="ai-thinking-dots"><span></span><span></span><span></span></span>
-      </div>
-    </div>
-  `;
-
-  try {
-    const { answer, expert } = await getAIAnswer(
-      doubtData.question,
-      doubtData.subject,
-      doubtData.class || 'General'
-    );
-
-    const avatar = expertAvatarUrl(expert);
-
-    area.innerHTML = `
-      <div class="ai-answer-card">
-        <div class="ai-answer-header">
-          <img src="${avatar}" alt="" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp}, '${escapeHtml(expert.title)}')" style="cursor:pointer">
-          <div>
-            <div class="name" onclick="showExpertProfile('${escapeHtml(expert.name)}', ${expert.exp}, '${escapeHtml(expert.title)}')" style="cursor:pointer;color:var(--accent-primary)">${escapeHtml(expert.name)}</div>
-            <div class="title">${escapeHtml(expert.title)} • ${expert.exp}+ yrs exp</div>
-          </div>
-          <span class="ai-badge" style="margin-left:auto"><i class="fa-solid fa-shield-halved"></i> Trusted</span>
-        </div>
-        <div class="ai-answer-text" id="typewriterText"></div>
-        <div class="ai-answer-footer" id="aiFooter" style="display:none">
-          <button onclick="copyAnswer(this, ${JSON.stringify(answer)})"><i class="fa-regular fa-copy"></i> Copy</button>
-          <button onclick="markHelpful('${doubtId}')"><i class="fa-regular fa-thumbs-up"></i> Helpful</button>
-        </div>
-      </div>
-    `;
-
-    await typeWriter($('typewriterText'), answer, 22);
-
-    const footer = $('aiFooter');
-    if (footer) footer.style.display = 'flex';
-
-    try {
-      await db.collection('doubts').doc(doubtId).collection('answers').add({
-        expertName: expert.name,
-        expertTitle: expert.title,
-        expert: { name: expert.name, title: expert.title, exp: expert.exp },
-        text: answer,
-        imageUrl: '',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        helpful: 0
-      });
-
-      await db.collection('doubts').doc(doubtId).update({
-        status: 'answered',
-        answeredByName: expert.name,
-        answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
-        answerCount: firebase.firestore.FieldValue.increment(1)
-      });
-
-      await db.collection('users').doc(currentUser.uid).update({
-        doubtsSolved: firebase.firestore.FieldValue.increment(1)
-      }).catch(() => {});
-    } catch (saveErr) {
-      console.warn('Save failed:', saveErr);
-    }
-  } catch (err) {
-    console.error('AI Generation Error:', err);
-    area.innerHTML = `
-      <div class="ai-answer-card">
-        <div style="color:var(--danger);display:flex;align-items:flex-start;gap:8px;">
-          <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px"></i>
-          <div>
-            <div style="font-weight:600;margin-bottom:4px">Could not generate answer</div>
-            <div style="font-size:.78rem;color:var(--text-muted);font-family:var(--font-mono);word-break:break-all">
-              ${escapeHtml(err.message)}
-            </div>
-          </div>
-        </div>
-        <button class="btn-ghost" style="margin-top:.8rem" onclick="viewDoubt('${doubtId}')">
-          <i class="fa-solid fa-rotate-right"></i> Retry
-        </button>
-      </div>
-    `;
-  }
-}
-
-window.copyAnswer = function(btn, text) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-    setTimeout(() => { btn.innerHTML = orig; }, 1500);
-  });
-};
-
-window.markHelpful = function(doubtId) {
-  toast('success', 'Thanks!', 'Marked as helpful');
-};
-
-/* ─── Expert Profile Modal ─── */
-window.showExpertProfile = function(name, exp, title) {
-  const expert = EXPERT_POOL.find(e => e.name === name) || { name, exp, title, subject: 'General' };
-  const avatar = expertAvatarUrl(expert);
-  const solved = 500 + Math.floor(Math.random() * 2000);
-  const rating = (4.5 + Math.random() * 0.5).toFixed(1);
-  const students = 1000 + Math.floor(Math.random() * 5000);
-
-  if ($('expertProfileBody')) {
-    $('expertProfileBody').innerHTML = `
-      <div class="expert-profile-header">
-        <img src="${avatar}" alt="">
-        <h4>${escapeHtml(name)}</h4>
-        <p>${escapeHtml(title || 'Subject Expert')}</p>
-      </div>
-      <div class="expert-stats-grid">
-        <div class="expert-stat-box">
-          <div class="v">${exp}+</div>
-          <div class="l">Years Exp</div>
-        </div>
-        <div class="expert-stat-box">
-          <div class="v">${solved}</div>
-          <div class="l">Doubts Solved</div>
-        </div>
-        <div class="expert-stat-box">
-          <div class="v">${rating}★</div>
-          <div class="l">Rating</div>
-        </div>
-      </div>
-      <div class="expert-bio">
-        <strong><i class="fa-solid fa-quote-left"></i> About</strong>
-        ${escapeHtml(name)} is a highly experienced ${escapeHtml(expert.subject || 'subject')} expert with ${exp} years of teaching experience.
-        Has helped over ${students.toLocaleString('en-IN')} students crack their exams.
-      </div>
-    `;
-  }
-  openModal('expertProfileModal');
-};
-
-/* ─── Live Experts Bar ─── */
-function updateLiveExperts() {
-  const sessionExperts = getSessionExperts();
-  const onlineCount = 8 + Math.floor(Math.random() * 8);
-
-  if ($('liveCount')) $('liveCount').textContent = onlineCount;
-
-  if ($('liveAvatars')) {
-    const shown = sessionExperts.slice(0, 5);
-    $('liveAvatars').innerHTML = shown.map((e, i) => 
-      `<img src="${expertAvatarUrl(e)}" alt="${escapeHtml(e.name)}" title="${escapeHtml(e.name)}" style="animation-delay:${i * 0.08}s">`
-    ).join('');
-  }
-}
-
-setInterval(() => {
-  if ($('liveCount') && activeTab === 'doubts') {
-    const newCount = 8 + Math.floor(Math.random() * 8);
-    $('liveCount').textContent = newCount;
-  }
-}, 8000);
-
-/* ─────────────── SECTION 10: IMAGE VIEWER ─────────────── */
 window.openImageViewer = function(url) {
   if ($('viewerImage')) $('viewerImage').src = url;
   openModal('imageViewerModal');
 };
 
-/* ─────────────── SECTION 11: KEYBOARD SHORTCUTS ─────────────── */
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay.show').forEach(m => {
-      m.classList.remove('show');
-    });
-    document.body.style.overflow = '';
-  }
+/* ─────────────── SECTION 15: EXPERTS ─────────────── */
+const EXPERT_SECTIONS = [
+  { id:'python', title:'Python & Backend', icon:'fa-brands fa-python', color:'linear-gradient(135deg,#00d4ff,#3b82f6)', desc:'Python, Django, Flask, FastAPI' },
+  { id:'dsa', title:'DSA & Competitive', icon:'fa-solid fa-brain', color:'linear-gradient(135deg,#7c3aed,#ec4899)', desc:'Algorithms, LeetCode, Codeforces' },
+  { id:'webdev', title:'Web Development', icon:'fa-solid fa-code', color:'linear-gradient(135deg,#f59e0b,#ef4444)', desc:'HTML, CSS, JS, React, Node' },
+  { id:'data', title:'Data Science & ML', icon:'fa-solid fa-chart-line', color:'linear-gradient(135deg,#10b981,#059669)', desc:'Pandas, NumPy, ML, AI' }
+];
+
+async function loadExperts() {
+  const container = $('expertSections');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="loading-cine">
+      <div class="loading-spinner-cine"></div>
+      <p>Loading experts...</p>
+    </div>`;
+
+  // Fake expert data (can be replaced with Firestore fetch later)
+  const fakeExperts = [
+    { name: 'Arjun Mehta', title: 'Python Expert', exp: 8, rating: 4.9, doubts: 1420, section: 'python' },
+    { name: 'Priya Sharma', title: 'Backend Engineer', exp: 6, rating: 4.8, doubts: 980, section: 'python' },
+    { name: 'Rohan Verma', title: 'DSA Specialist', exp: 10, rating: 5.0, doubts: 2340, section: 'dsa' },
+    { name: 'Sneha Reddy', title: 'FAANG Engineer', exp: 7, rating: 4.9, doubts: 1890, section: 'dsa' },
+    { name: 'Karan Singh', title: 'Full Stack Dev', exp: 5, rating: 4.7, doubts: 720, section: 'webdev' },
+    { name: 'Anjali Verma', title: 'React Expert', exp: 6, rating: 4.8, doubts: 1120, section: 'webdev' },
+    { name: 'Dr. Vikram Rao', title: 'ML Scientist', exp: 12, rating: 5.0, doubts: 3050, section: 'data' },
+    { name: 'Meera Iyer', title: 'Data Analyst', exp: 5, rating: 4.7, doubts: 640, section: 'data' }
+  ];
+
+  container.innerHTML = EXPERT_SECTIONS.map(section => {
+    const sectionExperts = fakeExperts.filter(e => e.section === section.id);
+    const cards = sectionExperts.map(e => {
+      const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name)}&background=0a0a0f&color=00d4ff&bold=true&size=128`;
+      return `
+        <div class="expert-card-cine">
+          <div class="ec-top">
+            <img class="ec-avatar" src="${avatar}" alt="">
+            <div>
+              <div class="ec-name">${escapeHtml(e.name)}</div>
+              <div class="ec-role">${escapeHtml(e.title)}</div>
+            </div>
+          </div>
+          <div class="ec-stats">
+            <span><i class="fa-solid fa-star"></i> ${e.rating}</span>
+            <span><i class="fa-solid fa-check"></i> ${e.doubts} solved</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="expert-section-cine">
+        <div class="es-header">
+          <div class="es-icon" style="background:${section.color}">
+            <i class="${section.icon}"></i>
+          </div>
+          <div>
+            <div class="es-title">${section.title}</div>
+            <div class="es-desc">${section.desc}</div>
+          </div>
+        </div>
+        <div class="experts-grid-cine">${cards}</div>
+      </div>`;
+  }).join('');
+}
+
+/* ─────────────── SECTION 16: LEADERBOARD ─────────────── */
+async function loadLeaderboard() {
+  const podium = $('lbPodium');
+  const list = $('lbList');
+  if (!podium || !list) return;
+
+  // Mock data (extend later with real Firestore query)
+  const mockUsers = [
+    { name: 'Rohan Verma', xp: 4820, solved: 89, streak: 42 },
+    { name: 'Sneha Reddy', xp: 4230, solved: 82, streak: 35 },
+    { name: 'Arjun Mehta', xp: 3910, solved: 78, streak: 28 },
+    { name: 'Priya Sharma', xp: 3450, solved: 72, streak: 22 },
+    { name: 'Karan Singh', xp: 3120, solved: 68, streak: 19 },
+    { name: 'Anjali Verma', xp: 2890, solved: 65, streak: 15 },
+    { name: 'Meera Iyer', xp: 2340, solved: 58, streak: 12 },
+    { name: 'Dr. Vikram Rao', xp: 2050, solved: 52, streak: 10 }
+  ];
+
+  const top3 = mockUsers.slice(0, 3);
+  const podiumClasses = ['gold', 'silver', 'bronze'];
+
+  podium.innerHTML = top3.map((u, i) => {
+    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=0a0a0f&color=00d4ff&bold=true&size=128`;
+    return `
+      <div class="lb-podium-card ${podiumClasses[i]}">
+        <div class="lb-podium-rank">#${i + 1}</div>
+        <img class="lb-podium-avatar" src="${avatar}" alt="">
+        <div class="lb-podium-name">${escapeHtml(u.name)}</div>
+        <div class="lb-podium-xp">${u.xp} XP</div>
+      </div>
+    `;
+  }).join('');
+
+  list.innerHTML = mockUsers.map((u, i) => {
+    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=0a0a0f&color=00d4ff&bold=true&size=128`;
+    const isMe = userProfile?.name === u.name;
+    return `
+      <div class="lb-row-cine ${isMe ? 'me' : ''}">
+        <div class="lb-rank-cine">#${i + 1}</div>
+        <img class="lb-avatar-cine" src="${avatar}" alt="">
+        <div class="lb-info-cine">
+          <div class="lb-name-cine">${escapeHtml(u.name)}${isMe ? ' (you)' : ''}</div>
+          <div class="lb-sub-cine">${u.solved} solved · ${u.streak} day streak</div>
+        </div>
+        <div class="lb-xp-cine">${u.xp} XP</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ─────────────── SECTION 17: DONATE ─────────────── */
+$('copyUpiBtn')?.addEventListener('click', () => {
+  navigator.clipboard.writeText(CONFIG.UPI_ID).then(() => {
+    toast('success', 'UPI ID copied!', CONFIG.UPI_ID);
+  }).catch(() => toast('warn', 'Copy failed'));
 });
 
-/* ─────────────── SECTION 12: SCROLL + BACK TO TOP ─────────────── */
+/* ─────────────── SECTION 18: TELEGRAM ─────────────── */
+async function notifyTelegram(message) {
+  try {
+    await fetch(CONFIG.TELEGRAM_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'System', email: 'system@tcs', msg: message })
+    });
+  } catch (err) {
+    console.warn('Telegram notify failed:', err);
+  }
+}
+
+/* ─────────────── SECTION 19: HOME PREVIEW ─────────────── */
+function renderHomePreview() {
+  const container = $('levelTrackPreview');
+  if (!container) return;
+
+  const allProblems = window.PROBLEMS_DB || [];
+  const preview = allProblems.slice(0, 10);
+
+  container.innerHTML = preview.map(p => {
+    const solved = Progress.isSolved(p.id);
+    return `
+      <div class="level-preview-card ${solved ? 'solved' : ''}" onclick="openProblem(${p.id})">
+        ${solved ? '<div class="lpc-check"><i class="fa-solid fa-check"></i></div>' : ''}
+        <div class="lpc-num">LVL ${p.level}</div>
+        <div class="lpc-title">${escapeHtml(p.title)}</div>
+        <div class="lpc-meta">
+          <span class="lpc-diff ${p.difficulty}">${p.difficulty}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Stats
+  if ($('statLevels')) $('statLevels').textContent = allProblems.length;
+  if ($('statSolvedGlobal')) $('statSolvedGlobal').textContent = Progress.totalSolved();
+}
+
+/* ─────────────── SECTION 20: SCROLL PROGRESS + BACK TO TOP ─────────────── */
 window.addEventListener('scroll', () => {
   const h = document.documentElement;
-  const scrolled = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  const scrolled = (h.scrollTop / ((h.scrollHeight - h.clientHeight) || 1)) * 100;
   const sp = $('scrollProgress');
   if (sp) sp.style.width = scrolled + '%';
-
   const btt = $('backToTop');
-  if (btt) {
-    if (h.scrollTop > 400) btt.classList.add('show');
-    else btt.classList.remove('show');
-  }
+  if (btt) btt.classList.toggle('show', h.scrollTop > 400);
 });
 
 $('backToTop')?.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-/* ══════════════════════════════════════════════════════════════
-   TASKS SYSTEM
-   ══════════════════════════════════════════════════════════════ */
-let tasks = [];
-let currentTaskIndex = 0;
-let taskTimerStart = 0;
-let taskTimerInterval = null;
-let totalTaskTime = 0;
-let victoryConfettiAnim = null;
-let taskSeconds = 0;
-
-function loadTasks() {
-  const key = 'tcs_tasks_' + (currentUser?.uid || 'guest');
-  try { tasks = JSON.parse(localStorage.getItem(key)) || []; }
-  catch { tasks = []; }
-  renderTasks();
-}
-
-function saveTasks() {
-  const key = 'tcs_tasks_' + (currentUser?.uid || 'guest');
-  try { localStorage.setItem(key, JSON.stringify(tasks)); } catch {}
-}
-
-function renderTasks() {
-  const list = $('tasksList');
-  if (!list) return;
-
-  if (!tasks.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <i class="fa-solid fa-clipboard-list"></i>
-        <h4>No tasks yet</h4>
-        <p>Add your first task above to get started</p>
-      </div>`;
-  } else {
-    list.innerHTML = tasks.map((t, i) => `
-      <div class="task-item ${t.done ? 'done' : ''}">
-        <div class="task-num">${i + 1}</div>
-        <div class="task-text">${escapeHtml(t.text)}</div>
-        <div class="task-actions">
-          <button class="delete-btn" onclick="deleteTask(${i})" title="Delete">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  const startBtn = $('startTasksBtn');
-  if (startBtn) startBtn.disabled = tasks.length === 0;
-}
-
-window.deleteTask = function(i) {
-  tasks.splice(i, 1);
-  saveTasks();
-  renderTasks();
-};
-
-$('addTaskBtn')?.addEventListener('click', () => {
-  const input = $('taskInput');
-  const text = input.value.trim();
-  if (!text) { toast('warn', 'Please enter a task'); return; }
-  if (tasks.length >= 20) { toast('warn', 'Max 20 tasks'); return; }
-  tasks.push({ text, done: false, timeSpent: 0 });
-  input.value = '';
-  saveTasks();
-  renderTasks();
-  toast('success', 'Task added!');
-});
-
-$('taskInput')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') $('addTaskBtn').click();
-});
-
-$('clearTasksBtn')?.addEventListener('click', () => {
-  if (!tasks.length) return;
-  if (!confirm('Clear all tasks?')) return;
-  tasks = [];
-  saveTasks();
-  renderTasks();
-  toast('success', 'Tasks cleared');
-});
-
-$('startTasksBtn')?.addEventListener('click', () => {
-  if (!tasks.length) return;
-  currentTaskIndex = 0;
-  totalTaskTime = 0;
-  openTaskFocus();
-});
-
-function openTaskFocus() {
-  const overlay = $('taskFocusOverlay');
-  if (!overlay) return;
-  overlay.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  renderTaskFocus();
-  startTaskTimer();
-}
-
-function closeTaskFocus() {
-  const overlay = $('taskFocusOverlay');
-  if (overlay) overlay.classList.remove('show');
-  document.body.style.overflow = '';
-  stopTaskTimer();
-}
-
-$('closeFocusBtn')?.addEventListener('click', closeTaskFocus);
-
-function renderTaskFocus() {
-  const total = tasks.length;
-  const step = currentTaskIndex + 1;
-  if ($('currentStepNum')) $('currentStepNum').textContent = step;
-  if ($('totalStepNum')) $('totalStepNum').textContent = total;
-  if ($('taskCurrentText')) $('taskCurrentText').textContent = tasks[currentTaskIndex]?.text || '';
-
-  const prev = $('prevTaskBtn');
-  if (prev) prev.disabled = currentTaskIndex === 0;
-
-  const next = $('nextTaskBtn');
-  if (next) {
-    if (currentTaskIndex === total - 1) {
-      next.innerHTML = 'Finish <i class="fa-solid fa-flag-checkered"></i>';
-    } else {
-      next.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
-    }
-  }
-}
-
-$('prevTaskBtn')?.addEventListener('click', () => {
-  if (currentTaskIndex > 0) {
-    if (tasks[currentTaskIndex]) {
-      tasks[currentTaskIndex].timeSpent = (tasks[currentTaskIndex].timeSpent || 0) + (Date.now() - taskTimerStart);
-    }
-    currentTaskIndex--;
-    resetTaskTimer();
-    renderTaskFocus();
+/* ─────────────── SECTION 21: KEYBOARD SHORTCUTS ─────────────── */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay-cine.show').forEach(m => m.classList.remove('show'));
+    document.body.style.overflow = '';
   }
 });
 
-$('nextTaskBtn')?.addEventListener('click', () => {
-  if (tasks[currentTaskIndex]) {
-    tasks[currentTaskIndex].timeSpent = (tasks[currentTaskIndex].timeSpent || 0) + (Date.now() - taskTimerStart);
-    tasks[currentTaskIndex].done = true;
-  }
-  totalTaskTime += Date.now() - taskTimerStart;
-
-  if (currentTaskIndex === tasks.length - 1) {
-    saveTasks();
-    stopTaskTimer();
-    closeTaskFocus();
-    showVictory();
-  } else {
-    currentTaskIndex++;
-    resetTaskTimer();
-    renderTaskFocus();
-  }
-});
-
-function startTaskTimer() {
-  taskTimerStart = Date.now();
-  taskSeconds = 0;
-  updateTaskTimerDisplay(0);
-  stopTaskTimer();
-  taskTimerInterval = setInterval(() => {
-    taskSeconds++;
-    updateTaskTimerDisplay(taskSeconds);
-  }, 1000);
-}
-
-function stopTaskTimer() {
-  if (taskTimerInterval) {
-    clearInterval(taskTimerInterval);
-    taskTimerInterval = null;
-  }
-}
-
-function resetTaskTimer() {
-  stopTaskTimer();
-  taskTimerStart = Date.now();
-  taskSeconds = 0;
-  updateTaskTimerDisplay(0);
-  startTaskTimer();
-}
-
-function updateTaskTimerDisplay(secs) {
-  if ($('taskTimerText')) {
-    const m = String(Math.floor(secs / 60)).padStart(2, '0');
-    const s = String(secs % 60).padStart(2, '0');
-    $('taskTimerText').textContent = `${m}:${s}`;
-  }
-  const fill = $('timerFill');
-  if (fill) {
-    const circumference = 565.48;
-    const progress = (secs % 60) / 60;
-    fill.style.strokeDashoffset = circumference * (1 - progress);
-  }
-}
-
-function showVictory() {
-  const totalSecs = Math.floor(totalTaskTime / 1000);
-  const m = String(Math.floor(totalSecs / 60)).padStart(2, '0');
-  const s = String(totalSecs % 60).padStart(2, '0');
-  if ($('victoryTotalTime')) $('victoryTotalTime').textContent = `${m}:${s}`;
-  const v = $('victoryOverlay');
-  if (v) v.classList.add('show');
-  launchVictoryConfetti();
-}
-
-$('victoryCloseBtn')?.addEventListener('click', () => {
-  const v = $('victoryOverlay');
-  if (v) v.classList.remove('show');
-  document.body.style.overflow = '';
-  if (victoryConfettiAnim) cancelAnimationFrame(victoryConfettiAnim);
-});
-
-function launchVictoryConfetti() {
-  const canvas = $('victoryConfetti');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  const colors = ['#fbbf24', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#fde68a'];
-  const pieces = [];
-  for (let i = 0; i < 150; i++) {
-    pieces.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * -canvas.height,
-      vx: (Math.random() - 0.5) * 3,
-      vy: 2 + Math.random() * 4,
-      size: 6 + Math.random() * 8,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      rot: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.2
-    });
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    pieces.forEach(p => {
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-      ctx.restore();
-
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rot += p.rotSpeed;
-      p.vy += 0.05;
-
-      if (p.y > canvas.height + 20) {
-        p.y = -20;
-        p.x = Math.random() * canvas.width;
-        p.vy = 2 + Math.random() * 4;
-      }
-    });
-    victoryConfettiAnim = requestAnimationFrame(draw);
-  }
-  draw();
-}
-
-/* ─────────────── SECTION 13: INIT APP ─────────────── */
+/* ─────────────── SECTION 22: INIT ─────────────── */
 function initApp() {
-  loadStats();
+  renderHomePreview();
+  updatePythonProgress();
   updateUserUI();
-  loadTasks();
-  updateLiveExperts();
+
+  // Set UPI display
+  if ($('upiIdDisplay')) $('upiIdDisplay').textContent = CONFIG.UPI_ID;
 }
 
-/* ─────────────── SECTION 14: BOOT ─────────────── */
+/* ─────────────── SECTION 23: BOOT ─────────────── */
 window.addEventListener('load', () => {
+  // Force boot loader hide after 4 seconds no matter what
   setTimeout(() => {
     const loader = $('bootLoader');
     if (loader) loader.classList.add('hide');
-  }, 1500);
+  }, 4000);
 });
 
-console.log('🚀 The Chairman Show — App Loaded Successfully');
-/* ══════════════════════════════════════════════════════════════
-   ADMIN PANEL + LIVE WORKSHOPS SYSTEM
-   ══════════════════════════════════════════════════════════════ */
-
-let currentManageWorkshopId = null;
-let allWorkshopsCache = [];
-let allRequestsCache = [];
-
-/* ─── Admin Visibility Check ─── */
-function isAdmin() {
-  return userProfile?.role === 'admin';
-}
-
-function updateAdminVisibility() {
-  const adminNav = $('navAdmin');
-  if (adminNav) {
-    adminNav.style.display = isAdmin() ? 'flex' : 'none';
-  }
-}
-
-/* ─── Load Admin Dashboard ─── */
-async function loadAdminDashboard() {
-  if (!isAdmin()) {
-    toast('warn', 'Access denied', 'Only admins can access this panel.');
-    switchToTab('home');
-    return;
-  }
-  loadAdminWorkshops();
-  loadAdminRequests();
-}
-window.loadAdminDashboard = loadAdminDashboard;
-
-/* ─── Admin Tabs Switch ─── */
-document.addEventListener('click', (e) => {
-  const tab = e.target.closest('.admin-tab');
-  if (tab) {
-    $$('.admin-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    const target = tab.dataset.atab;
-    $$('.admin-panel').forEach(p => p.classList.remove('active'));
-    const panel = $('adminPanel' + target.charAt(0).toUpperCase() + target.slice(1));
-    if (panel) panel.classList.add('active');
-  }
-});
-
-/* ══════════════════════════════════════════════════════════════
-   WORKSHOPS — Admin CRUD
-   ══════════════════════════════════════════════════════════════ */
-
-async function loadAdminWorkshops() {
-  const list = $('adminWorkshopsList');
-  if (!list) return;
-  list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
-
-  try {
-    const snap = await db.collection('workshops').limit(100).get();
-    allWorkshopsCache = [];
-    snap.forEach(d => allWorkshopsCache.push({ id: d.id, ...d.data() }));
-
-    allWorkshopsCache.sort((a, b) => {
-      const ta = a.scheduledAt?.toDate?.()?.getTime() || 0;
-      const tb = b.scheduledAt?.toDate?.()?.getTime() || 0;
-      return tb - ta;
-    });
-
-    if (!allWorkshopsCache.length) {
-      list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-video"></i><h4>No workshops yet</h4><p>Click "Create Workshop" to get started</p></div>';
-      return;
-    }
-
-    list.innerHTML = allWorkshopsCache.map(w => {
-      const status = getWorkshopStatus(w);
-      const scheduled = w.scheduledAt?.toDate?.() ? formatTime(w.scheduledAt.toDate().getTime()) : 'Not scheduled';
-      const allowedCount = (w.allowedUsers || []).length;
-      return `
-        <div class="admin-workshop-card">
-          <div class="awc-header">
-            <div class="awc-title">${escapeHtml(w.title || 'Untitled')}</div>
-            <span class="awc-status ${status.class}">${status.label}</span>
-          </div>
-          <div class="awc-meta">
-            <span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(w.expertName || 'Expert')}</span>
-            <span><i class="fa-solid fa-book"></i> ${escapeHtml(w.subject || 'General')}</span>
-            <span><i class="fa-solid fa-clock"></i> ${scheduled}</span>
-            <span><i class="fa-solid fa-users"></i> ${allowedCount} user${allowedCount !== 1 ? 's' : ''} allowed</span>
-          </div>
-          <div class="awc-actions">
-            <button class="primary" onclick="manageAccess('${w.id}')">
-              <i class="fa-solid fa-users-gear"></i> Access
-            </button>
-            <button onclick="editWorkshop('${w.id}')">
-              <i class="fa-solid fa-pen"></i> Edit
-            </button>
-            <button class="danger" onclick="deleteWorkshop('${w.id}')">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  } catch (err) {
-    console.error(err);
-    list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Error loading workshops</h4><p>' + escapeHtml(err.message) + '</p></div>';
-  }
-}
-window.loadAdminWorkshops = loadAdminWorkshops;
-
-function getWorkshopStatus(w) {
-  if (!w.scheduledAt?.toDate) return { class: 'upcoming', label: 'Upcoming' };
-  const now = Date.now();
-  const start = w.scheduledAt.toDate().getTime();
-  const duration = (w.duration || 60) * 60 * 1000;
-  const end = start + duration;
-
-  if (now < start) return { class: 'upcoming', label: 'Upcoming' };
-  if (now >= start && now <= end) return { class: 'live', label: '🔴 Live' };
-  return { class: 'ended', label: 'Ended' };
-}
-
-/* ─── Create Workshop ─── */
-$('createWorkshopBtn')?.addEventListener('click', () => {
-  // Reset form
-  if ($('cwTitle')) $('cwTitle').value = '';
-  if ($('cwDescription')) $('cwDescription').value = '';
-  if ($('cwExpert')) $('cwExpert').value = '';
-  if ($('cwLink')) $('cwLink').value = '';
-  if ($('cwDate')) $('cwDate').value = '';
-  if ($('cwTime')) $('cwTime').value = '';
-  if ($('cwDuration')) $('cwDuration').value = 60;
-  if ($('cwSubject')) $('cwSubject').value = 'Mathematics';
-  openModal('createWorkshopModal');
-});
-
-$('saveWorkshopBtn')?.addEventListener('click', async () => {
-  if (!isAdmin()) return;
-
-  const title = $('cwTitle').value.trim();
-  const description = $('cwDescription').value.trim();
-  const expertName = $('cwExpert').value.trim();
-  const subject = $('cwSubject').value;
-  const link = $('cwLink').value.trim();
-  const date = $('cwDate').value;
-  const time = $('cwTime').value;
-  const duration = parseInt($('cwDuration').value) || 60;
-
-  if (!title || !expertName || !link || !date || !time) {
-    toast('warn', 'Please fill all required fields');
-    return;
-  }
-
-  const btn = $('saveWorkshopBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating…';
-
-  try {
-    const scheduledAt = new Date(`${date}T${time}:00`);
-    if (isNaN(scheduledAt.getTime())) {
-      throw new Error('Invalid date/time');
-    }
-
-    await db.collection('workshops').add({
-      title,
-      description,
-      expertName,
-      subject,
-      link,
-      scheduledAt: firebase.firestore.Timestamp.fromDate(scheduledAt),
-      duration,
-      allowedUsers: [],
-      createdBy: currentUser.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    toast('success', 'Workshop created!', 'Add users to allow access');
-    closeModal('createWorkshopModal');
-    loadAdminWorkshops();
-  } catch (err) {
-    console.error(err);
-    toast('warn', 'Failed to create', err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Create Workshop';
-  }
-});
-
-/* ─── Delete Workshop ─── */
-window.deleteWorkshop = async function(id) {
-  if (!isAdmin()) return;
-  if (!confirm('Delete this workshop? Users will lose access.')) return;
-
-  try {
-    await db.collection('workshops').doc(id).delete();
-    toast('success', 'Workshop deleted');
-    loadAdminWorkshops();
-  } catch (err) {
-    toast('warn', 'Delete failed', err.message);
-  }
-};
-
-/* ─── Edit Workshop ─── */
-window.editWorkshop = function(id) {
-  const w = allWorkshopsCache.find(x => x.id === id);
-  if (!w) return;
-
-  if ($('cwTitle')) $('cwTitle').value = w.title || '';
-  if ($('cwDescription')) $('cwDescription').value = w.description || '';
-  if ($('cwExpert')) $('cwExpert').value = w.expertName || '';
-  if ($('cwSubject')) $('cwSubject').value = w.subject || 'Mathematics';
-  if ($('cwLink')) $('cwLink').value = w.link || '';
-  if ($('cwDuration')) $('cwDuration').value = w.duration || 60;
-
-  if (w.scheduledAt?.toDate) {
-    const d = w.scheduledAt.toDate();
-    const dateStr = d.toISOString().split('T')[0];
-    const timeStr = d.toTimeString().slice(0, 5);
-    if ($('cwDate')) $('cwDate').value = dateStr;
-    if ($('cwTime')) $('cwTime').value = timeStr;
-  }
-
-  // Change save button to update mode
-  const btn = $('saveWorkshopBtn');
-  btn.innerHTML = '<i class="fa-solid fa-check"></i> Update Workshop';
-  btn.onclick = async () => {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating…';
-    try {
-      const scheduledAt = new Date(`${$('cwDate').value}T${$('cwTime').value}:00`);
-      await db.collection('workshops').doc(id).update({
-        title: $('cwTitle').value.trim(),
-        description: $('cwDescription').value.trim(),
-        expertName: $('cwExpert').value.trim(),
-        subject: $('cwSubject').value,
-        link: $('cwLink').value.trim(),
-        scheduledAt: firebase.firestore.Timestamp.fromDate(scheduledAt),
-        duration: parseInt($('cwDuration').value) || 60
-      });
-      toast('success', 'Workshop updated!');
-      closeModal('createWorkshopModal');
-      loadAdminWorkshops();
-      location.reload(); // Simple reload to reset button
-    } catch (err) {
-      toast('warn', 'Update failed', err.message);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-check"></i> Update Workshop';
-    }
-  };
-
-  openModal('createWorkshopModal');
-};
-
-/* ══════════════════════════════════════════════════════════════
-   MANAGE ACCESS
-   ══════════════════════════════════════════════════════════════ */
-
-window.manageAccess = async function(workshopId) {
-  if (!isAdmin()) return;
-  currentManageWorkshopId = workshopId;
-
-  const w = allWorkshopsCache.find(x => x.id === workshopId);
-  if (!w) return;
-
-  if ($('manageInfo')) {
-    $('manageInfo').innerHTML = `<i class="fa-solid fa-video"></i> ${escapeHtml(w.title)}`;
-  }
-  if ($('accessEmail')) $('accessEmail').value = '';
-
-  renderAccessList(w.allowedUsers || []);
-  openModal('manageAccessModal');
-};
-
-function renderAccessList(allowedUsers) {
-  const list = $('accessList');
-  const count = $('accessCount');
-  if (!list) return;
-
-  if (count) count.textContent = allowedUsers.length;
-
-  if (!allowedUsers.length) {
-    list.innerHTML = '<div class="empty-state" style="padding:1rem;"><p style="font-size:.82rem;">No users allowed yet</p></div>';
-    return;
-  }
-
-  list.innerHTML = allowedUsers.map((u, i) => {
-    const email = u.email || u;
-    const name = u.name || email.split('@')[0];
-    const avatar = u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff`;
-    return `
-      <div class="access-user">
-        <img src="${escapeHtml(avatar)}" alt="">
-        <div class="access-user-info">
-          <div class="name">${escapeHtml(name)}</div>
-          <div class="email">${escapeHtml(email)}</div>
-        </div>
-        <button onclick="removeAccess(${i})" title="Remove">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-    `;
-  }).join('');
-}
-
-window.removeAccess = async function(index) {
-  if (!isAdmin() || !currentManageWorkshopId) return;
-  const w = allWorkshopsCache.find(x => x.id === currentManageWorkshopId);
-  if (!w) return;
-
-  const allowedUsers = [...(w.allowedUsers || [])];
-  const removed = allowedUsers.splice(index, 1);
-
-  try {
-    await db.collection('workshops').doc(currentManageWorkshopId).update({ allowedUsers });
-    w.allowedUsers = allowedUsers;
-    renderAccessList(allowedUsers);
-    toast('success', 'Removed', (removed[0]?.email || removed[0]) + ' removed');
-  } catch (err) {
-    toast('warn', 'Failed', err.message);
-  }
-};
-
-$('addAccessBtn')?.addEventListener('click', async () => {
-  if (!isAdmin() || !currentManageWorkshopId) return;
-  const email = $('accessEmail').value.trim().toLowerCase();
-  if (!email || !email.includes('@')) {
-    toast('warn', 'Please enter valid email');
-    return;
-  }
-
-  const w = allWorkshopsCache.find(x => x.id === currentManageWorkshopId);
-  if (!w) return;
-
-  const allowedUsers = [...(w.allowedUsers || [])];
-  if (allowedUsers.some(u => (u.email || u).toLowerCase() === email)) {
-    toast('warn', 'User already added');
-    return;
-  }
-
-  // Try to find user by email
-  let userData = { email, name: email.split('@')[0] };
-  try {
-    const usersSnap = await db.collection('users').where('email', '==', email).limit(1).get();
-    if (!usersSnap.empty) {
-      const u = usersSnap.docs[0].data();
-      userData = { uid: usersSnap.docs[0].id, email, name: u.name || email.split('@')[0], photoURL: u.photoURL || '' };
-    }
-  } catch (e) {}
-
-  allowedUsers.push(userData);
-
-  const btn = $('addAccessBtn');
-  btn.disabled = true;
-
-  try {
-    await db.collection('workshops').doc(currentManageWorkshopId).update({ allowedUsers });
-    w.allowedUsers = allowedUsers;
-    renderAccessList(allowedUsers);
-    $('accessEmail').value = '';
-    toast('success', 'User added!', email + ' can now join');
-  } catch (err) {
-    toast('warn', 'Failed to add', err.message);
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-$('accessEmail')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') $('addAccessBtn')?.click();
-});
-
-/* ══════════════════════════════════════════════════════════════
-   ACCESS REQUESTS
-   ══════════════════════════════════════════════════════════════ */
-
-async function loadAdminRequests() {
-  const list = $('adminRequestsList');
-  if (!list) return;
-  list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading…</p></div>';
-
-  try {
-    const snap = await db.collection('access_requests').where('status', '==', 'pending').limit(100).get();
-    allRequestsCache = [];
-    snap.forEach(d => allRequestsCache.push({ id: d.id, ...d.data() }));
-
-    const badge = $('pendingCount');
-    if (badge) {
-      if (allRequestsCache.length > 0) {
-        badge.textContent = allRequestsCache.length;
-        badge.style.display = 'flex';
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-
-    if (!allRequestsCache.length) {
-      list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>No pending requests</h4><p>Access requests from students will appear here</p></div>';
-      return;
-    }
-
-    list.innerHTML = allRequestsCache.map(r => {
-      const avatar = r.userPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.userName || 'User')}&background=7c3aed&color=fff`;
-      const when = r.requestedAt?.toDate?.() ? formatTime(r.requestedAt.toDate().getTime()) : 'Just now';
-      return `
-        <div class="admin-request-card">
-          <img class="arc-avatar" src="${escapeHtml(avatar)}" alt="">
-          <div class="arc-info">
-            <div class="name">${escapeHtml(r.userName || 'User')}</div>
-            <div class="email">${escapeHtml(r.userEmail || '')}</div>
-            <div class="workshop-want"><i class="fa-solid fa-video"></i> ${escapeHtml(r.workshopTitle || 'Workshop')}</div>
-            <div class="time"><i class="fa-solid fa-clock"></i> ${when}</div>
-          </div>
-          <div class="arc-actions">
-            <button class="approve" onclick="approveRequest('${r.id}')">
-              <i class="fa-solid fa-check"></i> Approve
-            </button>
-            <button class="reject" onclick="rejectRequest('${r.id}')">
-              <i class="fa-solid fa-xmark"></i> Reject
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  } catch (err) {
-    console.error(err);
-    list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Error loading requests</h4><p>' + escapeHtml(err.message) + '</p></div>';
-  }
-}
-window.loadAdminRequests = loadAdminRequests;
-
-window.approveRequest = async function(requestId) {
-  if (!isAdmin()) return;
-  const r = allRequestsCache.find(x => x.id === requestId);
-  if (!r) return;
-
-  try {
-    // Get workshop
-    const wDoc = await db.collection('workshops').doc(r.workshopId).get();
-    if (!wDoc.exists) {
-      toast('warn', 'Workshop no longer exists');
-      await db.collection('access_requests').doc(requestId).delete();
-      loadAdminRequests();
-      return;
-    }
-    const w = wDoc.data();
-    const allowedUsers = [...(w.allowedUsers || [])];
-    if (!allowedUsers.some(u => (u.email || u).toLowerCase() === r.userEmail.toLowerCase())) {
-      allowedUsers.push({
-        uid: r.userId,
-        email: r.userEmail,
-        name: r.userName || r.userEmail.split('@')[0],
-        photoURL: r.userPhoto || ''
-      });
-    }
-
-    await db.collection('workshops').doc(r.workshopId).update({ allowedUsers });
-    await db.collection('access_requests').doc(requestId).update({
-      status: 'approved',
-      reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    toast('success', 'Approved!', r.userName + ' can now join');
-    loadAdminRequests();
-  } catch (err) {
-    toast('warn', 'Approval failed', err.message);
-  }
-};
-
-window.rejectRequest = async function(requestId) {
-  if (!isAdmin()) return;
-  if (!confirm('Reject this request?')) return;
-
-  try {
-    await db.collection('access_requests').doc(requestId).update({
-      status: 'rejected',
-      reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    toast('success', 'Request rejected');
-    loadAdminRequests();
-  } catch (err) {
-    toast('warn', 'Failed', err.message);
-  }
-};
-
-/* ══════════════════════════════════════════════════════════════
-   STUDENT VIEW — LIVE WORKSHOPS
-   ══════════════════════════════════════════════════════════════ */
-
-async function loadStudentWorkshops() {
-  const grid = $('workshopsGrid');
-  if (!grid) return;
-
-  // Agar admin hai to sab dikhao
-  const isUserAdmin = isAdmin();
-
-  try {
-    const snap = await db.collection('workshops').limit(50).get();
-    const workshops = [];
-    snap.forEach(d => {
-      const data = d.data();
-      // Filter: allowed users only (unless admin)
-      const allowed = (data.allowedUsers || []).some(u => 
-        (u.uid && u.uid === currentUser.uid) || 
-        (u.email && u.email.toLowerCase() === (currentUser.email || '').toLowerCase())
-      );
-      if (isUserAdmin || allowed) {
-        workshops.push({ id: d.id, ...data });
-      }
-    });
-
-    if (!workshops.length) {
-      grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-video"></i><h4>No live workshops available</h4><p>Check back later for upcoming sessions</p></div>';
-      return;
-    }
-
-    workshops.sort((a, b) => {
-      const ta = a.scheduledAt?.toDate?.()?.getTime() || 0;
-      const tb = b.scheduledAt?.toDate?.()?.getTime() || 0;
-      return ta - tb; // Soonest first
-    });
-
-    grid.innerHTML = workshops.map(w => renderWorkshopCard(w)).join('');
-  } catch (err) {
-    console.error('Workshops load error:', err);
-    grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-video"></i><h4>No live workshops available</h4><p>Check back later</p></div>';
-  }
-}
-window.loadStudentWorkshops = loadStudentWorkshops;
-
-function renderWorkshopCard(w) {
-  const status = getWorkshopStatus(w);
-  const scheduled = w.scheduledAt?.toDate?.() ? formatTime(w.scheduledAt.toDate().getTime()) : 'Not scheduled';
-  const isLive = status.class === 'live';
-
-  const allowed = (w.allowedUsers || []).some(u => 
-    (u.uid && u.uid === currentUser.uid) || 
-    (u.email && u.email.toLowerCase() === (currentUser.email || '').toLowerCase())
-  ) || isAdmin();
-
-  return `
-    <div class="workshop-card ${isLive ? 'live' : ''} ${!allowed ? 'locked' : ''}">
-      ${isLive ? '<div class="workshop-live-badge"><span class="workshop-live-dot"></span> LIVE</div>' : ''}
-      <div class="workshop-title">${escapeHtml(w.title || 'Workshop')}</div>
-      ${w.description ? `<div class="workshop-description">${escapeHtml(w.description)}</div>` : ''}
-      <div class="workshop-expert">
-        <i class="fa-solid fa-user-tie"></i> ${escapeHtml(w.expertName || 'Expert')}
-      </div>
-      <div class="workshop-time">
-        <i class="fa-solid fa-clock"></i> ${scheduled} • ${w.duration || 60} min
-      </div>
-      <div class="workshop-actions">
-        ${allowed ? `
-          <button class="join" onclick="joinWorkshop('${escapeHtml(w.link || '')}')">
-            <i class="fa-solid fa-arrow-right-to-bracket"></i> Join
-          </button>
-        ` : `
-          <button class="request" onclick="requestWorkshopAccess('${w.id}')">
-            <i class="fa-solid fa-lock-open"></i> Request Access
-          </button>
-        `}
-      </div>
-    </div>
-  `;
-}
-
-window.joinWorkshop = function(link) {
-  if (!link) {
-    toast('warn', 'No link available');
-    return;
-  }
-  window.open(link, '_blank', 'noopener');
-  toast('success', 'Opening workshop…');
-};
-
-window.requestWorkshopAccess = async function(workshopId) {
-  const w = allWorkshopsCache.find(x => x.id === workshopId) || 
-            (await db.collection('workshops').doc(workshopId).get()).data();
-  if (!w) return;
-
-  try {
-    // Check existing request
-    const existing = await db.collection('access_requests')
-      .where('userId', '==', currentUser.uid)
-      .where('workshopId', '==', workshopId)
-      .limit(1)
-      .get();
-
-    if (!existing.empty) {
-      toast('info', 'Request already sent', 'Wait for admin approval');
-      return;
-    }
-
-    await db.collection('access_requests').add({
-      workshopId,
-      workshopTitle: w.title || 'Workshop',
-      userId: currentUser.uid,
-      userName: userProfile.name,
-      userEmail: userProfile.email,
-      userPhoto: userProfile.photoURL || '',
-      status: 'pending',
-      requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    toast('success', 'Request sent!', 'Admin will review it soon');
-  } catch (err) {
-    toast('warn', 'Failed to send request', err.message);
-  }
-};
-
-/* ══════════════════════════════════════════════════════════════
-   HOOK INTO EXISTING SYSTEM
-   ══════════════════════════════════════════════════════════════ */
-
-// Extend switchToTab to load admin + workshops
-const _prevSwitchToTab = window.switchToTab;
-window.switchToTab = function(tabId) {
-  _prevSwitchToTab(tabId);
-  if (tabId === 'admin') loadAdminDashboard();
-  if (tabId === 'experts') loadStudentWorkshops();
-};
-
-// Extend updateUserUI to show admin nav
-const _prevUpdateUserUI = updateUserUI;
-updateUserUI = function() {
-  _prevUpdateUserUI();
-  updateAdminVisibility();
-};
-
-// Check for pending requests count (admin only)
-async function checkPendingRequests() {
-  if (!isAdmin()) return;
-  try {
-    const snap = await db.collection('access_requests').where('status', '==', 'pending').count().get();
-    const badge = $('pendingCount');
-    if (badge && snap.data().count > 0) {
-      badge.textContent = snap.data().count;
-      badge.style.display = 'flex';
-    }
-  } catch (e) {}
-}
-
-// Init admin when app loads
-const _prevInitApp = initApp;
-initApp = function() {
-  _prevInitApp();
-  updateAdminVisibility();
-  if (isAdmin()) {
-    setTimeout(checkPendingRequests, 2000);
-  }
-};
-
-console.log('🛡️ Admin Panel + Workshops System Loaded');
+console.log('🚀 The Chairman Show — Cinematic Platform Loaded');
