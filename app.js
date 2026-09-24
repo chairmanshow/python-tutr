@@ -2466,3 +2466,42 @@ window.openProblem = function(id) {
 };
 
 console.log('🧭 Problem Navigation Loaded');
+// Sync solution-card nav buttons with main nav
+function syncSolutionNav() {
+  if (!currentProblem) return;
+  const allProblems = window.PROBLEMS_DB || [];
+  const idx = allProblems.findIndex(p => p.id === currentProblem.id);
+
+  const sPrev = $('solutionPrevBtn');
+  const sNext = $('solutionNextBtn');
+
+  if (sPrev) {
+    if (idx > 0) {
+      sPrev.disabled = false;
+      sPrev.onclick = () => openProblem(allProblems[idx - 1].id);
+    } else {
+      sPrev.disabled = true;
+    }
+  }
+
+  if (sNext) {
+    if (idx < allProblems.length - 1) {
+      sNext.disabled = false;
+      sNext.onclick = () => openProblem(allProblems[idx + 1].id);
+    } else {
+      sNext.disabled = true;
+    }
+  }
+}
+
+// Update navigation whenever solution is shown
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#showSolutionBtn')) {
+    setTimeout(syncSolutionNav, 100);
+  }
+  if (e.target.closest('#backToCodeBtn')) {
+    setTimeout(updateProblemNavigation, 100);
+  }
+});
+
+// Also call in openProblem (already handled by setTimeout updateProblemNavigation)
