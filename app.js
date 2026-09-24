@@ -24,6 +24,8 @@ const CONFIG = {
   ADMIN_EMAIL: "overactingofficial7@gmail.com",
   IMGBB_KEY: "f1e5041PbWWqgKDBDorh525uecKaGZD21FGSoCeR",
   PISTON_API: "https://emkc.org/api/v2/piston/execute"
+  GROQ_API_KEY: "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"
+
 };
 
 let currentUser = null;
