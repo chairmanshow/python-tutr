@@ -1,897 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-     <!-- ═══ CHAT CSS — Inline fallback ═══ -->
-<style>
-.chat-shell-cine {
-  position: relative;
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  height: min(82vh, 800px);
-  min-height: 550px;
-  background: #101015;
-  border: 1px solid rgba(212,175,55,.4);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,.6);
-}
-
-.chat-sidebar-cine {
-  display: flex;
-  flex-direction: column;
-  background: #08080c;
-  border-right: 1px solid rgba(255,255,255,.06);
-  min-width: 0;
-  overflow: hidden;
-}
-
-.cs-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-}
-.cs-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: .94rem;
-  color: #f4f4f7;
-}
-.cs-brand i { color: #D4AF37; }
-.cs-close-btn {
-  display: none;
-  width: 30px; height: 30px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  font-size: .95rem;
-  cursor: pointer;
-}
-
-.cs-me {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  background: rgba(212,175,55,.03);
-}
-.cs-me img, .cs-me > div:first-child {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  border: 2px solid #D4AF37;
-  object-fit: cover;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: .9rem;
-  background: linear-gradient(135deg, #00d4ff, #7c3aed);
-  color: #000;
-}
-.cs-me-info { flex: 1; min-width: 0; }
-.cs-me-name {
-  font-weight: 600;
-  font-size: .88rem;
-  color: #f4f4f7;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cs-me-status {
-  display: flex; align-items: center; gap: 5px;
-  font-size: .72rem;
-  color: #10b981;
-  margin-top: 1px;
-}
-.online-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-.cs-search {
-  position: relative;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-}
-.cs-search i {
-  position: absolute;
-  left: 24px; top: 50%;
-  transform: translateY(-50%);
-  color: #6b7280;
-  font-size: .8rem;
-  pointer-events: none;
-}
-.cs-search input {
-  width: 100%;
-  padding: 8px 12px 8px 32px;
-  background: #0a0a0f;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 9999px;
-  color: #f4f4f7;
-  font-family: inherit;
-  font-size: .82rem;
-  outline: none;
-}
-.cs-search input:focus {
-  border-color: rgba(212,175,55,.4);
-  box-shadow: 0 0 0 3px rgba(212,175,55,.12);
-}
-
-.cs-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: 12px;
-}
-.cs-label {
-  font-size: .66rem;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: #4b5563;
-  padding: 14px 18px 6px;
-}
-.cs-rooms {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 8px;
-}
-.cs-room {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: 8px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: #9ca3af;
-  font-family: inherit;
-  font-size: .86rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-  transition: all .15s;
-}
-.cs-room:hover {
-  background: rgba(255,255,255,.03);
-  color: #f4f4f7;
-}
-.cs-room.active {
-  background: rgba(212,175,55,.12);
-  border-color: rgba(212,175,55,.4);
-  color: #D4AF37;
-}
-.cs-room-ico {
-  width: 28px; height: 28px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #16161d;
-  font-size: .78rem;
-  flex-shrink: 0;
-}
-.cs-room.active .cs-room-ico {
-  background: linear-gradient(135deg, #D4AF37, #B8860B);
-  color: #000;
-}
-.cs-room-meta { flex: 1; min-width: 0; }
-.cs-room-name {
-  font-weight: 600;
-  font-size: .85rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cs-room-count {
-  font-size: .64rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  background: #16161d;
-  color: #6b7280;
-}
-.cs-room.active .cs-room-count {
-  background: rgba(212,175,55,.2);
-  color: #D4AF37;
-}
-
-.cs-users {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 8px;
-}
-.cs-user {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: .82rem;
-  color: #9ca3af;
-}
-.cs-user-av {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .66rem;
-  font-weight: 800;
-  color: #000;
-  position: relative;
-  flex-shrink: 0;
-}
-.cs-user-av::after {
-  content: '';
-  position: absolute;
-  right: -1px; bottom: -1px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #10b981;
-  border: 2px solid #08080c;
-}
-.cs-user-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cs-user-you {
-  font-size: .64rem;
-  color: #6b7280;
-  margin-left: auto;
-  font-family: 'JetBrains Mono', monospace;
-}
-.cs-loading {
-  padding: 8px 16px;
-  font-size: .78rem;
-  color: #6b7280;
-}
-
-.chat-main-cine {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: #0a0a10;
-  position: relative;
-}
-.cm-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #08080c;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  flex-shrink: 0;
-}
-.cm-menu-btn {
-  display: none;
-  width: 34px; height: 34px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-  font-size: 1rem;
-}
-.cm-room-icon {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #D4AF37, #B8860B);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-.cm-room-info { flex: 1; min-width: 0; }
-.cm-room-info h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .98rem;
-  font-weight: 700;
-  color: #f4f4f7;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cm-room-sub {
-  display: flex; align-items: center; gap: 6px;
-  font-size: .72rem;
-  color: #9ca3af;
-  margin-top: 1px;
-}
-.cm-icon-btn {
-  width: 34px; height: 34px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-  font-size: .9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all .15s;
-}
-.cm-icon-btn:hover, .cm-icon-btn.active {
-  background: rgba(212,175,55,.12);
-  color: #D4AF37;
-}
-
-.cm-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  scroll-behavior: smooth;
-}
-.cm-empty {
-  margin: auto;
-  text-align: center;
-  color: #6b7280;
-  padding: 40px 20px;
-}
-.cm-empty i {
-  font-size: 2.6rem;
-  opacity: .3;
-  margin-bottom: 12px;
-  display: block;
-  color: #D4AF37;
-}
-.cm-empty h4 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #9ca3af;
-  margin-bottom: 5px;
-}
-.cm-empty p { font-size: .85rem; }
-
-.cm-date-sep {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 16px 0 12px;
-}
-.cm-date-sep span {
-  padding: 4px 14px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 9999px;
-  font-size: .68rem;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.cm-msg {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  position: relative;
-  padding: 1px 0;
-  max-width: 100%;
-}
-.cm-msg.mine { flex-direction: row-reverse; }
-.cm-msg-avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .78rem;
-  font-weight: 800;
-  color: #000;
-  flex-shrink: 0;
-}
-.cm-msg-avatar.hidden { visibility: hidden; }
-.cm-msg-col {
-  display: flex;
-  flex-direction: column;
-  max-width: min(560px, 76%);
-  min-width: 0;
-}
-.cm-msg.mine .cm-msg-col { align-items: flex-end; }
-.cm-msg-author {
-  font-size: .7rem;
-  font-weight: 700;
-  margin: 0 0 3px 12px;
-}
-.cm-bubble {
-  position: relative;
-  background: #16161d;
-  border: 1px solid rgba(255,255,255,.04);
-  border-radius: 15px 15px 15px 5px;
-  padding: 8px 12px;
-  font-size: .9rem;
-  line-height: 1.5;
-  word-wrap: break-word;
-  color: #f4f4f7;
-}
-.cm-msg.mine .cm-bubble {
-  background: linear-gradient(135deg, #B8860B, #D4AF37);
-  color: #0a0a0f;
-  border-radius: 15px 15px 5px 15px;
-  border-color: transparent;
-}
-.cm-msg.grouped .cm-bubble { border-radius: 13px; }
-.cm-bubble a { color: #D4AF37; text-decoration: underline; }
-.cm-msg.mine .cm-bubble a { color: #003344; }
-.cm-bubble code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .85em;
-  background: rgba(0,0,0,.4);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-.cm-bubble img.cm-chat-img {
-  max-width: 100%;
-  border-radius: 10px;
-  margin: 4px 0;
-  cursor: pointer;
-  display: block;
-}
-.cm-quote {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
-  background: rgba(0,0,0,.25);
-  border-radius: 8px;
-  padding: 6px 9px;
-  cursor: pointer;
-  border-left: 3px solid #D4AF37;
-}
-.cm-quote-body { min-width: 0; }
-.cm-quote-name {
-  font-size: .68rem;
-  font-weight: 700;
-  color: #D4AF37;
-}
-.cm-quote-text {
-  font-size: .74rem;
-  color: #9ca3af;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 300px;
-}
-.cm-text { white-space: pre-wrap; }
-.cm-bubble-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  float: right;
-  margin: 4px 0 -2px 10px;
-  font-size: .63rem;
-  color: #6b7280;
-}
-.cm-msg.mine .cm-bubble-meta { color: rgba(0,0,0,.6); }
-.cm-edited-tag { font-style: italic; opacity: .75; }
-
-.cm-reactions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 5px;
-}
-.cm-reaction-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 9999px;
-  font-size: .74rem;
-  cursor: pointer;
-  color: #9ca3af;
-  font-family: inherit;
-}
-.cm-reaction-chip.mine {
-  background: rgba(212,175,55,.12);
-  border-color: rgba(212,175,55,.4);
-  color: #D4AF37;
-}
-
-.cm-msg-actions {
-  position: absolute;
-  top: -14px;
-  display: flex;
-  gap: 2px;
-  background: #1c1c26;
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 9999px;
-  padding: 3px 5px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(4px) scale(.94);
-  z-index: 20;
-  transition: all .15s;
-}
-.cm-msg:not(.mine) .cm-msg-actions { right: 6px; }
-.cm-msg.mine .cm-msg-actions { left: 6px; }
-.cm-msg:hover .cm-msg-actions {
-  opacity: 1;
-  pointer-events: auto;
-  transform: none;
-}
-.cm-msg-actions button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: .85rem;
-  padding: 3px 5px;
-  border-radius: 50%;
-  color: #9ca3af;
-  font-family: inherit;
-  transition: all .15s;
-}
-.cm-msg-actions button:hover {
-  background: rgba(255,255,255,.1);
-  transform: scale(1.15);
-}
-.cm-act-sep {
-  width: 1px;
-  background: rgba(255,255,255,.06);
-  margin: 3px 2px;
-}
-
-.cm-typing {
-  height: 22px;
-  padding: 0 22px;
-  font-size: .74rem;
-  color: #9ca3af;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity .2s;
-}
-.cm-typing.show { opacity: 1; }
-.cm-typing-dots { display: inline-flex; gap: 3px; }
-.cm-typing-dots i {
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: #D4AF37;
-  display: block;
-  animation: tBounce 1.2s infinite;
-}
-.cm-typing-dots i:nth-child(2) { animation-delay: .15s; }
-.cm-typing-dots i:nth-child(3) { animation-delay: .3s; }
-@keyframes tBounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: .4; }
-  30% { transform: translateY(-4px); opacity: 1; }
-}
-
-.cm-composer-wrap {
-  position: relative;
-  padding: 10px 14px 12px;
-  background: #08080c;
-  border-top: 1px solid rgba(255,255,255,.06);
-  flex-shrink: 0;
-}
-.cm-reply-preview {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  background: #101015;
-  border: 1px solid rgba(212,175,55,.4);
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin-bottom: 8px;
-}
-.cm-reply-preview.show { display: flex; }
-.cm-rp-bar {
-  width: 3px;
-  align-self: stretch;
-  background: #D4AF37;
-  border-radius: 2px;
-}
-.cm-rp-body { flex: 1; min-width: 0; }
-.cm-rp-name {
-  font-size: .7rem;
-  font-weight: 700;
-  color: #D4AF37;
-}
-.cm-rp-text {
-  font-size: .78rem;
-  color: #9ca3af;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cm-img-preview {
-  position: relative;
-  display: inline-block;
-  margin-bottom: 8px;
-}
-.cm-img-preview img {
-  max-height: 100px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.1);
-}
-.cm-img-remove {
-  position: absolute;
-  top: -8px; right: -8px;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  background: #ef4444;
-  color: #fff;
-  border: 2px solid #08080c;
-  cursor: pointer;
-  font-size: .7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cm-composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  background: #0a0a0f;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 22px;
-  padding: 5px 8px;
-}
-.cm-composer:focus-within {
-  border-color: rgba(212,175,55,.4);
-  box-shadow: 0 0 0 3px rgba(212,175,55,.12);
-}
-.cm-composer textarea {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #f4f4f7;
-  font-family: inherit;
-  font-size: .92rem;
-  resize: none;
-  max-height: 130px;
-  line-height: 1.5;
-  padding: 8px 4px;
-}
-.cm-composer textarea::placeholder { color: #4b5563; }
-.cm-send-btn {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #D4AF37, #B8860B);
-  color: #0a0a0f;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: .9rem;
-  transition: all .15s;
-}
-.cm-send-btn:hover:not(:disabled) {
-  transform: scale(1.08);
-  box-shadow: 0 0 20px rgba(212,175,55,.4);
-}
-.cm-send-btn:disabled { opacity: .3; cursor: not-allowed; }
-
-.cm-emoji-panel {
-  position: absolute;
-  bottom: calc(100% - 6px);
-  left: 14px;
-  width: min(340px, calc(100% - 28px));
-  background: #1c1c26;
-  border: 1px solid rgba(212,175,55,.4);
-  border-radius: 12px;
-  padding: 10px;
-  display: none;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
-  max-height: 220px;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,.6);
-  z-index: 50;
-}
-.cm-emoji-panel.show { display: grid; }
-.cm-emoji-panel button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 6px 2px;
-  border-radius: 6px;
-  transition: all .15s;
-  line-height: 1;
-}
-.cm-emoji-panel button:hover {
-  background: rgba(212,175,55,.12);
-  transform: scale(1.2);
-}
-
-.cm-jump-btn {
-  position: absolute;
-  right: 22px; bottom: 110px;
-  width: 42px; height: 42px;
-  border-radius: 50%;
-  background: #1c1c26;
-  border: 1px solid rgba(212,175,55,.4);
-  color: #D4AF37;
-  cursor: pointer;
-  z-index: 30;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5);
-  font-size: .95rem;
-}
-.cm-jump-btn.show { display: flex; }
-.cm-jump-badge {
-  position: absolute;
-  top: -6px; right: -6px;
-  min-width: 20px; height: 20px;
-  padding: 0 5px;
-  background: #ef4444;
-  color: #fff;
-  border-radius: 9999px;
-  font-size: .64rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #0a0a0f;
-}
-
-.cm-join-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-  background: rgba(5,5,10,.92);
-  backdrop-filter: blur(12px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.cm-join-overlay.hide { display: none; }
-.cm-join-card {
-  width: 100%;
-  max-width: 380px;
-  background: #101015;
-  border: 1px solid rgba(212,175,55,.4);
-  border-radius: 24px;
-  padding: 30px 26px;
-  text-align: center;
-  box-shadow: 0 30px 80px rgba(0,0,0,.8);
-}
-.cm-join-icon {
-  width: 62px; height: 62px;
-  margin: 0 auto 16px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #D4AF37, #B8860B);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #0a0a0f;
-  font-size: 1.6rem;
-  box-shadow: 0 0 30px rgba(212,175,55,.4);
-}
-.cm-join-card h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #f4f4f7;
-  margin-bottom: 5px;
-}
-.cm-join-card p {
-  color: #9ca3af;
-  font-size: .85rem;
-  margin-bottom: 18px;
-}
-.cm-join-card input {
-  width: 100%;
-  padding: 13px 16px;
-  background: #0a0a0f;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 12px;
-  color: #f4f4f7;
-  font-family: inherit;
-  font-size: .95rem;
-  outline: none;
-  text-align: center;
-}
-.cm-join-card input:focus {
-  border-color: rgba(212,175,55,.4);
-  box-shadow: 0 0 0 3px rgba(212,175,55,.12);
-}
-.cm-join-colors {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin: 18px 0 20px;
-  flex-wrap: wrap;
-}
-.cm-color-swatch {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all .15s;
-}
-.cm-color-swatch:hover { transform: scale(1.12); }
-.cm-color-swatch.sel {
-  border-color: #fff;
-  transform: scale(1.18);
-  box-shadow: 0 0 15px rgba(255,255,255,.3);
-}
-.cm-join-submit {
-  width: 100%;
-  padding: 13px;
-  background: linear-gradient(135deg, #D4AF37, #B8860B);
-  border: none;
-  border-radius: 12px;
-  color: #0a0a0f;
-  font-family: inherit;
-  font-size: .95rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all .15s;
-}
-.cm-join-submit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(212,175,55,.4);
-}
-.cm-join-error {
-  display: none;
-  color: #fca5a5;
-  font-size: .82rem;
-  margin-top: 12px;
-}
-
-@media (max-width: 900px) {
-  .chat-shell-cine {
-    grid-template-columns: 1fr;
-    height: min(85vh, 720px);
-  }
-  .chat-sidebar-cine {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 280px;
-    z-index: 60;
-    transform: translateX(-102%);
-    transition: transform .28s cubic-bezier(.4,0,.2,1);
-    box-shadow: 12px 0 40px rgba(0,0,0,.7);
-  }
-  .chat-sidebar-cine.open { transform: translateX(0); }
-  .cs-close-btn { display: flex; }
-  .cm-menu-btn { display: flex; }
-  .cm-msg-col { max-width: 88%; }
-  .cm-jump-btn { right: 14px; bottom: 108px; }
-}
-</style>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Chairman Show | Learn Python. Master DSA. Get Hired.</title>
-<meta name="description" content="Learn Python from Level 1 to 100. Get doubts solved by experts. Free coding platform for Indian students.">
+<meta name="description" content="Learn Python from Level 1 to 100. Chat with Chairman live. Free coding platform for Indian students.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23D4AF37'/%3E%3Cstop offset='1' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='58' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ECS%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -908,31 +21,21 @@
 <canvas id="particlesCanvas"></canvas>
 
 <!-- ═══════════════════════════════════════════════════════════
-     BOOT LOADER — Cinematic
+     BOOT LOADER
      ═══════════════════════════════════════════════════════════ -->
 <div id="bootLoader">
   <div class="boot-content">
-    <div class="boot-crown">
-      <i class="fa-solid fa-crown"></i>
-    </div>
+    <div class="boot-crown"><i class="fa-solid fa-crown"></i></div>
     <div class="boot-logo-text">THE CHAIRMAN SHOW</div>
     <div class="boot-terminal">
       <div class="boot-line">
         <span class="boot-prompt">$</span>
         <span class="boot-cmd">initializing <span class="boot-name">platform</span>...</span>
       </div>
-      <div class="boot-line delay-1">
-        <span class="boot-ok">✓</span> Firebase connected
-      </div>
-      <div class="boot-line delay-2">
-        <span class="boot-ok">✓</span> Python engine ready
-      </div>
-      <div class="boot-line delay-3">
-        <span class="boot-ok">✓</span> Loading 100 levels...
-      </div>
-      <div class="boot-bar">
-        <div class="boot-bar-fill"></div>
-      </div>
+      <div class="boot-line delay-1"><span class="boot-ok">✓</span> Firebase connected</div>
+      <div class="boot-line delay-2"><span class="boot-ok">✓</span> Python engine ready</div>
+      <div class="boot-line delay-3"><span class="boot-ok">✓</span> Loading 100 levels...</div>
+      <div class="boot-bar"><div class="boot-bar-fill"></div></div>
     </div>
     <div class="boot-cursor">█</div>
   </div>
@@ -949,11 +52,8 @@
 
   <div class="login-card">
     <div class="login-logo">
-      <!-- CSS Logo (Chair + Crown) -->
       <div class="css-logo">
-        <div class="logo-crown">
-          <i class="fa-solid fa-crown"></i>
-        </div>
+        <div class="logo-crown"><i class="fa-solid fa-crown"></i></div>
         <div class="logo-chair">
           <div class="chair-back"></div>
           <div class="chair-seat"></div>
@@ -972,22 +72,10 @@
     </div>
 
     <div class="login-features">
-      <div class="login-feat">
-        <i class="fa-solid fa-code"></i>
-        <span>100 Python Levels</span>
-      </div>
-      <div class="login-feat">
-        <i class="fa-solid fa-user-tie"></i>
-        <span>Expert Doubt Solving</span>
-      </div>
-      <div class="login-feat">
-        <i class="fa-solid fa-trophy"></i>
-        <span>Track Progress</span>
-      </div>
-      <div class="login-feat">
-        <i class="fa-solid fa-bolt"></i>
-        <span>100% Free Forever</span>
-      </div>
+      <div class="login-feat"><i class="fa-solid fa-code"></i><span>100 Python Levels</span></div>
+      <div class="login-feat"><i class="fa-solid fa-comments"></i><span>Chat with Chairman</span></div>
+      <div class="login-feat"><i class="fa-solid fa-trophy"></i><span>Track Progress</span></div>
+      <div class="login-feat"><i class="fa-solid fa-bolt"></i><span>100% Free Forever</span></div>
     </div>
 
     <button id="googleSignInBtn" class="google-btn">
@@ -1015,103 +103,123 @@
   <canvas id="confettiCanvas"></canvas>
   <button id="backToTop" title="Back to top"><i class="fa-solid fa-arrow-up"></i></button>
 
- <!-- ═══ HEADER ═══ -->
-<header>
-  <div class="nav-container">
-    <a href="#" class="logo" onclick="switchToTab('home'); return false;">
-      <div class="logo-mini">
-        <i class="fa-solid fa-crown logo-crown-mini"></i>
-        <span class="logo-text-mini">CS</span>
-      </div>
-      <div class="logo-brand">
-        <span class="logo-brand-the">THE</span>
-        <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
-      </div>
-    </a>
+  <!-- UNIVERSAL BACK BUTTON -->
+  <button class="universal-back-btn" id="universalBackBtn" style="display:none;" onclick="goBack()">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Back</span>
+  </button>
 
-    <ul class="nav-links">
-      <li>
-        <button class="nav-item active" data-tab="home">
-          <i class="fa-solid fa-house"></i>
-          <span class="nav-text">Home</span>
-        </button>
-      </li>
-      <li>
-        <button class="nav-item" data-tab="python" id="navPython">
-          <i class="fa-brands fa-python"></i>
-          <span class="nav-text">Practice</span>
-        </button>
-      </li>
-      <li>
-        <button class="nav-item" data-tab="doubts">
-          <i class="fa-solid fa-circle-question"></i>
-          <span class="nav-text">Doubts</span>
-        </button>
-      </li>
-      <li>
-        <button class="nav-item" data-tab="experts">
-          <i class="fa-solid fa-user-tie"></i>
-          <span class="nav-text">Experts</span>
-        </button>
-      </li>
-      <li>
-        <button class="nav-item" data-tab="leaderboard">
-          <i class="fa-solid fa-trophy"></i>
-          <span class="nav-text">Leaderboard</span>
-        </button>
-      </li>
-      <li>
-        <button class="nav-item" data-tab="community" id="navCommunity">
-          <i class="fa-solid fa-comments"></i>
-          <span class="nav-text">Community</span>
-          <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
-        </button>
-      </li>
-      <li>
-        <button class="nav-item" data-tab="freeCourses" id="navFreeCourses">
-          <i class="fa-solid fa-graduation-cap"></i>
-          <span class="nav-text">FREE Courses</span>
-        </button>
-      </li>
-      <li>
-        <button class="nav-item" data-tab="donate">
-          <i class="fa-solid fa-heart"></i>
-          <span class="nav-text">Support</span>
-        </button>
-      </li>
-    </ul>
+  <!-- ═══ HEADER ═══ -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo" onclick="switchToTab('home'); return false;">
+        <div class="logo-mini">
+          <i class="fa-solid fa-crown logo-crown-mini"></i>
+          <span class="logo-text-mini">CS</span>
+        </div>
+        <div class="logo-brand">
+          <span class="logo-brand-the">THE</span>
+          <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
+        </div>
+      </a>
 
-    <div class="user-menu">
-      <button class="user-avatar-btn" id="userMenuBtn">
-        <img id="navUserAvatar" src="" alt="">
-        <span class="user-name-nav" id="navUserName">User</span>
-        <i class="fa-solid fa-chevron-down"></i>
-      </button>
-      <div class="user-dropdown" id="userDropdown">
-        <div class="dropdown-header">
-          <img id="ddUserAvatar" src="" alt="">
-          <div>
-            <div class="dd-name" id="ddUserName">User</div>
-            <div class="dd-email" id="ddUserEmail">email@example.com</div>
+      <ul class="nav-links">
+        <li>
+          <button class="nav-item active" data-tab="home">
+            <i class="fa-solid fa-house"></i>
+            <span class="nav-text">Home</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="python" id="navPython">
+            <i class="fa-brands fa-python"></i>
+            <span class="nav-text">Practice</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="chatWithChairman" id="navChatWithChairman">
+            <i class="fa-solid fa-comments"></i>
+            <span class="nav-text">Chat</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="chairmanPosts" id="navChairmanPosts">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span class="nav-text">Posts</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="leaderboard">
+            <i class="fa-solid fa-trophy"></i>
+            <span class="nav-text">Leaderboard</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="community" id="navCommunity">
+            <i class="fa-solid fa-users"></i>
+            <span class="nav-text">Community</span>
+            <span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="freeCourses" id="navFreeCourses">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span class="nav-text">Courses</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="support">
+            <i class="fa-solid fa-headset"></i>
+            <span class="nav-text">Support</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" data-tab="donate">
+            <i class="fa-solid fa-heart"></i>
+            <span class="nav-text">Donate</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="nav-actions">
+        <!-- THEME TOGGLE -->
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+          <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
+
+        <div class="user-menu">
+          <button class="user-avatar-btn" id="userMenuBtn">
+            <img id="navUserAvatar" src="" alt="">
+            <span class="user-name-nav" id="navUserName">User</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="dropdown-header">
+              <img id="ddUserAvatar" src="" alt="">
+              <div>
+                <div class="dd-name" id="ddUserName">User</div>
+                <div class="dd-email" id="ddUserEmail">email@example.com</div>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
+            <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
+            <button class="dropdown-item" data-goto="chatWithChairman"><i class="fa-solid fa-comments"></i> Chat with Chairman</button>
+            <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
           </div>
         </div>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
-        <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
-        <button class="dropdown-item" data-goto="doubts"><i class="fa-solid fa-circle-question"></i> My Doubts</button>
-        <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item danger" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
       </div>
     </div>
-  </div>
-</header>
+  </header>
+
+  <main>
+
     <!-- ═══════════════════════════════════════════════════════
          HOME TAB
          ═══════════════════════════════════════════════════════ -->
     <section id="home" class="tab-content active">
-
-      <!-- HERO -->
       <div class="hero-cinematic">
         <div class="hero-grid-bg"></div>
         <div class="hero-orbs">
@@ -1133,7 +241,7 @@
           </h1>
 
           <p class="hero-sub">
-            100 levels of handpicked Python problems. Real-time expert doubt solving.
+            100 levels of handpicked Python problems. Chat with Chairman live for instant answers.
             Progress tracking that actually matters. <strong>100% free — forever.</strong>
           </p>
 
@@ -1143,13 +251,12 @@
               <span>Start Python Practice</span>
               <i class="fa-solid fa-arrow-right btn-arrow"></i>
             </button>
-            <button class="btn-hero-ghost" data-goto="doubts">
-              <i class="fa-solid fa-bolt"></i>
-              <span>Ask a Doubt</span>
+            <button class="btn-hero-ghost" data-goto="chatWithChairman">
+              <i class="fa-solid fa-comments"></i>
+              <span>Chat with Chairman</span>
             </button>
           </div>
 
-          <!-- Live terminal -->
           <div class="hero-terminal">
             <div class="terminal-header">
               <span class="dot dot-red"></span>
@@ -1167,7 +274,7 @@
               </div>
               <div class="terminal-line fade-3">
                 <span class="t-prompt">&gt;&gt;&gt;</span>
-                <span class="t-code">challenges.solve(<span class="t-number">100</span>)</span>
+                <span class="t-code">chairman.help(<span class="t-number">me</span>)</span>
                 <span class="t-cursor-blink">_</span>
               </div>
             </div>
@@ -1232,30 +339,22 @@
       <!-- FEATURES GRID -->
       <div class="features-cinematic">
         <div class="feature-cine-card">
-          <div class="fc-icon" style="--fc-color: #D4AF37">
-            <i class="fa-solid fa-terminal"></i>
-          </div>
+          <div class="fc-icon" style="--fc-color: #D4AF37"><i class="fa-solid fa-terminal"></i></div>
           <h3>Real Code Editor</h3>
           <p>Write Python code, learn from expert solutions. No setup needed — works in your browser.</p>
         </div>
         <div class="feature-cine-card">
-          <div class="fc-icon" style="--fc-color: #7c3aed">
-            <i class="fa-solid fa-graduation-cap"></i>
-          </div>
+          <div class="fc-icon" style="--fc-color: #7c3aed"><i class="fa-solid fa-graduation-cap"></i></div>
           <h3>Learn by Doing</h3>
           <p>Not just videos — solve real problems. Every concept backed by practice.</p>
         </div>
         <div class="feature-cine-card">
-          <div class="fc-icon" style="--fc-color: #00d4ff">
-            <i class="fa-solid fa-brain"></i>
-          </div>
-          <h3>Expert Help</h3>
-          <p>Stuck? Ask a doubt. AI + experts help you understand, not just copy answers.</p>
+          <div class="fc-icon" style="--fc-color: #00d4ff"><i class="fa-solid fa-comments"></i></div>
+          <h3>Chat with Chairman</h3>
+          <p>Stuck? Ask directly. Get instant AI-powered answers to your coding doubts.</p>
         </div>
         <div class="feature-cine-card">
-          <div class="fc-icon" style="--fc-color: #10b981">
-            <i class="fa-solid fa-chart-line"></i>
-          </div>
+          <div class="fc-icon" style="--fc-color: #10b981"><i class="fa-solid fa-chart-line"></i></div>
           <h3>Track Progress</h3>
           <p>See your growth daily. Streaks, XP, badges — the dopamine you need to keep going.</p>
         </div>
@@ -1282,9 +381,7 @@
       <div class="python-header-cinematic">
         <div class="python-header-bg"></div>
         <div class="python-header-content">
-          <div class="python-icon-big">
-            <i class="fa-brands fa-python"></i>
-          </div>
+          <div class="python-icon-big"><i class="fa-brands fa-python"></i></div>
           <div>
             <h1>Python Practice Arena</h1>
             <p>100 levels · Beginner to Interview-Ready</p>
@@ -1303,21 +400,11 @@
 
       <div class="python-filter-bar">
         <div class="filter-chips-cine" id="pythonFilters">
-          <button class="chip-cine active" data-diff="all">
-            <i class="fa-solid fa-layer-group"></i> All Levels
-          </button>
-          <button class="chip-cine" data-diff="Easy">
-            <i class="fa-solid fa-seedling"></i> Easy
-          </button>
-          <button class="chip-cine" data-diff="Medium">
-            <i class="fa-solid fa-fire"></i> Medium
-          </button>
-          <button class="chip-cine" data-diff="Hard">
-            <i class="fa-solid fa-skull"></i> Hard
-          </button>
-          <button class="chip-cine" data-diff="solved">
-            <i class="fa-solid fa-circle-check"></i> Solved
-          </button>
+          <button class="chip-cine active" data-diff="all"><i class="fa-solid fa-layer-group"></i> All</button>
+          <button class="chip-cine" data-diff="Easy"><i class="fa-solid fa-seedling"></i> Easy</button>
+          <button class="chip-cine" data-diff="Medium"><i class="fa-solid fa-fire"></i> Medium</button>
+          <button class="chip-cine" data-diff="Hard"><i class="fa-solid fa-skull"></i> Hard</button>
+          <button class="chip-cine" data-diff="solved"><i class="fa-solid fa-circle-check"></i> Solved</button>
         </div>
         <div class="filter-search-cine">
           <i class="fa-solid fa-magnifying-glass"></i>
@@ -1353,7 +440,6 @@
             </div>
             <div class="problem-tags" id="pvTags"></div>
             <div class="problem-desc" id="pvDescription"></div>
-
             <div class="examples-section">
               <h3><i class="fa-solid fa-flask"></i> Examples</h3>
               <div id="pvExamples"></div>
@@ -1366,530 +452,7 @@
             <div class="editor-header">
               <div class="editor-tabs">
                 <button class="editor-tab active" id="tabCode">
-                  <i class="fa-solid fa-code"></i> Code
-                </button>
-                <button class="editor-tab" id="tabSolution">
-                  <i class="fa-solid fa-lightbulb"></i> Solution
-                </button>
-              </div>
-              <div class="editor-actions">
-                <button class="editor-btn" id="resetCodeBtn" title="Reset code">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
-                <button class="editor-btn" id="copyCodeBtn" title="Copy code">
-                  <i class="fa-regular fa-copy"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="editor-body">
-              <div class="editor-line-numbers" id="editorLineNumbers"></div>
-              <textarea id="codeEditor" class="code-textarea" spellcheck="false"
-                placeholder="# Write your Python code here..."></textarea>
-            </div>
-
-            <div class="editor-footer">
-              <button class="btn-run-cine" id="showSolutionBtn">
-                <i class="fa-solid fa-lightbulb"></i> Show Solution
-              </button>
-              <button class="btn-mark-solved" id="markSolvedBtn">
-                <i class="fa-regular fa-circle-check"></i> Mark as Solved
-              </button>
-            </div>
-          </div>
-
-          <div class="output-card" id="outputCard" style="display:none;">
-            <div class="output-header">
-              <span><i class="fa-solid fa-terminal"></i> Output</span>
-              <button class="editor-btn" onclick="document.getElementById('outputCard').style.display='none'">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div class="output-body" id="outputBody"></div>
-          </div>
-
-          <div class="solution-card" id="solutionCard" style="display:none;">
-            <div class="solution-header">
-              <span><i class="fa-solid fa-lightbulb"></i> Official Solution</span>
-              <div style="display:flex; gap:.4rem;">
-                <button class="editor-btn" id="copySolutionBtn" title="Copy solution">
-                  <i class="fa-regular fa-copy"></i>
-                </button>
-                <button class="editor-btn" id="backToCodeBtn" title="Back to code">
-                  <i class="fa-solid fa-code"></i>
-                </button>
-              </div>
-            </div>
-            <div class="solution-body">
-  <pre id="solutionCode"></pre>
-  <div class="solution-explanation" id="solutionExplanation"></div>
-
-  <!-- Navigation inside solution card (visible even after solution is shown) -->
-  <div class="solution-nav">
-    <button id="solutionPrevBtn">
-      <i class="fa-solid fa-arrow-left"></i> Previous
-    </button>
-    <button id="solutionNextBtn">
-      Next <i class="fa-solid fa-arrow-right"></i>
-    </button>
-  </div>
-</div>
-          </div>
-        </div>
-      </div>
-    </section>
-       <!-- ═══ PROBLEM NAVIGATION ═══ -->
-<div class="problem-navigation" id="problemNavigation">
-  <button class="problem-nav-btn prev" id="prevProblemBtn">
-    <i class="fa-solid fa-arrow-left"></i>
-    <div class="pnb-text">
-      <span class="pnb-label">Previous</span>
-      <span class="pnb-title" id="prevProblemTitle">—</span>
-    </div>
-  </button>
-
-  <button class="problem-nav-btn all-levels" id="allLevelsBtn">
-    <i class="fa-solid fa-grid-2"></i>
-    <span>All Levels</span>
-  </button>
-
-  <button class="problem-nav-btn next" id="nextProblemBtn">
-    <div class="pnb-text">
-      <span class="pnb-label">Next</span>
-      <span class="pnb-title" id="nextProblemTitle">—</span>
-    </div>
-    <i class="fa-solid fa-arrow-right"></i>
-  </button>
-</div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         DOUBTS TAB
-         ═══════════════════════════════════════════════════════ -->
-    <section id="doubts" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-solid fa-circle-question"></i> Help</div>
-        <h2 class="section-title-cine">Code Doubts</h2>
-        <p class="section-sub-cine">Stuck in code? Ask. Get answered by AI + experts.</p>
-      </div>
-
-      <div class="doubts-toolbar-cine">
-        <button class="btn-hero-primary" id="newDoubtBtn">
-          <i class="fa-solid fa-plus"></i> Ask New Doubt
-        </button>
-        <div class="filter-chips-cine" id="doubtFilters">
-          <button class="chip-cine active" data-status="all">All</button>
-          <button class="chip-cine" data-status="open">Open</button>
-          <button class="chip-cine" data-status="answered">Answered</button>
-        </div>
-      </div>
-
-      <div class="doubts-grid-cine" id="doubtsGrid">
-        <div class="empty-state-cine">
-          <i class="fa-solid fa-inbox"></i>
-          <h4>No doubts yet</h4>
-          <p>Click "Ask New Doubt" to get started</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         EXPERTS TAB
-         ═══════════════════════════════════════════════════════ -->
-    <section id="experts" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-solid fa-user-tie"></i> Experts</div>
-        <h2 class="section-title-cine">Learn from the Best</h2>
-        <p class="section-sub-cine">Verified programming experts ready to help.</p>
-      </div>
-
-      <div class="expert-sections-cine" id="expertSections">
-        <div class="loading-cine">
-          <div class="loading-spinner-cine"></div>
-          <p>Loading experts...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         LEADERBOARD TAB
-         ═══════════════════════════════════════════════════════ -->
-    <section id="leaderboard" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-solid fa-trophy"></i> Leaderboard</div>
-        <h2 class="section-title-cine">Top Coders This Week</h2>
-        <p class="section-sub-cine">Solve more, rank higher.</p>
-      </div>
-
-      <div class="lb-podium-cine" id="lbPodium"></div>
-      <div class="lb-list-cine" id="lbList">
-        <div class="loading-cine">
-          <div class="loading-spinner-cine"></div>
-          <p>Loading leaderboard...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         COMMUNITY CHAT TAB
-         ═══════════════════════════════════════════════════════ -->
-    <section id="community" class="tab-content">
-      <div class="chat-shell-cine">
-        <aside class="chat-sidebar-cine" id="chatSidebar">
-          <div class="cs-header">
-            <div class="cs-brand">
-              <i class="fa-solid fa-comments"></i>
-              <span>Community</span>
-            </div>
-            <button class="cs-close-btn" id="csCloseBtn">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-
-          <div class="cs-me">
-            <img id="csMeAvatar" src="" alt="">
-            <div class="cs-me-info">
-              <div class="cs-me-name" id="csMeName">User</div>
-              <div class="cs-me-status"><span class="online-dot"></span> Online</div>
-            </div>
-          </div>
-
-          <div class="cs-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="csSearchInput" placeholder="Search messages...">
-          </div>
-
-          <div class="cs-scroll">
-            <div class="cs-label">Channels</div>
-            <div class="cs-rooms" id="csRooms"></div>
-            <div class="cs-label">Online — <span id="csOnlineCount">0</span></div>
-            <div class="cs-users" id="csUsers">
-              <div class="cs-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
-            </div>
-          </div>
-        </aside>
-
-        <div class="chat-main-cine">
-          <header class="cm-top">
-            <button class="cm-menu-btn" id="cmMenuBtn"><i class="fa-solid fa-bars"></i></button>
-            <div class="cm-room-icon"><i class="fa-solid fa-hashtag"></i></div>
-            <div class="cm-room-info">
-              <h3 id="cmRoomName">general</h3>
-              <div class="cm-room-sub">
-                <span class="online-dot"></span>
-                <span id="cmRoomSub">0 members online</span>
-              </div>
-            </div>
-            <button class="cm-icon-btn" id="cmSoundBtn" title="Toggle sound">
-              <i class="fa-solid fa-volume-xmark"></i>
-            </button>
-          </header>
-
-          <div class="cm-body" id="cmBody">
-            <div class="cm-empty">
-              <i class="fa-solid fa-comments"></i>
-              <h4>Welcome to Community Chat</h4>
-              <p>Say hello and start coding together!</p>
-            </div>
-          </div>
-
-          <div class="cm-typing" id="cmTyping"></div>
-
-          <div class="cm-composer-wrap">
-            <div class="cm-reply-preview" id="cmReplyPreview">
-              <div class="cm-rp-bar"></div>
-              <div class="cm-rp-body">
-                <div class="cm-rp-name" id="cmRpName"></div>
-                <div class="cm-rp-text" id="cmRpText"></div>
-              </div>
-              <button class="cm-icon-btn" id="cmRpCancel"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="cm-emoji-panel" id="cmEmojiPanel"></div>
-
-            <div class="cm-img-preview" id="cmImgPreview" style="display:none;">
-              <img id="cmImgPreviewEl" src="" alt="">
-              <button class="cm-img-remove" id="cmImgRemove"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <form class="cm-composer" id="cmComposer">
-              <button type="button" class="cm-icon-btn" id="cmEmojiBtn" title="Emoji">
-                <i class="fa-regular fa-face-smile"></i>
-              </button>
-              <button type="button" class="cm-icon-btn" id="cmImageBtn" title="Image">
-                <i class="fa-regular fa-image"></i>
-              </button>
-              <input type="file" id="cmImageInput" accept="image/*" style="display:none;">
-              <textarea id="cmInput" rows="1" placeholder="Message..." autocomplete="off"></textarea>
-              <button type="submit" class="cm-send-btn" id="cmSendBtn" disabled>
-                <i class="fa-solid fa-paper-plane"></i>
-              </button>
-            </form>
-          </div>
-
-          <button class="cm-jump-btn" id="cmJumpBtn">
-            <i class="fa-solid fa-arrow-down"></i>
-            <span class="cm-jump-badge" id="cmJumpBadge">0</span>
-          </button>
-        </div>
-
-        <div class="cm-join-overlay" id="cmJoinOverlay">
-          <div class="cm-join-card">
-            <div class="cm-join-icon"><i class="fa-solid fa-comments"></i></div>
-            <h3>Join the Community</h3>
-            <p>Pick a display name and avatar color</p>
-            <input type="text" id="cmJoinName" maxlength="20" placeholder="Your display name">
-            <div class="cm-join-colors" id="cmJoinColors"></div>
-            <button class="cm-join-submit" id="cmJoinBtn">
-              <span>Enter Chat</span>
-              <i class="fa-solid fa-arrow-right"></i>
-            </button>
-            <div id="cmJoinError" class="cm-join-error"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-<!-- ═══════════════════════════════════════════════════════
-     FREE COURSES — YouTube Videos
-     ═══════════════════════════════════════════════════════ -->
-<section id="freeCourses" class="tab-content">
-  <div class="section-head-cinematic">
-    <div class="section-tag">
-      <i class="fa-brands fa-youtube"></i> Free Content
-    </div>
-    <h2 class="section-title-cine">FREE Courses</h2>
-    <p class="section-sub-cine">
-      सारी videos from <strong style="color:var(--gold-primary);">The Chairman Show</strong> YouTube channel
-    </p>
-  </div>
-
-  <!-- Channel Banner -->
-  <div class="yt-channel-banner">
-    <div class="yt-channel-info">
-      <div class="yt-channel-avatar">
-        <i class="fa-brands fa-youtube"></i>
-      </div>
-      <div class="yt-channel-meta">
-        <h3>THE CHAIRMAN SHOW</h3>
-        <p id="ytSubscriberCount">Loading…</p>
-      </div>
-    </div>
-    <a href="https://www.youtube.com/@THE_CHAIRMAN_SHOW?sub_confirmation=1" 
-       target="_blank" 
-       rel="noopener" 
-       class="yt-subscribe-btn">
-      <i class="fa-brands fa-youtube"></i>
-      <span>Subscribe</span>
-    </a>
-  </div>
-
-  <!-- Filter Chips -->
-  <div class="yt-filter-bar">
-    <div class="filter-chips-cine" id="ytFilters">
-      <button class="chip-cine active" data-filter="all">
-        <i class="fa-solid fa-layer-group"></i> All Videos
-      </button>
-      <button class="chip-cine" data-filter="latest">
-        <i class="fa-solid fa-clock"></i> Latest
-      </button>
-      <button class="chip-cine" data-filter="popular">
-        <i class="fa-solid fa-fire"></i> Most Popular
-      </button>
-      <button class="chip-cine" data-filter="long">
-        <i class="fa-solid fa-hourglass"></i> Full Courses
-      </button>
-    </div>
-    <div class="filter-search-cine">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="ytSearch" placeholder="Search videos...">
-    </div>
-  </div>
-
-  <!-- Videos Grid -->
-  <div class="yt-videos-grid" id="ytVideosGrid">
-    <div class="loading-cine">
-      <div class="loading-spinner-cine"></div>
-      <p>Loading videos from YouTube…</p>
-    </div>
-  </div>
-
-  <!-- Load More -->
-  <div class="yt-load-more-wrap" id="ytLoadMoreWrap" style="display:none;">
-    <button class="btn-hero-ghost" id="ytLoadMoreBtn">
-      <i class="fa-solid fa-rotate"></i>
-      <span>Load More Videos</span>
-    </button>
-  </div>
-</section>
-    <!-- ═══════════════════════════════════════════════════════
-         DONATE TAB
-         ═══════════════════════════════════════════════════════ -->
-    <section id="donate" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-solid fa-heart"></i> Support</div>
-        <h2 class="section-title-cine">Keep It Free ❤️</h2>
-        <p class="section-sub-cine">Your support keeps this platform 100% free for every student.</p>
-      </div>
-
-      <div class="donate-wrapper-cine">
-        <div class="donate-message-cine">
-          <div class="dm-icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
-          <h3>Built by a Student, For Students</h3>
-          <p><strong>No subscriptions. No paywalls. No premium.</strong> Just free, high-quality Python practice and doubt solving for every Indian student.</p>
-          <p>If this platform helped you, you can support us with any amount. Every rupee keeps the servers running.</p>
-        </div>
-
-        <div class="donate-payment-cine">
-          <div class="upi-block-cine">
-            <div class="upi-label-cine"><i class="fa-solid fa-indian-rupee-sign"></i> UPI ID</div>
-            <div class="upi-id-cine" id="upiIdDisplay">chairman@upi</div>
-            <button class="btn-copy-upi" id="copyUpiBtn">
-              <i class="fa-regular fa-copy"></i> Copy UPI ID
-            </button>
-          </div>
-          <div class="thanks-cine">
-            <i class="fa-solid fa-hands-praying"></i>
-            Thank you for believing in free education
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         PROFILE TAB
-         ═══════════════════════════════════════════════════════ -->
-    <section id="profile" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-solid fa-user"></i> Profile</div>
-        <h2 class="section-title-cine">My Account</h2>
-      </div>
-
-      <div class="profile-card-cine">
-        <img id="profileAvatar" src="" alt="" class="profile-avatar-cine">
-        <h3 id="profileName">User</h3>
-        <p id="profileEmail">email@example.com</p>
-
-        <div class="profile-form-cine">
-          <div class="form-group-cine">
-            <label>Display Name</label>
-            <input type="text" id="profileDisplayName" placeholder="Your name">
-          </div>
-          <div class="form-group-cine">
-            <label>Class / Level</label>
-            <select id="profileClass">
-              <option value="">Select</option>
-              <option value="1-10">Class 1-10</option>
-              <option value="11-12">Class 11-12</option>
-              <option value="jee">JEE Aspirant</option>
-              <option value="neet">NEET Aspirant</option>
-              <option value="college">College Student</option>
-            </select>
-          </div>
-          <div class="form-group-cine">
-            <label>Bio</label>
-            <textarea id="profileBio" placeholder="Tell us about yourself"></textarea>
-          </div>
-          <button class="btn-hero-primary" id="saveProfileBtn" style="width:100%;justify-content:center;">
-            <i class="fa-solid fa-check"></i> Save Changes
-          </button>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- MODALS -->
-  <div class="modal-overlay-cine" id="newDoubtModal">
-    <div class="modal-content-cine">
-      <div class="modal-header-cine">
-        <h3><i class="fa-solid fa-circle-question"></i> Ask a Code Doubt</h3>
-        <button class="close-modal-cine" onclick="closeModal('newDoubtModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body-cine">
-        <div class="form-group-cine">
-          <label>Topic / Language</label>
-          <select id="doubtSubject">
-            <option value="Python">Python</option>
-            <option value="JavaScript">JavaScript</option>
-            <option value="C++">C++</option>
-            <option value="Java">Java</option>
-            <option value="DSA">Data Structures & Algorithms</option>
-            <option value="SQL">SQL / Databases</option>
-            <option value="Web Dev">HTML / CSS / React</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="form-group-cine">
-          <label>Your Code / Question</label>
-          <textarea id="doubtQuestion" rows="6" placeholder="Describe your problem. Paste your code here..." style="font-family: var(--font-mono); font-size: 0.85rem;"></textarea>
-        </div>
-        <div class="form-group-cine">
-          <label>Attach Screenshot (optional)</label>
-          <input type="file" id="doubtImage" accept="image/*">
-          <div id="doubtImagePreview"></div>
-        </div>
-        <button class="btn-hero-primary" id="postDoubtBtn" style="width:100%;justify-content:center;">
-          <i class="fa-solid fa-paper-plane"></i> Post Doubt
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay-cine" id="doubtDetailsModal">
-    <div class="modal-content-cine" style="max-width: 720px;">
-      <div class="modal-header-cine">
-        <h3><i class="fa-solid fa-code"></i> Doubt Details</h3>
-        <button class="close-modal-cine" onclick="closeModal('doubtDetailsModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body-cine" id="doubtDetailsBody"></div>
-    </div>
-  </div>
-
-  <div class="modal-overlay-cine" id="imageViewerModal">
-    <div class="image-viewer-cine">
-      <button class="close-modal-cine" onclick="closeModal('imageViewerModal')"><i class="fa-solid fa-xmark"></i></button>
-      <img id="viewerImage" src="" alt="">
-    </div>
-  </div>
-
-  <footer class="footer-cine">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <div class="logo-mini">
-          <i class="fa-solid fa-crown logo-crown-mini"></i>
-          <span class="logo-text-mini">CS</span>
-        </div>
-        <span class="logo-brand-main">THE CHAIRMAN <em>SHOW</em></span>
-      </div>
-      <p class="footer-tagline">Made with <i class="fa-solid fa-heart" style="color:#ef4444"></i> in India · 100% Free Forever</p>
-      <p class="footer-copy">© 2026 The Chairman Show. Built by Sumit Shrivas.</p>
-    </div>
-  </footer>
-</div>
-
-<!-- ═══ FIREBASE SDK ═══ -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-<!-- ═══ APP SCRIPTS ═══ -->
-<script src="problems.js"></script>
-<script src="app.js"></script>
-
-<script>
-  setTimeout(() => {
-    const loader = document.getElementById('bootLoader');
-    if (loader) loader.classList.add('hide');
-  }, 4000);
-
-  window.addEventListener('error', (e) => {
-    console.error('Global error:', e.message);
-    const loader = document.getElementById('bootLoader');
-    if (loader) loader.classList.add('hide');
-  });
-</script>
-</body>
-</html>
+           
 
 
 
