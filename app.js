@@ -3128,3 +3128,47 @@ initApp = function() {
 window.YouTube = YouTube;
 
 console.log('📺 YouTube Free Courses Loaded');
+
+
+/* ══════════════════════════════════════════════════════════════
+   UNIVERSAL BACK BUTTON
+   ══════════════════════════════════════════════════════════════ */
+
+const tabHistory = ['home'];
+
+// Extend switchToTab to track history
+const _prevSwitchToTabForHistory = window.switchToTab;
+window.switchToTab = function(tabId) {
+  const current = tabHistory[tabHistory.length - 1];
+  if (current !== tabId) {
+    tabHistory.push(tabId);
+    if (tabHistory.length > 20) tabHistory.shift();
+  }
+  _prevSwitchToTabForHistory(tabId);
+  updateBackButton();
+};
+
+function goBack() {
+  if (tabHistory.length > 1) {
+    tabHistory.pop();
+    const prev = tabHistory[tabHistory.length - 1];
+    _prevSwitchToTabForHistory(prev);
+    updateBackButton();
+  } else {
+    _prevSwitchToTabForHistory('home');
+    updateBackButton();
+  }
+}
+window.goBack = goBack;
+
+function updateBackButton() {
+  const btn = document.getElementById('universalBackBtn');
+  if (!btn) return;
+  
+  // Hide back button on home
+  if (activeTab === 'home' || tabHistory.length <= 1) {
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = 'inline-flex';
+  }
+}
