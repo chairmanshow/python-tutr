@@ -3900,3 +3900,40 @@ main {
   .yt-videos-grid { grid-template-columns: 1fr; gap: 1rem; }
   .yt-filter-bar { flex-direction: column; align-items: stretch; }
 }
+
+/* ═══ UNIVERSAL BACK BUTTON ═══ */
+.universal-back-btn {
+  position: fixed;
+  top: 90px;
+  left: 20px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: .6rem 1.1rem;
+  background: rgba(16,16,21,.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--r-full);
+  color: var(--gold-primary);
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--t-mid);
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.universal-back-btn:hover {
+  background: var(--gold-soft);
+  transform: translateX(-4px);
+  box-shadow: 0 0 25px rgba(212,175,55,.3);
+}
+
+@media (max-width: 640px) {
+  .universal-back-btn {
+    top: 155px;
+    left: 12px;
+    padding: .5rem .9rem;
+    font-size: .78rem;
+  }
+}
