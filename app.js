@@ -994,7 +994,451 @@ const ChairmanChat = (function() {
     // Inline code
     out = out.replace(/`([^`\n]+)`/g, '<code>$1</code>');
     // Bold
-    out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$
+    out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Italic
+    out = out.replace(/(^|\s)\*([^*\n]+)\*(?=\s|$)/g, '$1<em>$2</em>');
+    // Links
+    out = out.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    // Line breaks
+    out = out.replace(/\n/g, '<br>');
+    return out;
+  }
+
+  function renderSuggestions() {
+    if (!el.suggestions) return;
+    const chat = currentChat();
+    const hasMessages = chat && chat.messages.length > 0;
+    el.suggestions.style.display = hasMessages ? 'none' : 'flex';
+  }
+
+  function renderHistory() {
+    if (!el.historyList) return;
+    if (!state.chats.length) {
+      el.historyList.innerHTML = `
+        <div class="cc-history-empty">
+          <i class="fa-regular fa-comments"></i>
+          <p>No previous chats</p>
+        </div>`;
+      return;
+    }
+
+    const sorted = [...state.chats].sort((a, b) => b.updatedAt - a.updatedAt);
+    el.historyList.innerHTML = sorted.map(c => {
+      const last = c.messages[c.messages.length - 1];
+      const preview = last ? (last.text || '').slice(0, 50) : 'No messages yet';
+      const when = last ? formatRelativeTime(last.ts) : formatRelativeTime(c.createdAt);
+      const active = c.id === state.currentChatId ? ' style="background:var(--gold-soft);border-color:var(--border-gold);"' : '';
+      return `
+        <div class="cc-history-item"${active} onclick="ChairmanChat.openChat('${c.id}')">
+          <div class="cc-history-item-title">${escapeHtml(c.title || 'Chat')}</div>
+          <div class="cc-history-item-preview">${escapeHtml(preview)}</div>
+          <div class="cc-history-item-time">${when}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function formatRelativeTime(ts) {
+    const diff = Date.now() - ts;
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'Just now';
+    if (min < 60) return min + 'm ago';
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return hr + 'h ago';
+    const d = Math.floor(hr / 24);
+    if (d < 7) return d + 'd ago';
+    return new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
+
+  function scrollToBottom() {
+    if (el.body) el.body.scrollTop = el.body.scrollHeight;
+  }
+
+  /* ═══ SEND MESSAGE ═══ */
+  async function sendMessage() {
+    const chat = currentChat();
+    if (!chat) return;
+
+    const text = el.input.value.trim();
+    const hasImage = !!state.pendingImageUrl;
+    if (!text && !hasImage) return;
+    if (state.isTyping) return;
+
+    // User message
+    const userMsg = {
+      role: 'user',
+      text: text || '',
+      image: hasImage ? state.pendingImageUrl : null,
+      ts: Date.now()
+    };
+    chat.messages.push(userMsg);
+    chat.updatedAt = Date.now();
+
+    // Set title from first message
+    if (chat.messages.filter(m => m.role === 'user').length === 1) {
+      chat.title = (text || 'Image').slice(0, 40);
+    }
+
+    saveChats();
+    renderMessages();
+    renderSuggestions();
+    renderHistory();
+
+    // Reset input
+    el.input.value = '';
+    el.input.style.height = 'auto';
+    state.pendingImageUrl = '';
+    const preview = document.getElementById('ccAttachPreview');
+    if (preview) preview.remove();
+    updateSendState();
+
+    // Trigger AI reply
+    requestChairmanReply(chat, text);
+  }
+
+  async function requestChairmanReply(chat, userText) {
+    state.isTyping = true;
+    setTypingIndicator(true);
+    setStatus('typing', 'Chairman is typing…');
+    disableSuggestions(true);
+
+    // Small delay to feel natural
+    await sleep(700 + Math.random() * 500);
+
+    try {
+      // Build conversation context (last 6 messages)
+      const history = chat.messages.slice(-6).map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.text || '[image]'
+      }));
+
+      const res = await fetch(CONFIG.AI_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: userText,
+          subject: 'General',
+          history: history.slice(0, -1) // exclude current message
+        })
+      });
+
+      if (!res.ok) throw new Error('AI service returned ' + res.status);
+      const data = await res.json();
+      if (!data.ok || !data.answer) throw new Error(data.error || 'No answer');
+
+      // Add empty chairman message and typewriter effect
+      await streamChairmanMessage(chat, data.answer);
+
+    } catch (err) {
+      console.error('Chairman AI error:', err);
+      const errorMsg = {
+        role: 'chairman',
+        text: `⚠️ Sorry, मुझे अभी connection में problem हो रही है.\n\nError: ${err.message}\n\nथोड़ी देर बाद try करो!`,
+        ts: Date.now()
+      };
+      chat.messages.push(errorMsg);
+      saveChats();
+      renderMessages();
+    } finally {
+      state.isTyping = false;
+      setTypingIndicator(false);
+      setStatus('online', 'Online — replies instantly');
+      disableSuggestions(false);
+    }
+  }
+
+  async function streamChairmanMessage(chat, fullText) {
+    const chairmanMsg = {
+      role: 'chairman',
+      text: '',
+      ts: Date.now()
+    };
+    chat.messages.push(chairmanMsg);
+
+    // Create message node for streaming
+    const row = document.createElement('div');
+    const isMine = false;
+    row.className = 'cc-msg cc-chairman';
+
+    const av = document.createElement('div');
+    av.className = 'cc-msg-avatar cc-chairman';
+    av.innerHTML = '<i class="fa-solid fa-crown"></i>';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'cc-msg-bubble';
+    const textEl = document.createElement('div');
+    textEl.className = 'cc-msg-text';
+    bubble.appendChild(textEl);
+
+    const meta = document.createElement('div');
+    meta.className = 'cc-msg-meta';
+    meta.innerHTML = '<span>' + formatClock(Date.now()) + '</span>';
+    bubble.appendChild(meta);
+
+    row.appendChild(av);
+    row.appendChild(bubble);
+
+    // Remove any empty welcome if present
+    const existingEmpty = el.body.querySelector('.cc-msg');
+    if (existingEmpty && !chat.messages.slice(0, -1).length) {
+      el.body.innerHTML = '';
+    }
+
+    el.body.appendChild(row);
+    scrollToBottom();
+
+    // Typewriter
+    const cursor = document.createElement('span');
+    cursor.className = 'cc-typing-cursor';
+    textEl.appendChild(cursor);
+
+    let displayed = '';
+    const speed = fullText.length > 400 ? 6 : 12; // faster for long answers
+
+    for (let i = 0; i < fullText.length; i++) {
+      displayed += fullText.charAt(i);
+      chairmanMsg.text = displayed;
+      textEl.innerHTML = formatChairmanText(displayed);
+      textEl.appendChild(cursor);
+
+      if (i % 8 === 0) scrollToBottom();
+
+      await sleep(speed);
+    }
+
+    // Finished
+    cursor.remove();
+    chairmanMsg.text = fullText;
+    textEl.innerHTML = formatChairmanText(fullText);
+    chat.updatedAt = Date.now();
+    saveChats();
+    renderHistory();
+    scrollToBottom();
+  }
+
+  /* ═══ UI HELPERS ═══ */
+  function setTypingIndicator(show) {
+    if (!el.typingBar) return;
+    el.typingBar.classList.toggle('show', show);
+    if (show) scrollToBottom();
+  }
+
+  function setStatus(type, text) {
+    if (el.statusText) el.statusText.textContent = text;
+    if (el.status) el.status.classList.toggle('typing', type === 'typing');
+  }
+
+  function disableSuggestions(disable) {
+    if (!el.suggestions) return;
+    el.suggestions.querySelectorAll('button').forEach(b => b.disabled = disable);
+  }
+
+  function updateSendState() {
+    if (!el.sendBtn || !el.input) return;
+    const hasText = el.input.value.trim().length > 0;
+    const hasImg = !!state.pendingImageUrl;
+    el.sendBtn.disabled = !(hasText || hasImg) || state.isTyping;
+  }
+
+  function autoResize() {
+    if (!el.input) return;
+    el.input.style.height = 'auto';
+    el.input.style.height = Math.min(el.input.scrollHeight, 120) + 'px';
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  /* ═══ ATTACH IMAGE ═══ */
+  async function handleAttach(file) {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast('warn', 'Image too large', 'Max 10MB');
+      return;
+    }
+    try {
+      toast('info', 'Uploading image…');
+      const url = await uploadToImgBB(file);
+      state.pendingImageUrl = url;
+
+      // Show preview
+      let preview = document.getElementById('ccAttachPreview');
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'ccAttachPreview';
+        preview.className = 'cc-attach-preview show';
+        preview.innerHTML = `
+          <img src="${url}" alt="">
+          <button type="button" class="cc-attach-remove" onclick="ChairmanChat.clearAttach()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>`;
+        el.shell.querySelector('.cc-composer-wrap').prepend(preview);
+      } else {
+        preview.querySelector('img').src = url;
+        preview.classList.add('show');
+      }
+      updateSendState();
+      toast('success', 'Image ready');
+    } catch (err) {
+      toast('warn', 'Upload failed', err.message);
+    } finally {
+      el.attachInput.value = '';
+    }
+  }
+
+  function clearAttach() {
+    state.pendingImageUrl = '';
+    const preview = document.getElementById('ccAttachPreview');
+    if (preview) preview.remove();
+    updateSendState();
+  }
+
+  /* ═══ CHAT MANAGEMENT ═══ */
+  function openChat(id) {
+    if (!state.chats.some(c => c.id === id)) return;
+    state.currentChatId = id;
+    renderAll();
+    closeHistory();
+  }
+
+  function startNewChat() {
+    if (state.isTyping) {
+      toast('warn', 'Please wait', 'Chairman is typing…');
+      return;
+    }
+    newChat();
+    renderAll();
+    closeHistory();
+    toast('info', 'New chat started', 'Ask anything!');
+  }
+
+  function openHistory() {
+    el.historyPanel?.classList.add('open');
+    renderHistory();
+  }
+
+  function closeHistory() {
+    el.historyPanel?.classList.remove('open');
+  }
+
+  /* ═══ EVENTS ═══ */
+  function bindEvents() {
+    // Send
+    el.form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      sendMessage();
+    });
+
+    // Input
+    el.input?.addEventListener('input', () => {
+      autoResize();
+      updateSendState();
+    });
+    el.input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Emoji
+    el.emojiBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      el.emojiPanel.classList.toggle('show');
+      el.emojiBtn.classList.toggle('active', el.emojiPanel.classList.contains('show'));
+    });
+    document.addEventListener('click', (e) => {
+      if (el.emojiPanel?.classList.contains('show') &&
+          !el.emojiPanel.contains(e.target) &&
+          e.target !== el.emojiBtn && !el.emojiBtn?.contains(e.target)) {
+        el.emojiPanel.classList.remove('show');
+        el.emojiBtn?.classList.remove('active');
+      }
+    });
+
+    // Attach
+    el.attachBtn?.addEventListener('click', () => el.attachInput?.click());
+    el.attachInput?.addEventListener('change', (e) => handleAttach(e.target.files?.[0]));
+
+    // Quick suggestions
+    el.suggestions?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.cc-suggestion');
+      if (!btn) return;
+      el.input.value = btn.dataset.q || '';
+      autoResize();
+      updateSendState();
+      sendMessage();
+    });
+
+    // History
+    el.historyBtn?.addEventListener('click', openHistory);
+    el.historyClose?.addEventListener('click', closeHistory);
+
+    // New chat
+    el.newChatBtn?.addEventListener('click', startNewChat);
+  }
+
+  /* ═══ BUILD EMOJI PANEL ═══ */
+  function buildEmojiPanel() {
+    if (!el.emojiPanel) return;
+    el.emojiPanel.innerHTML = '';
+    EMOJI_SET.forEach(e => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = e;
+      b.addEventListener('click', () => {
+        const input = el.input;
+        const start = input.selectionStart || input.value.length;
+        const end = input.selectionEnd || input.value.length;
+        input.value = input.value.slice(0, start) + e + input.value.slice(end);
+        input.selectionStart = input.selectionEnd = start + e.length;
+        input.focus();
+        autoResize();
+        updateSendState();
+      });
+      el.emojiPanel.appendChild(b);
+    });
+  }
+
+  /* ═══ INIT ═══ */
+  function init() {
+    cacheDom();
+    state.chats = loadChats();
+
+    // If no chat, create one
+    if (!state.chats.length) {
+      newChat();
+    } else {
+      // Open most recent
+      const mostRecent = [...state.chats].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+      state.currentChatId = mostRecent.id;
+    }
+
+    bindEvents();
+    buildEmojiPanel();
+    renderAll();
+    updateSendState();
+  }
+
+  return { init, openChat, clearAttach, startNewChat };
+})();
+
+/* Hook into tab switching */
+const _prevSwitchToTabForChairman = window.switchToTab;
+window.switchToTab = function(tabId) {
+  _prevSwitchToTabForChairman(tabId);
+  if (tabId === 'chatWithChairman') {
+    setTimeout(() => {
+      if (!ChairmanChat.__inited) {
+        ChairmanChat.init();
+        ChairmanChat.__inited = true;
+      }
+      const input = document.getElementById('ccInput');
+      if (input && window.innerWidth > 640) input.focus();
+    }, 60);
+  }
+};
+
+/* Also init on app load */
+const _prevInitAppForChairman = typeof initApp === 'function' ? initApp : null;
 /* ─────────────── SECTION 13: POSTS BY CHAIRMAN ─────────────── */
 async function loadChairmanPosts() {
   const feed = $('postsFeed');
