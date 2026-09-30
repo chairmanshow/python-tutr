@@ -340,30 +340,103 @@
       </div>
     </section>
 
-    <!-- CHAT WITH CHAIRMAN -->
-    <section id="chatWithChairman" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-solid fa-crown"></i> Live Help</div>
-        <h2 class="section-title-cine">Chat with Chairman</h2>
-        <p class="section-sub-cine">Ask anything. Get instant AI-powered answers from the Chairman.</p>
-      </div>
-      <div class="doubts-toolbar-cine">
-        <button class="btn-hero-primary" id="newDoubtBtn"><i class="fa-solid fa-plus"></i> Ask New Question</button>
-        <div class="filter-chips-cine" id="doubtFilters">
-          <button class="chip-cine active" data-status="all">All</button>
-          <button class="chip-cine" data-status="open">Open</button>
-          <button class="chip-cine" data-status="answered">Answered</button>
-        </div>
-      </div>
-      <div class="doubts-grid-cine" id="doubtsGrid">
-        <div class="empty-state-cine">
-          <i class="fa-solid fa-comments"></i>
-          <h4>No questions yet</h4>
-          <p>Click "Ask New Question" to chat with the Chairman</p>
-        </div>
-      </div>
-    </section>
+    <!-- ═══════════════════════════════════════════════════════════
+     CHAT WITH CHAIRMAN — Real 1-on-1 Chat
+     ═══════════════════════════════════════════════════════════ -->
+<section id="chatWithChairman" class="tab-content">
+  <div class="chairman-chat-shell">
 
+    <!-- ═══ CHAT HEADER ═══ -->
+    <div class="cc-header">
+      <div class="cc-header-left">
+        <div class="cc-avatar-wrap">
+          <div class="cc-avatar">
+            <i class="fa-solid fa-crown"></i>
+          </div>
+          <span class="cc-online-dot"></span>
+        </div>
+        <div class="cc-header-info">
+          <div class="cc-name">The Chairman</div>
+          <div class="cc-status" id="ccStatus">
+            <span class="cc-status-dot"></span>
+            <span id="ccStatusText">Online — replies instantly</span>
+          </div>
+        </div>
+      </div>
+      <div class="cc-header-actions">
+        <button class="cc-icon-btn" id="ccNewChatBtn" title="New chat">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+        <button class="cc-icon-btn" id="ccHistoryBtn" title="Chat history">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ HISTORY SIDEBAR (slide from right) ═══ -->
+    <div class="cc-history-panel" id="ccHistoryPanel">
+      <div class="cc-history-head">
+        <h3>Chat History</h3>
+        <button class="cc-icon-btn" id="ccHistoryClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="cc-history-list" id="ccHistoryList">
+        <div class="cc-history-empty">
+          <i class="fa-regular fa-comments"></i>
+          <p>No previous chats</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CHAT BODY ═══ -->
+    <div class="cc-body" id="ccBody">
+      <!-- Welcome message will be injected by JS -->
+    </div>
+
+    <!-- ═══ QUICK SUGGESTIONS ═══ -->
+    <div class="cc-suggestions" id="ccSuggestions">
+      <button class="cc-suggestion" data-q="What is Python?">What is Python? 🐍</button>
+      <button class="cc-suggestion" data-q="Explain for loop">Explain for loop</button>
+      <button class="cc-suggestion" data-q="How to reverse a string?">Reverse a string</button>
+      <button class="cc-suggestion" data-q="What is DSA?">What is DSA?</button>
+    </div>
+
+    <!-- ═══ TYPING INDICATOR ═══ -->
+    <div class="cc-typing-bar" id="ccTypingBar">
+      <div class="cc-typing-avatar">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <div class="cc-typing-bubble">
+        <span class="cc-typing-dot"></span>
+        <span class="cc-typing-dot"></span>
+        <span class="cc-typing-dot"></span>
+      </div>
+      <span class="cc-typing-text">Chairman is typing…</span>
+    </div>
+
+    <!-- ═══ COMPOSER ═══ -->
+    <div class="cc-composer-wrap">
+      <form class="cc-composer" id="ccComposer">
+        <button type="button" class="cc-icon-btn" id="ccEmojiBtn" title="Emoji">
+          <i class="fa-regular fa-face-smile"></i>
+        </button>
+        <button type="button" class="cc-icon-btn" id="ccAttachBtn" title="Attach">
+          <i class="fa-solid fa-paperclip"></i>
+        </button>
+        <input type="file" id="ccAttachInput" accept="image/*" style="display:none;">
+        <textarea id="ccInput" rows="1" placeholder="Message The Chairman…" autocomplete="off"></textarea>
+        <button type="submit" class="cc-send-btn" id="ccSendBtn" disabled>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+
+      <!-- Emoji panel -->
+      <div class="cc-emoji-panel" id="ccEmojiPanel"></div>
+    </div>
+
+  </div>
+</section>
     <!-- POSTS BY CHAIRMAN -->
     <section id="chairmanPosts" class="tab-content">
       <div class="section-head-cinematic">
