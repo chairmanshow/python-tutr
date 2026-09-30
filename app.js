@@ -338,7 +338,9 @@ window.switchToTab = function(tabId) {
 
   // Tab-specific loaders
   if (tabId === 'python') renderLevelsGrid();
-  if (tabId === 'chatWithChairman') loadDoubts();
+  if (tabId === 'chatWithChairman') {
+  // Chairman chat handle karta hai apna load
+}
   if (tabId === 'chairmanPosts') loadChairmanPosts();
   if (tabId === 'leaderboard') loadLeaderboard();
   if (tabId === 'freeCourses') YouTube.ensureLoaded();
