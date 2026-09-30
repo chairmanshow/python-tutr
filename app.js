@@ -1399,24 +1399,31 @@ const ChairmanChat = (function() {
   }
 
   /* ═══ INIT ═══ */
-  function init() {
-    cacheDom();
-    state.chats = loadChats();
+function init() {
+  cacheDom();
+  state.chats = loadChats();
 
-    // If no chat, create one
-    if (!state.chats.length) {
-      newChat();
-    } else {
-      // Open most recent
-      const mostRecent = [...state.chats].sort((a, b) => b.updatedAt - a.updatedAt)[0];
-      state.currentChatId = mostRecent.id;
-    }
-
-    bindEvents();
-    buildEmojiPanel();
-    renderAll();
-    updateSendState();
+  // If no chat, create one
+  if (!state.chats.length) {
+    newChat();
+  } else {
+    // Open most recent
+    const mostRecent = [...state.chats].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+    state.currentChatId = mostRecent.id;
   }
+
+  bindEvents();
+  buildEmojiPanel();
+  renderAll();
+  updateSendState();
+  
+  // ═══ FORCE ENABLE CHECK ═══
+  setTimeout(() => {
+    if (el.input && el.sendBtn) {
+      el.sendBtn.disabled = el.input.value.trim().length === 0;
+    }
+  }, 100);
+}
 
   return { init, openChat, clearAttach, startNewChat };
 })();
@@ -1651,6 +1658,14 @@ function initApp() {
   if ($('postCreator')) $('postCreator').style.display = isAdmin() ? 'block' : 'none';
   try { Chat.init(); } catch (err) { console.error('Chat init:', err); }
   try { YouTube.init(); } catch (err) { console.error('YT init:', err); }
+  
+  // ═══ INIT CHAIRMAN CHAT ═══
+  try { 
+    if (typeof ChairmanChat !== 'undefined') {
+      ChairmanChat.init();
+      ChairmanChat.__inited = true;
+    }
+  } catch (err) { console.error('ChairmanChat init:', err); }
 }
 
 /* ─────────────── SECTION 19: YOUTUBE ─────────────── */
