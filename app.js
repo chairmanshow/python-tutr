@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════════════════════════
-   THE CHAIRMAN SHOW — Cinematic Coding Platform
-   Complete App Logic
+   THE CHAIRMAN SHOW — Complete App Logic (v3)
+   Fixed AI + Admin Posts + Theme Toggle + Universal Back
    ══════════════════════════════════════════════════════════════ */
 
 /* ─────────────── SECTION 1: CONFIG ─────────────── */
@@ -17,24 +17,25 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const rtdb = firebase.database();
 
 const CONFIG = {
   UPI_ID: "chairman@upi",
-  ADMIN_EMAIL: "overactingofficial7@gmail.com",
   IMGBB_KEY: "f1e5041PDx4Vtw4YF6XfduRwwS6nKZ6sPAC9nCeR",
-  AI_PROXY: "https://tcs-ai-proxy.sumitshrivas24.workers.dev/",
-  GOOGLE_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSfbAwC7rS2RHX1ICPUWSrbFK0VImAD36A9o6iG5glmsgKEZbQ/viewform"
+  AI_PROXY: "https://tcs-ai-proxy.sumitshrivas24.workers.dev/",   // ⚠️ अपना worker URL डालो
+  ADMIN_EMAIL: "overactingofficial7@gmail.com",              // ⚠️ अपना admin email
+  YT_API_KEY: "AIzaSyBdHiNJ6VOskm_KAWnZVb53XWJv662fDgw",             // ⚠️ YouTube API key
+  YT_CHANNEL_ID: "UCkxoxW7yaoQri2HW_37FqLQ"
 };
 
 let currentUser = null;
 let userProfile = null;
-let activeTab = 'home';
 let currentProblem = null;
 
-/* ─────────────── SECTION 2: UTILITIES ─────────────── */
 const $ = (id) => document.getElementById(id);
 const $$ = (sel) => document.querySelectorAll(sel);
 
+/* ─────────────── SECTION 2: UTILITIES ─────────────── */
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, m => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -71,6 +72,18 @@ window.closeModal = function(id) {
 function formatTime(ts) {
   if (!ts) return 'Just now';
   return new Date(ts).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function debounce(fn, wait) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  };
+}
+
+function isAdmin() {
+  return currentUser?.email === CONFIG.ADMIN_EMAIL;
 }
 
 /* ─────────────── SECTION 3: IMGBB UPLOAD ─────────────── */
@@ -131,7 +144,35 @@ async function uploadToImgBB(file) {
   return data.data.url;
 }
 
-/* ─────────────── SECTION 4: AUTH ─────────────── */
+/* ─────────────── SECTION 4: THEME TOGGLE ─────────────── */
+(function initTheme() {
+  const saved = localStorage.getItem('tcs_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateThemeIcon(saved);
+  });
+
+  document.addEventListener('click', (e) => {
+    const toggle = e.target.closest('#themeToggle');
+    if (!toggle) return;
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('tcs_theme', next);
+    updateThemeIcon(next);
+    toast('info', next === 'light' ? '☀️ Light mode' : '🌙 Dark mode');
+  });
+
+  function updateThemeIcon(theme) {
+    const icon = document.getElementById('themeIcon');
+    if (icon) {
+      icon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+  }
+})();
+
+/* ─────────────── SECTION 5: AUTH ─────────────── */
 $('googleSignInBtn')?.addEventListener('click', async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -140,6 +181,7 @@ $('googleSignInBtn')?.addEventListener('click', async () => {
     await auth.signInWithPopup(provider);
   } catch (err) {
     console.error('Sign in error:', err);
+    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
     if ($('loginError')) {
       $('loginError').textContent = err.message;
       $('loginError').style.display = 'block';
@@ -201,7 +243,7 @@ function showLogin() {
   if (loader) setTimeout(() => loader.classList.add('hide'), 500);
 }
 
-/* ─────────────── SECTION 5: USER PROFILE ─────────────── */
+/* ─────────────── SECTION 6: USER PROFILE ─────────────── */
 async function ensureUserProfile(user) {
   const ref = db.collection('users').doc(user.uid);
   const snap = await ref.get();
@@ -211,20 +253,19 @@ async function ensureUserProfile(user) {
       email: user.email,
       name: user.displayName || 'Coder',
       photoURL: user.photoURL || '',
-      role: 'student',
+      role: user.email === CONFIG.ADMIN_EMAIL ? 'admin' : 'student',
       class: '',
       bio: '',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       solvedCount: 0,
       xp: 0,
-      streak: 0,
-      lastSolveDate: null
+      streak: 0
     };
     await ref.set(profile);
     userProfile = profile;
   } else {
     userProfile = snap.data();
-    userProfile.role = userProfile.role || 'student';
+    if (user.email === CONFIG.ADMIN_EMAIL) userProfile.role = 'admin';
   }
   updateUserUI();
 }
@@ -232,7 +273,7 @@ async function ensureUserProfile(user) {
 function updateUserUI() {
   if (!userProfile) return;
   const name = userProfile.name || 'Coder';
-  const avatar = userProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00d4ff&color=000&bold=true`;
+  const avatar = userProfile.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=D4AF37&color=000&bold=true`;
 
   if ($('navUserName')) $('navUserName').textContent = name.split(' ')[0];
   if ($('navUserAvatar')) $('navUserAvatar').src = avatar;
@@ -245,6 +286,11 @@ function updateUserUI() {
   if ($('profileDisplayName')) $('profileDisplayName').value = name;
   if ($('profileClass')) $('profileClass').value = userProfile.class || '';
   if ($('profileBio')) $('profileBio').value = userProfile.bio || '';
+
+  // Show post creator if admin
+  if ($('postCreator')) {
+    $('postCreator').style.display = isAdmin() ? 'block' : 'none';
+  }
 }
 
 $('userMenuBtn')?.addEventListener('click', (e) => {
@@ -270,8 +316,54 @@ $('saveProfileBtn')?.addEventListener('click', async () => {
   }
 });
 
-/* ─────────────── SECTION 6: TAB SWITCHING ─────────────── */
+/* ─────────────── SECTION 7: TAB SWITCHING + HISTORY ─────────────── */
+let activeTab = 'home';
+const tabHistory = ['home'];
+
 window.switchToTab = function(tabId) {
+  const current = tabHistory[tabHistory.length - 1];
+  if (current !== tabId) {
+    tabHistory.push(tabId);
+    if (tabHistory.length > 20) tabHistory.shift();
+  }
+
+  $$('.tab-content').forEach(t => t.classList.remove('active'));
+  $$('.nav-item').forEach(b => b.classList.remove('active'));
+  const target = $(tabId);
+  if (target) target.classList.add('active');
+  const navBtn = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+  if (navBtn) navBtn.classList.add('active');
+  activeTab = tabId;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Tab-specific loaders
+  if (tabId === 'python') renderLevelsGrid();
+  if (tabId === 'chatWithChairman') loadDoubts();
+  if (tabId === 'chairmanPosts') loadChairmanPosts();
+  if (tabId === 'leaderboard') loadLeaderboard();
+  if (tabId === 'freeCourses') YouTube.ensureLoaded();
+  if (tabId === 'donate') {
+    if ($('upiIdDisplay')) $('upiIdDisplay').textContent = CONFIG.UPI_ID;
+  }
+  if (tabId === 'community') {
+    setTimeout(() => { Chat.scrollToBottom(false); Chat.focusInput(); }, 80);
+  }
+
+  updateBackButton();
+};
+
+window.goBack = function() {
+  if (tabHistory.length > 1) {
+    tabHistory.pop();
+    const prev = tabHistory[tabHistory.length - 1];
+    switchToTabWithoutHistory(prev);
+  } else {
+    switchToTabWithoutHistory('home');
+  }
+  updateBackButton();
+};
+
+function switchToTabWithoutHistory(tabId) {
   $$('.tab-content').forEach(t => t.classList.remove('active'));
   $$('.nav-item').forEach(b => b.classList.remove('active'));
   const target = $(tabId);
@@ -282,13 +374,21 @@ window.switchToTab = function(tabId) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (tabId === 'python') renderLevelsGrid();
-  if (tabId === 'doubts') loadDoubts();
-  if (tabId === 'experts') loadExperts();
+  if (tabId === 'chatWithChairman') loadDoubts();
+  if (tabId === 'chairmanPosts') loadChairmanPosts();
   if (tabId === 'leaderboard') loadLeaderboard();
-  if (tabId === 'donate') {
-    if ($('upiIdDisplay')) $('upiIdDisplay').textContent = CONFIG.UPI_ID;
+  if (tabId === 'freeCourses') YouTube.ensureLoaded();
+}
+
+function updateBackButton() {
+  const btn = $('universalBackBtn');
+  if (!btn) return;
+  if (activeTab === 'home' || tabHistory.length <= 1) {
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = 'inline-flex';
   }
-};
+}
 
 document.addEventListener('click', (e) => {
   const navBtn = e.target.closest('.nav-item[data-tab]');
@@ -300,7 +400,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-/* ─────────────── SECTION 7: PROGRESS TRACKER ─────────────── */
+/* ─────────────── SECTION 8: PROGRESS TRACKER ─────────────── */
 const Progress = (function() {
   const STORAGE_KEY = 'tcs_python_progress_v1';
 
@@ -353,27 +453,23 @@ const Progress = (function() {
   return { isSolved, markSolved, unmarkSolved, totalSolved, state };
 })();
 
-/* ─────────────── SECTION 8: LEVELS GRID (Python) ─────────────── */
+/* ─────────────── SECTION 9: LEVELS GRID ─────────────── */
 let currentPythonFilter = 'all';
 let currentPythonSearch = '';
 
 function renderLevelsGrid() {
   const grid = $('levelsGrid');
   if (!grid) return;
-
-  // Update progress bar
   updatePythonProgress();
 
   let problems = window.PROBLEMS_DB || [];
 
-  // Filter
   if (currentPythonFilter === 'solved') {
     problems = problems.filter(p => Progress.isSolved(p.id));
   } else if (currentPythonFilter !== 'all') {
     problems = problems.filter(p => p.difficulty === currentPythonFilter);
   }
 
-  // Search
   if (currentPythonSearch) {
     const q = currentPythonSearch.toLowerCase();
     problems = problems.filter(p =>
@@ -394,12 +490,12 @@ function renderLevelsGrid() {
 
   grid.innerHTML = problems.map(p => {
     const solved = Progress.isSolved(p.id);
-    const meta = window.getLevelMeta ? window.getLevelMeta(p.level) : { name:'', icon:'fa-code', color:'#00d4ff' };
+    const meta = window.getLevelMeta ? window.getLevelMeta(p.level) : { icon:'fa-code', color:'#D4AF37' };
     return `
       <div class="level-card-cine ${solved ? 'solved' : ''}" onclick="openProblem(${p.id})">
         <div class="lc-header">
           <div class="lc-level">
-            <i class="fa-solid ${meta.icon} lc-level-icon" style="color:${meta.color}"></i>
+            <i class="fa-solid ${meta.icon}" style="color:${meta.color}"></i>
             <span>LVL ${p.level}</span>
           </div>
           ${solved ? '<div class="lc-check-big pop-in"><i class="fa-solid fa-check"></i></div>' : ''}
@@ -423,10 +519,9 @@ function updatePythonProgress() {
   if ($('pythonProgressFill')) $('pythonProgressFill').style.width = pct + '%';
 }
 
-// Filter chips
-$$('#pythonFilters .chip-cine').forEach(chip => {
+document.querySelectorAll('#pythonFilters .chip-cine').forEach(chip => {
   chip.addEventListener('click', () => {
-    $$('#pythonFilters .chip-cine').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#pythonFilters .chip-cine').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     currentPythonFilter = chip.dataset.diff;
     renderLevelsGrid();
@@ -438,15 +533,7 @@ $('pythonSearch')?.addEventListener('input', debounce((e) => {
   renderLevelsGrid();
 }, 250));
 
-function debounce(fn, wait) {
-  let t;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), wait);
-  };
-}
-
-/* ─────────────── SECTION 9: PROBLEM VIEW ─────────────── */
+/* ─────────────── SECTION 10: PROBLEM VIEW ─────────────── */
 window.openProblem = function(id) {
   const prob = (window.PROBLEMS_DB || []).find(p => p.id === id);
   if (!prob) return;
@@ -454,8 +541,7 @@ window.openProblem = function(id) {
   currentProblem = prob;
   switchToTab('problemView');
 
-  // Meta
-  const meta = window.getLevelMeta ? window.getLevelMeta(prob.level) : { name:'', icon:'fa-code', color:'#00d4ff' };
+  const meta = window.getLevelMeta ? window.getLevelMeta(prob.level) : { name:'', icon:'fa-code', color:'#D4AF37' };
   if ($('problemViewMeta')) {
     $('problemViewMeta').innerHTML = `
       <span><i class="fa-solid ${meta.icon}" style="color:${meta.color}"></i> ${meta.name}</span>
@@ -464,7 +550,6 @@ window.openProblem = function(id) {
     `;
   }
 
-  // Title, difficulty, tags
   if ($('pvTitle')) $('pvTitle').textContent = prob.title;
   if ($('pvDifficulty')) {
     $('pvDifficulty').textContent = prob.difficulty;
@@ -476,24 +561,16 @@ window.openProblem = function(id) {
     ).join('');
   }
 
-  // Description
   if ($('pvDescription')) {
     $('pvDescription').innerHTML = escapeHtml(prob.description).replace(/`([^`]+)`/g, '<code>$1</code>');
   }
 
-  // Examples
   if ($('pvExamples')) {
     if (prob.examples && prob.examples.length) {
       $('pvExamples').innerHTML = prob.examples.map(ex => `
         <div class="example-block">
-          <div class="example-row">
-            <span class="label">Input:</span>
-            <span class="value">${escapeHtml(ex.input)}</span>
-          </div>
-          <div class="example-row">
-            <span class="label">Output:</span>
-            <span class="value output">${escapeHtml(ex.output)}</span>
-          </div>
+          <div class="example-row"><span class="label">Input:</span><span class="value">${escapeHtml(ex.input)}</span></div>
+          <div class="example-row"><span class="label">Output:</span><span class="value output">${escapeHtml(ex.output)}</span></div>
           ${ex.explanation ? `<div class="example-explanation">💡 ${escapeHtml(ex.explanation)}</div>` : ''}
         </div>
       `).join('');
@@ -502,25 +579,22 @@ window.openProblem = function(id) {
     }
   }
 
-  // Code editor
   if ($('codeEditor')) {
     $('codeEditor').value = prob.starter || '# Write your Python code here\n';
     updateLineNumbers();
   }
 
-  // Mark solved state
   updateMarkSolvedBtn();
-
-  // Hide output & solution
-  if ($('outputCard')) $('outputCard').style.display = 'none';
   if ($('solutionCard')) $('solutionCard').style.display = 'none';
+  if ($('codeEditor') && $('codeEditor').parentElement) $('codeEditor').parentElement.style.display = 'flex';
 
-  // Reset tabs
-  $$('.editor-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
   $('tabCode')?.classList.add('active');
+
+  setTimeout(updateProblemNavigation, 50);
 };
 
-/* ─────────────── SECTION 10: CODE EDITOR ─────────────── */
+/* Code editor */
 const codeEditor = $('codeEditor');
 const editorLineNumbers = $('editorLineNumbers');
 
@@ -528,9 +602,7 @@ function updateLineNumbers() {
   if (!codeEditor || !editorLineNumbers) return;
   const lines = codeEditor.value.split('\n').length;
   let html = '';
-  for (let i = 1; i <= lines; i++) {
-    html += `<span>${i}</span>`;
-  }
+  for (let i = 1; i <= lines; i++) html += `<span>${i}</span>`;
   editorLineNumbers.innerHTML = html;
 }
 
@@ -539,7 +611,6 @@ codeEditor?.addEventListener('scroll', () => {
   if (editorLineNumbers) editorLineNumbers.scrollTop = codeEditor.scrollTop;
 });
 codeEditor?.addEventListener('keydown', (e) => {
-  // Tab support
   if (e.key === 'Tab') {
     e.preventDefault();
     const start = codeEditor.selectionStart;
@@ -550,7 +621,6 @@ codeEditor?.addEventListener('keydown', (e) => {
   }
 });
 
-/* Reset code */
 $('resetCodeBtn')?.addEventListener('click', () => {
   if (!currentProblem) return;
   if (!confirm('Reset code to starter template?')) return;
@@ -558,7 +628,7 @@ $('resetCodeBtn')?.addEventListener('click', () => {
   updateLineNumbers();
   toast('info', 'Code reset');
 });
-/* Copy code */
+
 $('copyCodeBtn')?.addEventListener('click', () => {
   if (!codeEditor) return;
   navigator.clipboard.writeText(codeEditor.value).then(() => {
@@ -566,12 +636,69 @@ $('copyCodeBtn')?.addEventListener('click', () => {
   }).catch(() => toast('warn', 'Copy failed'));
 });
 
-/* ══════════════════════════════════════════════════════════════
-   NOTE: Run Code (Piston API) removed — we use "Show Solution" instead
-   ══════════════════════════════════════════════════════════════ */
+/* Show Solution */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#showSolutionBtn');
+  if (!btn) return;
+  e.preventDefault();
+  if (!currentProblem) { toast('warn', 'No problem loaded'); return; }
 
+  const solutionCard = $('solutionCard');
+  const codeBody = document.querySelector('.editor-body');
+  const editorFooter = document.querySelector('.editor-footer');
 
-/* ─────────────── SECTION 12: MARK SOLVED ─────────────── */
+  if ($('solutionCode')) $('solutionCode').textContent = currentProblem.solution || '# Solution not available';
+  if ($('solutionExplanation')) {
+    const exp = currentProblem.explanation || 'No explanation available for this problem.';
+    $('solutionExplanation').innerHTML = `
+      <div style="margin-bottom:.6rem; font-weight:700; color:var(--gold-primary);">
+        <i class="fa-solid fa-lightbulb"></i> Explanation
+      </div>
+      <div>${escapeHtml(exp).replace(/\n/g, '<br>')}</div>
+    `;
+  }
+
+  if (codeBody) codeBody.style.display = 'none';
+  if (editorFooter) editorFooter.style.display = 'none';
+  if (solutionCard) solutionCard.style.display = 'block';
+
+  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+  $('tabSolution')?.classList.add('active');
+
+  setTimeout(() => solutionCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  toast('success', 'Solution revealed!', 'Study it, then try on your own 💪');
+  setTimeout(syncSolutionNav, 100);
+});
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#copySolutionBtn');
+  if (!btn) return;
+  if (!currentProblem) return;
+  const text = currentProblem.solution || '';
+  if (!text) { toast('warn', 'Nothing to copy'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--accent-green)"></i>';
+    toast('success', 'Solution copied!');
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  });
+});
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#backToCodeBtn');
+  if (!btn) return;
+  const solutionCard = $('solutionCard');
+  const codeBody = document.querySelector('.editor-body');
+  const editorFooter = document.querySelector('.editor-footer');
+  if (solutionCard) solutionCard.style.display = 'none';
+  if (codeBody) codeBody.style.display = 'flex';
+  if (editorFooter) editorFooter.style.display = 'flex';
+  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+  $('tabCode')?.classList.add('active');
+  setTimeout(updateProblemNavigation, 100);
+});
+
+/* Mark Solved */
 function updateMarkSolvedBtn() {
   const btn = $('markSolvedBtn');
   if (!btn || !currentProblem) return;
@@ -588,7 +715,6 @@ function updateMarkSolvedBtn() {
 $('markSolvedBtn')?.addEventListener('click', () => {
   if (!currentProblem) return;
   const solved = Progress.isSolved(currentProblem.id);
-
   if (solved) {
     Progress.unmarkSolved(currentProblem.id);
     toast('info', 'Unmarked', 'Problem removed from solved list');
@@ -597,47 +723,91 @@ $('markSolvedBtn')?.addEventListener('click', () => {
     launchConfetti();
     toast('success', '🎉 Solved!', 'Great job, keep going!');
   }
-
   updateMarkSolvedBtn();
   updatePythonProgress();
 });
 
-/* Solution tab */
-$('tabCode')?.addEventListener('click', () => {
-  $$('.editor-tab').forEach(t => t.classList.remove('active'));
-  $('tabCode')?.classList.add('active');
-  if ($('solutionCard')) $('solutionCard').style.display = 'none';
-});
-
-$('tabSolution')?.addEventListener('click', () => {
-  $$('.editor-tab').forEach(t => t.classList.remove('active'));
-  $('tabSolution')?.classList.add('active');
+/* Problem navigation */
+function updateProblemNavigation() {
   if (!currentProblem) return;
-  if ($('solutionCode')) $('solutionCode').textContent = currentProblem.solution || '(no solution)';
-  if ($('solutionExplanation')) {
-    $('solutionExplanation').innerHTML = '<strong>💡 Explanation:</strong><br>' + escapeHtml(currentProblem.explanation || 'No explanation provided.');
+  const allProblems = window.PROBLEMS_DB || [];
+  const currentIndex = allProblems.findIndex(p => p.id === currentProblem.id);
+
+  const prevBtn = $('prevProblemBtn');
+  const nextBtn = $('nextProblemBtn');
+  const prevTitle = $('prevProblemTitle');
+  const nextTitle = $('nextProblemTitle');
+
+  if (currentIndex > 0) {
+    const prev = allProblems[currentIndex - 1];
+    if (prevTitle) prevTitle.textContent = prev.title;
+    if (prevBtn) { prevBtn.disabled = false; prevBtn.onclick = () => openProblem(prev.id); }
+  } else {
+    if (prevTitle) prevTitle.textContent = 'No previous';
+    if (prevBtn) prevBtn.disabled = true;
   }
-  if ($('solutionCard')) $('solutionCard').style.display = 'block';
+
+  if (currentIndex < allProblems.length - 1) {
+    const next = allProblems[currentIndex + 1];
+    if (nextTitle) nextTitle.textContent = next.title;
+    if (nextBtn) { nextBtn.disabled = false; nextBtn.onclick = () => openProblem(next.id); }
+  } else {
+    if (nextTitle) nextTitle.textContent = 'Completed! 🎉';
+    if (nextBtn) nextBtn.disabled = true;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#allLevelsBtn')) { e.preventDefault(); switchToTab('python'); }
 });
 
-/* ─────────────── SECTION 13: CONFETTI ─────────────── */
+document.addEventListener('keydown', (e) => {
+  if (activeTab !== 'problemView') return;
+  if (document.activeElement?.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    const btn = $('prevProblemBtn');
+    if (btn && !btn.disabled) btn.click();
+  }
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    const btn = $('nextProblemBtn');
+    if (btn && !btn.disabled) btn.click();
+  }
+});
+
+function syncSolutionNav() {
+  if (!currentProblem) return;
+  const allProblems = window.PROBLEMS_DB || [];
+  const idx = allProblems.findIndex(p => p.id === currentProblem.id);
+
+  const sPrev = $('solutionPrevBtn');
+  const sNext = $('solutionNextBtn');
+
+  if (sPrev) {
+    if (idx > 0) { sPrev.disabled = false; sPrev.onclick = () => openProblem(allProblems[idx - 1].id); }
+    else sPrev.disabled = true;
+  }
+  if (sNext) {
+    if (idx < allProblems.length - 1) { sNext.disabled = false; sNext.onclick = () => openProblem(allProblems[idx + 1].id); }
+    else sNext.disabled = true;
+  }
+}
+
+/* ─────────────── SECTION 11: CONFETTI ─────────────── */
 function launchConfetti() {
   const canvas = $('confettiCanvas');
   if (!canvas) return;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   const ctx = canvas.getContext('2d');
-  const colors = ['#00d4ff', '#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#ef4444'];
+  const colors = ['#D4AF37', '#F4D03F', '#B8860B', '#7c3aed', '#ec4899', '#10b981'];
   const particles = Array.from({ length: 100 }, () => ({
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    vx: (Math.random() - 0.5) * 16,
-    vy: (Math.random() - 1.5) * 16,
+    x: canvas.width / 2, y: canvas.height / 2,
+    vx: (Math.random() - 0.5) * 16, vy: (Math.random() - 1.5) * 16,
     size: Math.random() * 8 + 4,
     color: colors[Math.floor(Math.random() * colors.length)],
-    rot: Math.random() * 360,
-    vr: (Math.random() - 0.5) * 25,
-    life: 0
+    rot: Math.random() * 360, vr: (Math.random() - 0.5) * 25, life: 0
   }));
 
   let frame = 0;
@@ -645,11 +815,7 @@ function launchConfetti() {
     frame++;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach(p => {
-      p.vy += 0.4;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rot += p.vr;
-      p.life++;
+      p.vy += 0.4; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life++;
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rot * Math.PI / 180);
@@ -664,25 +830,23 @@ function launchConfetti() {
   tick();
 }
 
-/* ─────────────── SECTION 14: DOUBTS SYSTEM ─────────────── */
+/* ─────────────── SECTION 12: CHAT WITH CHAIRMAN ─────────────── */
 async function loadDoubts() {
   const grid = $('doubtsGrid');
   if (!grid) return;
   grid.innerHTML = `
     <div class="empty-state-cine" style="grid-column:1/-1">
-      <div class="loading-spinner-cine" style="margin: 0 auto 1rem;"></div>
-      <p>Loading your doubts...</p>
+      <div class="loading-spinner-cine" style="margin:0 auto 1rem;"></div>
+      <p>Loading questions...</p>
     </div>`;
 
   try {
     const snap = await db.collection('doubts')
       .where('userId', '==', currentUser.uid)
-      .limit(50)
-      .get();
+      .limit(50).get();
 
     const doubts = [];
     snap.forEach(d => doubts.push({ id: d.id, ...d.data() }));
-
     doubts.sort((a, b) => {
       const ta = a.createdAt?.toDate?.()?.getTime() || 0;
       const tb = b.createdAt?.toDate?.()?.getTime() || 0;
@@ -695,9 +859,9 @@ async function loadDoubts() {
     if (!filtered.length) {
       grid.innerHTML = `
         <div class="empty-state-cine" style="grid-column:1/-1">
-          <i class="fa-solid fa-code"></i>
-          <h4>No doubts yet</h4>
-          <p>Ask your first coding doubt to get help from experts</p>
+          <i class="fa-solid fa-comments"></i>
+          <h4>No questions yet</h4>
+          <p>Ask your first question to chat with the Chairman</p>
         </div>`;
       return;
     }
@@ -720,23 +884,21 @@ async function loadDoubts() {
     grid.innerHTML = `
       <div class="empty-state-cine" style="grid-column:1/-1">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <h4>Error loading doubts</h4>
+        <h4>Error loading</h4>
         <p>${escapeHtml(err.message)}</p>
       </div>`;
   }
 }
 
-$$('#doubtFilters .chip-cine').forEach(chip => {
+document.querySelectorAll('#doubtFilters .chip-cine').forEach(chip => {
   chip.addEventListener('click', () => {
-    $$('#doubtFilters .chip-cine').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#doubtFilters .chip-cine').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     loadDoubts();
   });
 });
 
-$('newDoubtBtn')?.addEventListener('click', () => {
-  openModal('newDoubtModal');
-});
+$('newDoubtBtn')?.addEventListener('click', () => openModal('newDoubtModal'));
 
 $('doubtImage')?.addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -754,10 +916,7 @@ $('postDoubtBtn')?.addEventListener('click', async () => {
   const question = $('doubtQuestion').value.trim();
   const imageFile = $('doubtImage').files[0];
 
-  if (!question) {
-    toast('warn', 'Please describe your problem');
-    return;
-  }
+  if (!question) { toast('warn', 'Please describe your problem'); return; }
 
   const btn = $('postDoubtBtn');
   const origHtml = btn.innerHTML;
@@ -766,45 +925,36 @@ $('postDoubtBtn')?.addEventListener('click', async () => {
 
   try {
     let imageUrl = '';
-    if (imageFile) {
-      imageUrl = await uploadToImgBB(imageFile);
-    }
+    if (imageFile) imageUrl = await uploadToImgBB(imageFile);
 
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...';
 
-    await db.collection('doubts').add({
+    const ref = await db.collection('doubts').add({
       userId: currentUser.uid,
       userName: userProfile.name,
       userPhoto: userProfile.photoURL || '',
-      subject,
-      question,
-      imageUrl,
+      subject, question, imageUrl,
       status: 'open',
       answerCount: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    notifyTelegram(`🆕 New Code Doubt!\nFrom: ${userProfile.name}\nTopic: ${subject}\n\n${question.slice(0, 250)}`);
-
-    toast('success', 'Doubt posted!', 'Experts will answer soon');
+    toast('success', 'Question posted!', 'Chairman is thinking...');
     closeModal('newDoubtModal');
-    if ($('doubtQuestion')) $('doubtQuestion').value = '';
-    if ($('doubtImage')) $('doubtImage').value = '';
-    if ($('doubtImagePreview')) $('doubtImagePreview').innerHTML = '';
+    $('doubtQuestion').value = '';
+    $('doubtImage').value = '';
+    $('doubtImagePreview').innerHTML = '';
 
     loadDoubts();
+    setTimeout(() => viewDoubt(ref.id), 400);
   } catch (err) {
     console.error(err);
-    toast('warn', 'Failed to post', err.message);
+    toast('warn', 'Failed', err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = origHtml;
   }
 });
-
-/* ══════════════════════════════════════════════════════════════
-   VIEW DOUBT + AI ANSWER — Full Featured
-   ══════════════════════════════════════════════════════════════ */
 
 window.viewDoubt = async function(id) {
   const modalEl = $('doubtDetailsModal');
@@ -816,90 +966,68 @@ window.viewDoubt = async function(id) {
   bodyEl.innerHTML = `
     <div style="text-align:center;padding:2rem;">
       <div class="loading-spinner-cine" style="margin:0 auto 1rem;"></div>
-      <p style="color:var(--text-muted);">Loading doubt...</p>
+      <p style="color:var(--text-muted);">Loading...</p>
     </div>`;
 
   try {
     const doc = await db.collection('doubts').doc(id).get();
     if (!doc.exists) {
-      bodyEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Doubt not found</div>';
+      bodyEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Not found</div>';
       return;
     }
-
     const d = doc.data();
 
-    // Check if answer already exists
     let existingAnswer = null;
     try {
       const ansSnap = await db.collection('doubts').doc(id).collection('answers')
         .orderBy('createdAt', 'desc').limit(1).get();
-      if (!ansSnap.empty) {
-        existingAnswer = ansSnap.docs[0].data();
-      }
-    } catch (e) {
-      console.warn('Answers fetch error:', e);
-    }
+      if (!ansSnap.empty) existingAnswer = ansSnap.docs[0].data();
+    } catch (e) { console.warn('Answers fetch:', e); }
 
-    // Build doubt display
     bodyEl.innerHTML = `
-      <div style="padding:1.2rem;background:#16161d;border-radius:12px;margin-bottom:1rem;border:1px solid rgba(212,175,55,.15);">
+      <div style="padding:1.2rem;background:var(--bg-surface-2);border-radius:12px;margin-bottom:1rem;border:1px solid var(--border-gold);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;gap:.5rem;flex-wrap:wrap;">
-          <span style="padding:.25rem .7rem;background:rgba(212,175,55,.12);color:#D4AF37;border-radius:9999px;font-size:.72rem;font-weight:700;font-family:var(--font-mono);">
+          <span style="padding:.25rem .7rem;background:var(--gold-soft);color:var(--gold-primary);border-radius:9999px;font-size:.72rem;font-weight:700;font-family:var(--font-mono);">
             ${escapeHtml(d.subject || 'Code')}
           </span>
-          <span style="padding:.25rem .7rem;border-radius:9999px;font-size:.68rem;font-weight:700;background:rgba(245,158,11,.12);color:#fcd34d;text-transform:uppercase;">
+          <span style="padding:.25rem .7rem;border-radius:9999px;font-size:.68rem;font-weight:700;background:rgba(245,158,11,.12);color:#d97706;text-transform:uppercase;">
             ${d.status || 'open'}
           </span>
         </div>
-        <div style="font-size:.92rem;line-height:1.7;color:#f4f4f7;white-space:pre-wrap;font-family:var(--font-mono);">${escapeHtml(d.question || '')}</div>
-        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer;border:1px solid rgba(255,255,255,.1);" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
-        <div style="margin-top:.8rem;font-size:.72rem;color:#6b7280;font-family:var(--font-mono);">
+        <div style="font-size:.92rem;line-height:1.7;color:var(--text-primary);white-space:pre-wrap;font-family:var(--font-mono);">${escapeHtml(d.question || '')}</div>
+        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer;border:1px solid var(--border-mid);" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
+        <div style="margin-top:.8rem;font-size:.72rem;color:var(--text-muted);font-family:var(--font-mono);">
           <i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.()?.getTime())}
         </div>
       </div>
       <div id="answerArea"></div>
     `;
 
-    const answerArea = document.getElementById('answerArea');
-
-    // Show existing answer OR generate new
+    const answerArea = $('answerArea');
     if (existingAnswer) {
       showAnswerInArea(answerArea, existingAnswer, id);
     } else {
       generateAndShowAnswer(answerArea, id, d);
     }
-
   } catch (err) {
     console.error('viewDoubt error:', err);
     bodyEl.innerHTML = `<div style="text-align:center;padding:2rem;color:#fca5a5;">Error: ${escapeHtml(err.message)}</div>`;
   }
 };
 
-/* ═══ Generate AI Answer ═══ */
 async function generateAndShowAnswer(area, doubtId, doubtData) {
-  // Thinking animation
   area.innerHTML = `
-    <div style="padding:1.2rem;background:#16161d;border-radius:12px;border:1px solid rgba(212,175,55,.15);">
-      <div style="display:flex;align-items:center;gap:10px;color:#9ca3af;font-size:.9rem;">
-        <i class="fa-solid fa-brain" style="color:#D4AF37;font-size:1.1rem;"></i>
-        <span>An expert is thinking</span>
-        <span style="display:inline-flex;gap:4px;">
-          <span style="width:6px;height:6px;border-radius:50%;background:#D4AF37;display:inline-block;animation:dotBounce 1.4s infinite;"></span>
-          <span style="width:6px;height:6px;border-radius:50%;background:#D4AF37;display:inline-block;animation:dotBounce 1.4s infinite .2s;"></span>
-          <span style="width:6px;height:6px;border-radius:50%;background:#D4AF37;display:inline-block;animation:dotBounce 1.4s infinite .4s;"></span>
-        </span>
+    <div class="ai-answer-card">
+      <div class="ai-thinking">
+        <i class="fa-solid fa-crown" style="color:var(--gold-primary);font-size:1.1rem;"></i>
+        <span>Chairman is thinking</span>
+        <span class="ai-thinking-dots"><span></span><span></span><span></span></span>
       </div>
     </div>
-    <style>
-      @keyframes dotBounce {
-        0%, 60%, 100% { transform: translateY(0); opacity: .4; }
-        30% { transform: translateY(-6px); opacity: 1; }
-      }
-    </style>
   `;
 
   try {
-    console.log('🤖 Calling AI proxy...');
+    console.log('🤖 Calling AI proxy:', CONFIG.AI_PROXY);
 
     const res = await fetch(CONFIG.AI_PROXY, {
       method: 'POST',
@@ -911,61 +1039,49 @@ async function generateAndShowAnswer(area, doubtId, doubtData) {
       })
     });
 
-    if (!res.ok) {
-      throw new Error('AI service returned ' + res.status);
-    }
-
+    if (!res.ok) throw new Error('AI service returned ' + res.status);
     const data = await res.json();
-
-    if (!data.ok || !data.answer) {
-      throw new Error(data.error || 'No answer received');
-    }
+    if (!data.ok || !data.answer) throw new Error(data.error || 'No answer received');
 
     const answerObj = {
-      expertName: 'Chairman AI',
-      expertTitle: 'AI Coding Mentor',
-      expert: { name: 'Chairman AI', title: 'AI Coding Mentor', exp: '∞', color: '#D4AF37' },
+      expertName: 'Chairman',
+      expertTitle: 'Your Coding Mentor',
+      expert: { name: 'Chairman', title: 'Your Coding Mentor', exp: '∞', color: '#D4AF37' },
       text: data.answer,
       createdAt: new Date()
     };
 
-    // Show with typewriter
     showAnswerInArea(area, answerObj, doubtId, true);
 
-    // Save to Firestore
     try {
       await db.collection('doubts').doc(doubtId).collection('answers').add({
-        expertName: 'Chairman AI',
-        expertTitle: 'AI Coding Mentor',
+        expertName: 'Chairman',
+        expertTitle: 'Your Coding Mentor',
         expert: answerObj.expert,
         text: data.answer,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         helpful: 0
       });
-
       await db.collection('doubts').doc(doubtId).update({
         status: 'answered',
-        answeredBy: 'Chairman AI',
+        answeredBy: 'Chairman',
         answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
         answerCount: firebase.firestore.FieldValue.increment(1)
       });
-
-      console.log('✅ Answer saved to Firestore');
-    } catch (saveErr) {
-      console.warn('Save failed:', saveErr);
-    }
+    } catch (saveErr) { console.warn('Save failed:', saveErr); }
 
   } catch (err) {
-    console.error('AI answer error:', err);
+    console.error('AI error:', err);
     area.innerHTML = `
-      <div style="padding:1rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;color:#fca5a5;font-size:.88rem;">
-        <div style="font-weight:700;margin-bottom:.5rem;">
-          <i class="fa-solid fa-triangle-exclamation"></i> Could not generate answer
+      <div class="ai-answer-card" style="border-color:rgba(239,68,68,.3);">
+        <div style="color:#fca5a5;display:flex;align-items:flex-start;gap:8px;">
+          <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px;"></i>
+          <div>
+            <div style="font-weight:600;margin-bottom:4px;">Could not generate answer</div>
+            <div style="font-size:.78rem;color:var(--text-muted);font-family:var(--font-mono);word-break:break-all;">${escapeHtml(err.message)}</div>
+          </div>
         </div>
-        <div style="font-size:.78rem;color:#9ca3af;margin-bottom:.8rem;font-family:var(--font-mono);word-break:break-all;">
-          ${escapeHtml(err.message)}
-        </div>
-        <button onclick="retryAnswer('${doubtId}')" style="padding:.5rem 1rem;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.4);border-radius:9999px;color:#D4AF37;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">
+        <button class="btn-hero-ghost" style="margin-top:.8rem;padding:.5rem 1rem;font-size:.8rem;" onclick="retryAnswer('${doubtId}')">
           <i class="fa-solid fa-rotate-right"></i> Retry
         </button>
       </div>
@@ -973,70 +1089,53 @@ async function generateAndShowAnswer(area, doubtId, doubtData) {
   }
 }
 
-/* ═══ Retry Handler ═══ */
 window.retryAnswer = async function(doubtId) {
-  const area = document.getElementById('answerArea');
+  const area = $('answerArea');
   if (!area) return;
   const doc = await db.collection('doubts').doc(doubtId).get();
   if (doc.exists) generateAndShowAnswer(area, doubtId, doc.data());
 };
 
-/* ═══ Render Answer ═══ */
 function showAnswerInArea(area, answer, doubtId, withTypewriter) {
   const expert = answer.expert || {
-    name: answer.expertName || 'Chairman AI',
-    title: answer.expertTitle || 'AI Coding Mentor',
-    exp: '∞',
+    name: answer.expertName || 'Chairman',
+    title: answer.expertTitle || 'Your Coding Mentor',
     color: '#D4AF37'
   };
-
   const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=D4AF37&color=000&bold=true&size=128`;
-  const when = answer.createdAt?.toDate?.()
-    ? formatTime(answer.createdAt.toDate().getTime())
-    : answer.createdAt instanceof Date
-      ? formatTime(answer.createdAt.getTime())
-      : 'Just now';
+  const when = answer.createdAt?.toDate?.() ? formatTime(answer.createdAt.toDate().getTime())
+    : answer.createdAt instanceof Date ? formatTime(answer.createdAt.getTime()) : 'Just now';
 
   area.innerHTML = `
-    <div style="padding:1.2rem;background:linear-gradient(135deg,rgba(212,175,55,.05),rgba(124,58,237,.03));border:1px solid rgba(212,175,55,.25);border-radius:12px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,.06);">
-        <img src="${avatar}" style="width:44px;height:44px;border-radius:50%;border:2px solid rgba(212,175,55,.5);" alt="">
+    <div class="ai-answer-card">
+      <div class="ai-answer-header">
+        <img src="${avatar}" alt="">
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:.94rem;color:#D4AF37;">${escapeHtml(expert.name)}</div>
-          <div style="font-size:.75rem;color:#9ca3af;font-family:var(--font-mono);">${escapeHtml(expert.title)}</div>
+          <div class="name">${escapeHtml(expert.name)}</div>
+          <div class="title">${escapeHtml(expert.title)}</div>
         </div>
-        <span style="padding:.25rem .7rem;background:rgba(16,185,129,.15);color:#6ee7b7;border-radius:9999px;font-size:.68rem;font-weight:700;">
-          <i class="fa-solid fa-shield-halved"></i> Verified
-        </span>
+        <span class="ai-badge"><i class="fa-solid fa-crown"></i> Chairman</span>
       </div>
-      <div id="answerText" style="font-size:.92rem;line-height:1.8;color:#f4f4f7;white-space:pre-wrap;word-wrap:break-word;font-family:var(--font-mono);"></div>
-      <div style="display:flex;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06);flex-wrap:wrap;">
-        <button onclick="copyAnswerText(${JSON.stringify(answer.text || '').replace(/"/g, '&quot;')})" style="padding:.5rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:9999px;color:#f4f4f7;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">
-          <i class="fa-regular fa-copy"></i> Copy
-        </button>
-        <button onclick="markAnswerHelpful('${doubtId}')" style="padding:.5rem 1rem;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:9999px;color:#6ee7b7;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">
-          <i class="fa-regular fa-thumbs-up"></i> Helpful
-        </button>
+      <div class="ai-answer-text" id="answerText"></div>
+      <div class="ai-answer-footer">
+        <button onclick="copyAnswerText()"><i class="fa-regular fa-copy"></i> Copy</button>
+        <button onclick="markAnswerHelpful('${doubtId}')"><i class="fa-regular fa-thumbs-up"></i> Helpful</button>
       </div>
-      <div style="margin-top:.8rem;font-size:.7rem;color:#6b7280;font-family:var(--font-mono);text-align:right;">
+      <div style="margin-top:.8rem;font-size:.7rem;color:var(--text-muted);font-family:var(--font-mono);text-align:right;">
         <i class="fa-solid fa-clock"></i> ${when}
       </div>
     </div>
   `;
 
-  const textEl = document.getElementById('answerText');
-
+  const textEl = $('answerText');
   if (withTypewriter && textEl) {
-    // Simple typewriter — no markdown parsing to avoid bugs
     let i = 0;
     const fullText = answer.text || '';
     textEl.textContent = '';
-
     function type() {
       if (i < fullText.length) {
         textEl.textContent += fullText.charAt(i);
         i++;
-        // Auto-scroll modal
         const modalBody = textEl.closest('.modal-body-cine');
         if (modalBody) modalBody.scrollTop = modalBody.scrollHeight;
         setTimeout(type, 8);
@@ -1048,10 +1147,12 @@ function showAnswerInArea(area, answer, doubtId, withTypewriter) {
   }
 }
 
-window.copyAnswerText = function(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    toast('success', 'Copied!', 'Answer copied to clipboard');
-  }).catch(() => toast('warn', 'Copy failed'));
+window.copyAnswerText = function() {
+  const el = $('answerText');
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    toast('success', 'Copied!', 'Answer copied');
+  });
 };
 
 window.markAnswerHelpful = function(doubtId) {
@@ -1063,107 +1164,147 @@ window.openImageViewer = function(url) {
   openModal('imageViewerModal');
 };
 
-/* ─────────────── SECTION 15: EXPERTS ─────────────── */
-const EXPERT_SECTIONS = [
-  { id:'python', title:'Python & Backend', icon:'fa-brands fa-python', color:'linear-gradient(135deg,#00d4ff,#3b82f6)', desc:'Python, Django, Flask, FastAPI' },
-  { id:'dsa', title:'DSA & Competitive', icon:'fa-solid fa-brain', color:'linear-gradient(135deg,#7c3aed,#ec4899)', desc:'Algorithms, LeetCode, Codeforces' },
-  { id:'webdev', title:'Web Development', icon:'fa-solid fa-code', color:'linear-gradient(135deg,#f59e0b,#ef4444)', desc:'HTML, CSS, JS, React, Node' },
-  { id:'data', title:'Data Science & ML', icon:'fa-solid fa-chart-line', color:'linear-gradient(135deg,#10b981,#059669)', desc:'Pandas, NumPy, ML, AI' }
-];
+/* ─────────────── SECTION 13: POSTS BY CHAIRMAN ─────────────── */
+async function loadChairmanPosts() {
+  const feed = $('postsFeed');
+  if (!feed) return;
 
-async function loadExperts() {
-  const container = $('expertSections');
-  if (!container) return;
-
-  container.innerHTML = `
+  feed.innerHTML = `
     <div class="loading-cine">
       <div class="loading-spinner-cine"></div>
-      <p>Loading experts...</p>
+      <p>Loading posts...</p>
     </div>`;
 
-  // Fake expert data (can be replaced with Firestore fetch later)
-  const fakeExperts = [
-    { name: 'Arjun Mehta', title: 'Python Expert', exp: 8, rating: 4.9, doubts: 1420, section: 'python' },
-    { name: 'Priya Sharma', title: 'Backend Engineer', exp: 6, rating: 4.8, doubts: 980, section: 'python' },
-    { name: 'Rohan Verma', title: 'DSA Specialist', exp: 10, rating: 5.0, doubts: 2340, section: 'dsa' },
-    { name: 'Sneha Reddy', title: 'FAANG Engineer', exp: 7, rating: 4.9, doubts: 1890, section: 'dsa' },
-    { name: 'Karan Singh', title: 'Full Stack Dev', exp: 5, rating: 4.7, doubts: 720, section: 'webdev' },
-    { name: 'Anjali Verma', title: 'React Expert', exp: 6, rating: 4.8, doubts: 1120, section: 'webdev' },
-    { name: 'Dr. Vikram Rao', title: 'ML Scientist', exp: 12, rating: 5.0, doubts: 3050, section: 'data' },
-    { name: 'Meera Iyer', title: 'Data Analyst', exp: 5, rating: 4.7, doubts: 640, section: 'data' }
-  ];
+  try {
+    const snap = await db.collection('posts').orderBy('createdAt', 'desc').limit(50).get();
+    const posts = [];
+    snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
 
-  container.innerHTML = EXPERT_SECTIONS.map(section => {
-    const sectionExperts = fakeExperts.filter(e => e.section === section.id);
-    const cards = sectionExperts.map(e => {
-      const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(e.name)}&background=0a0a0f&color=00d4ff&bold=true&size=128`;
+    if (!posts.length) {
+      feed.innerHTML = `
+        <div class="empty-state-cine">
+          <i class="fa-solid fa-bullhorn"></i>
+          <h4>No posts yet</h4>
+          <p>${isAdmin() ? 'Create your first post above' : 'Check back soon for updates from the Chairman'}</p>
+        </div>`;
+      return;
+    }
+
+    feed.innerHTML = posts.map(p => {
+      const when = p.createdAt?.toDate?.() ? formatTime(p.createdAt.toDate().getTime()) : 'Just now';
+      const adminActions = isAdmin() ? `
+        <div class="post-admin-actions">
+          <button onclick="deletePost('${p.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      ` : '';
       return `
-        <div class="expert-card-cine">
-          <div class="ec-top">
-            <img class="ec-avatar" src="${avatar}" alt="">
-            <div>
-              <div class="ec-name">${escapeHtml(e.name)}</div>
-              <div class="ec-role">${escapeHtml(e.title)}</div>
+        <div class="post-card-cine">
+          <div class="post-header-cine">
+            <div class="post-avatar-cine"><i class="fa-solid fa-crown"></i></div>
+            <div class="post-author-info">
+              <div class="post-author-name">The Chairman <i class="fa-solid fa-circle-check"></i></div>
+              <div class="post-time">${when}</div>
             </div>
           </div>
-          <div class="ec-stats">
-            <span><i class="fa-solid fa-star"></i> ${e.rating}</span>
-            <span><i class="fa-solid fa-check"></i> ${e.doubts} solved</span>
-          </div>
-        </div>`;
-    }).join('');
-
-    return `
-      <div class="expert-section-cine">
-        <div class="es-header">
-          <div class="es-icon" style="background:${section.color}">
-            <i class="${section.icon}"></i>
-          </div>
-          <div>
-            <div class="es-title">${section.title}</div>
-            <div class="es-desc">${section.desc}</div>
+          <div class="post-content-cine">${escapeHtml(p.content || '')}</div>
+          ${p.link ? `<a href="${escapeHtml(p.link)}" target="_blank" rel="noopener" class="post-link-cine"><i class="fa-solid fa-link"></i> ${escapeHtml(p.link)}</a>` : ''}
+          <div class="post-footer-cine">
+            <span><i class="fa-regular fa-heart"></i> ${p.likes || 0}</span>
+            ${adminActions}
           </div>
         </div>
-        <div class="experts-grid-cine">${cards}</div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    feed.innerHTML = `
+      <div class="empty-state-cine">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <h4>Error loading posts</h4>
+        <p>${escapeHtml(err.message)}</p>
       </div>`;
-  }).join('');
+  }
 }
 
-/* ─────────────── SECTION 16: LEADERBOARD ─────────────── */
+$('publishPostBtn')?.addEventListener('click', async () => {
+  if (!isAdmin()) { toast('warn', 'Only admin can post'); return; }
+  const content = $('postContent').value.trim();
+  const link = $('postLink').value.trim();
+
+  if (!content) { toast('warn', 'Write something first'); return; }
+
+  const btn = $('publishPostBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing...';
+
+  try {
+    await db.collection('posts').add({
+      content, link,
+      authorName: 'The Chairman',
+      authorEmail: userProfile.email,
+      authorUid: currentUser.uid,
+      likes: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    $('postContent').value = '';
+    $('postLink').value = '';
+    toast('success', 'Post published!', 'Students can see it now');
+    loadChairmanPosts();
+  } catch (err) {
+    console.error(err);
+    toast('warn', 'Failed to publish', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+});
+
+window.deletePost = async function(id) {
+  if (!isAdmin()) return;
+  if (!confirm('Delete this post?')) return;
+  try {
+    await db.collection('posts').doc(id).delete();
+    toast('success', 'Post deleted');
+    loadChairmanPosts();
+  } catch (err) {
+    toast('warn', 'Delete failed', err.message);
+  }
+};
+
+/* ─────────────── SECTION 14: LEADERBOARD ─────────────── */
 async function loadLeaderboard() {
   const podium = $('lbPodium');
   const list = $('lbList');
   if (!podium || !list) return;
 
-  // Mock data (extend later with real Firestore query)
+  // Mock data — replace with Firestore query later
   const mockUsers = [
     { name: 'Rohan Verma', xp: 4820, solved: 89, streak: 42 },
     { name: 'Sneha Reddy', xp: 4230, solved: 82, streak: 35 },
     { name: 'Arjun Mehta', xp: 3910, solved: 78, streak: 28 },
     { name: 'Priya Sharma', xp: 3450, solved: 72, streak: 22 },
     { name: 'Karan Singh', xp: 3120, solved: 68, streak: 19 },
-    { name: 'Anjali Verma', xp: 2890, solved: 65, streak: 15 },
-    { name: 'Meera Iyer', xp: 2340, solved: 58, streak: 12 },
-    { name: 'Dr. Vikram Rao', xp: 2050, solved: 52, streak: 10 }
+    { name: 'Anjali Verma', xp: 2890, solved: 65, streak: 15 }
   ];
 
   const top3 = mockUsers.slice(0, 3);
   const podiumClasses = ['gold', 'silver', 'bronze'];
 
   podium.innerHTML = top3.map((u, i) => {
-    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=0a0a0f&color=00d4ff&bold=true&size=128`;
+    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=D4AF37&color=000&bold=true&size=128`;
     return `
       <div class="lb-podium-card ${podiumClasses[i]}">
         <div class="lb-podium-rank">#${i + 1}</div>
         <img class="lb-podium-avatar" src="${avatar}" alt="">
         <div class="lb-podium-name">${escapeHtml(u.name)}</div>
         <div class="lb-podium-xp">${u.xp} XP</div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 
   list.innerHTML = mockUsers.map((u, i) => {
-    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=0a0a0f&color=00d4ff&bold=true&size=128`;
+    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=D4AF37&color=000&bold=true&size=128`;
     const isMe = userProfile?.name === u.name;
     return `
       <div class="lb-row-cine ${isMe ? 'me' : ''}">
@@ -1174,29 +1315,21 @@ async function loadLeaderboard() {
           <div class="lb-sub-cine">${u.solved} solved · ${u.streak} day streak</div>
         </div>
         <div class="lb-xp-cine">${u.xp} XP</div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
-/* ─────────────── SECTION 17: DONATE ─────────────── */
+/* ─────────────── SECTION 15: DONATE ─────────────── */
 $('copyUpiBtn')?.addEventListener('click', () => {
   navigator.clipboard.writeText(CONFIG.UPI_ID).then(() => {
     toast('success', 'UPI ID copied!', CONFIG.UPI_ID);
   }).catch(() => toast('warn', 'Copy failed'));
 });
 
-/* ─────────────── SECTION 18: NOTIFICATIONS (Disabled) ─────────────── */
-// Telegram notifications removed — replaced with Google Form
-function notifyTelegram(message) {
-  // Silent no-op — Telegram removed
-  console.log('[notification]', message);
-}
-/* ─────────────── SECTION 19: HOME PREVIEW ─────────────── */
+/* ─────────────── SECTION 16: HOME PREVIEW ─────────────── */
 function renderHomePreview() {
   const container = $('levelTrackPreview');
   if (!container) return;
-
   const allProblems = window.PROBLEMS_DB || [];
   const preview = allProblems.slice(0, 10);
 
@@ -1210,30 +1343,23 @@ function renderHomePreview() {
         <div class="lpc-meta">
           <span class="lpc-diff ${p.difficulty}">${p.difficulty}</span>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 
-  // Stats
   if ($('statLevels')) $('statLevels').textContent = allProblems.length;
   if ($('statSolvedGlobal')) $('statSolvedGlobal').textContent = Progress.totalSolved();
 }
 
-/* ─────────────── SECTION 20: SCROLL PROGRESS + BACK TO TOP ─────────────── */
+/* ─────────────── SECTION 17: SCROLL + BACK TO TOP ─────────────── */
 window.addEventListener('scroll', () => {
   const h = document.documentElement;
   const scrolled = (h.scrollTop / ((h.scrollHeight - h.clientHeight) || 1)) * 100;
-  const sp = $('scrollProgress');
-  if (sp) sp.style.width = scrolled + '%';
-  const btt = $('backToTop');
-  if (btt) btt.classList.toggle('show', h.scrollTop > 400);
+  if ($('scrollProgress')) $('scrollProgress').style.width = scrolled + '%';
+  if ($('backToTop')) $('backToTop').classList.toggle('show', h.scrollTop > 400);
 });
 
-$('backToTop')?.addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+$('backToTop')?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-/* ─────────────── SECTION 21: KEYBOARD SHORTCUTS ─────────────── */
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay-cine.show').forEach(m => m.classList.remove('show'));
@@ -1241,155 +1367,295 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-/* ─────────────── SECTION 22: INIT ─────────────── */
+/* ─────────────── SECTION 18: INIT ─────────────── */
 function initApp() {
   renderHomePreview();
   updatePythonProgress();
   updateUserUI();
-
-  // Set UPI display
   if ($('upiIdDisplay')) $('upiIdDisplay').textContent = CONFIG.UPI_ID;
+  if ($('postCreator')) $('postCreator').style.display = isAdmin() ? 'block' : 'none';
+  try { Chat.init(); } catch (err) { console.error('Chat init:', err); }
+  try { YouTube.init(); } catch (err) { console.error('YT init:', err); }
 }
 
-/* ─────────────── SECTION 23: BOOT ─────────────── */
-window.addEventListener('load', () => {
-  // Force boot loader hide after 4 seconds no matter what
-  setTimeout(() => {
-    const loader = $('bootLoader');
-    if (loader) loader.classList.add('hide');
-  }, 4000);
-});
+/* ─────────────── SECTION 19: YOUTUBE ─────────────── */
+const YouTube = (function() {
+  const API_KEY = CONFIG.YT_API_KEY;
+  const CHANNEL_ID = CONFIG.YT_CHANNEL_ID;
+  const API_BASE = 'https://www.googleapis.com/youtube/v3';
+  const CACHE_KEY = 'tcs_yt_cache_v2';
+  const CACHE_TTL = 30 * 60 * 1000;
 
-console.log('🚀 The Chairman Show — Cinematic Platform Loaded');
-/* ══════════════════════════════════════════════════════════════
-   SECTION 24: REAL-TIME COMMUNITY CHAT
-   ══════════════════════════════════════════════════════════════ */
+  let allVideos = [];
+  let currentFilter = 'all';
+  let searchTerm = '';
+  let nextPageToken = '';
+  let isLoading = false;
+  let uploadsPlaylistId = '';
 
-const rtdb = firebase.database();
+  function getCache() {
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY));
+      if (c && c.ts && (Date.now() - c.ts) < CACHE_TTL && c.videos) return c;
+    } catch (e) {}
+    return null;
+  }
 
+  function setCache(videos, nextToken, playlistId) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        ts: Date.now(), videos: videos.slice(0, 200),
+        nextToken: nextToken || '', playlistId: playlistId || ''
+      }));
+    } catch (e) {}
+  }
+
+  function formatViews(n) {
+    n = parseInt(n || 0, 10);
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M views';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K views';
+    return n + ' views';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const diff = Date.now() - d.getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days < 1) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return days + 'd ago';
+    if (days < 30) return Math.floor(days / 7) + 'w ago';
+    if (days < 365) return Math.floor(days / 30) + 'mo ago';
+    return Math.floor(days / 365) + 'y ago';
+  }
+
+  function formatDuration(iso) {
+    if (!iso) return '';
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return '';
+    const h = parseInt(m[1] || 0, 10);
+    const min = parseInt(m[2] || 0, 10);
+    const s = parseInt(m[3] || 0, 10);
+    if (h > 0) return h + ':' + String(min).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    return min + ':' + String(s).padStart(2, '0');
+  }
+
+  function durationToSeconds(iso) {
+    if (!iso) return 0;
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return 0;
+    return (parseInt(m[1] || 0, 10) * 3600) + (parseInt(m[2] || 0, 10) * 60) + (parseInt(m[3] || 0, 10));
+  }
+
+  async function getUploadsPlaylist() {
+    const url = `${API_BASE}/channels?part=contentDetails,statistics&id=${CHANNEL_ID}&key=${API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Channel fetch failed: ' + res.status);
+    const data = await res.json();
+    if (!data.items || !data.items.length) throw new Error('Channel not found');
+
+    const channel = data.items[0];
+    uploadsPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylistId) throw new Error('Uploads playlist not found');
+
+    const stats = channel.statistics;
+    if (stats?.subscriberCount) {
+      const count = parseInt(stats.subscriberCount, 10);
+      const formatted = count >= 1000000
+        ? (count / 1000000).toFixed(1) + 'M subscribers'
+        : count >= 1000
+          ? (count / 1000).toFixed(1) + 'K subscribers'
+          : count + ' subscribers';
+      const el = $('ytSubscriberCount');
+      if (el) el.textContent = formatted + ' · ' + (stats.videoCount || 0) + ' videos';
+    }
+    return uploadsPlaylistId;
+  }
+
+  async function fetchVideos(pageToken) {
+    if (!uploadsPlaylistId) await getUploadsPlaylist();
+    const url = `${API_BASE}/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${uploadsPlaylistId}&key=${API_KEY}${pageToken ? '&pageToken=' + pageToken : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Videos fetch failed: ' + res.status);
+    const data = await res.json();
+
+    const videos = (data.items || []).map(item => {
+      const s = item.snippet;
+      const vid = item.contentDetails?.videoId || s.resourceId?.videoId;
+      return {
+        id: vid, title: s.title || 'Untitled',
+        thumbnail: s.thumbnails?.maxres?.url || s.thumbnails?.high?.url || s.thumbnails?.medium?.url || '',
+        publishedAt: s.publishedAt, duration: '', views: 0
+      };
+    }).filter(v => v.id);
+
+    if (videos.length) {
+      const ids = videos.map(v => v.id).join(',');
+      const detailUrl = `${API_BASE}/videos?part=contentDetails,statistics&id=${ids}&key=${API_KEY}`;
+      const detailRes = await fetch(detailUrl);
+      if (detailRes.ok) {
+        const detailData = await detailRes.json();
+        const map = {};
+        (detailData.items || []).forEach(item => {
+          map[item.id] = { duration: item.contentDetails?.duration || '', views: parseInt(item.statistics?.viewCount || 0, 10) };
+        });
+        videos.forEach(v => {
+          if (map[v.id]) { v.duration = map[v.id].duration; v.views = map[v.id].views; }
+        });
+      }
+    }
+
+    return { videos, nextPageToken: data.nextPageToken || '' };
+  }
+
+  function renderVideos() {
+    const grid = $('ytVideosGrid');
+    if (!grid) return;
+    let videos = [...allVideos];
+
+    if (currentFilter === 'latest') videos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+    else if (currentFilter === 'popular') videos.sort((a, b) => b.views - a.views);
+    else if (currentFilter === 'long') videos = videos.filter(v => durationToSeconds(v.duration) > 1200);
+
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      videos = videos.filter(v => v.title.toLowerCase().includes(q));
+    }
+
+    if (!videos.length) {
+      grid.innerHTML = `<div class="empty-state-cine" style="grid-column:1/-1"><i class="fa-brands fa-youtube"></i><h4>No videos found</h4><p>Try a different filter</p></div>`;
+      return;
+    }
+
+    grid.innerHTML = videos.map((v, i) => {
+      const duration = formatDuration(v.duration);
+      const delay = Math.min(i * 0.03, 0.5);
+      return `
+        <div class="yt-video-card" style="animation-delay:${delay}s" onclick="YouTube.openVideo('${v.id}')">
+          <div class="yt-thumb">
+            <img src="${escapeHtml(v.thumbnail)}" alt="${escapeHtml(v.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${v.id}/hqdefault.jpg'">
+            <div class="yt-thumb-overlay"><div class="yt-play-icon"><i class="fa-solid fa-play"></i></div></div>
+            ${duration ? `<span class="yt-duration">${escapeHtml(duration)}</span>` : ''}
+          </div>
+          <div class="yt-card-body">
+            <div class="yt-card-title">${escapeHtml(v.title)}</div>
+            <div class="yt-card-meta">
+              <span><i class="fa-regular fa-eye"></i> ${escapeHtml(formatViews(v.views))}</span>
+              <span>·</span>
+              <span>${escapeHtml(formatDate(v.publishedAt))}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function loadVideos(loadMore) {
+    if (isLoading) return;
+    isLoading = true;
+    const grid = $('ytVideosGrid');
+    const wrap = $('ytLoadMoreWrap');
+
+    if (!loadMore && grid) {
+      grid.innerHTML = `<div class="loading-cine"><div class="loading-spinner-cine"></div><p>Loading videos…</p></div>`;
+    }
+
+    try {
+      if (!loadMore) {
+        const cache = getCache();
+        if (cache && cache.videos.length) {
+          allVideos = cache.videos;
+          nextPageToken = cache.nextToken || '';
+          uploadsPlaylistId = cache.playlistId || '';
+          renderVideos();
+          if (nextPageToken && wrap) wrap.style.display = 'block';
+          isLoading = false;
+          return;
+        }
+      }
+
+      const result = await fetchVideos(nextPageToken);
+      allVideos = loadMore ? allVideos.concat(result.videos) : result.videos;
+      nextPageToken = result.nextPageToken;
+      setCache(allVideos, nextPageToken, uploadsPlaylistId);
+      renderVideos();
+      if (wrap) wrap.style.display = nextPageToken ? 'block' : 'none';
+    } catch (err) {
+      console.error('YT error:', err);
+      if (grid) {
+        grid.innerHTML = `<div class="empty-state-cine" style="grid-column:1/-1"><i class="fa-solid fa-triangle-exclamation"></i><h4>Could not load videos</h4><p style="font-family:var(--font-mono);font-size:.8rem;margin-top:.5rem;">${escapeHtml(err.message)}</p><button class="btn-hero-primary" style="margin-top:1rem" onclick="YouTube.reload()"><i class="fa-solid fa-rotate"></i> Retry</button></div>`;
+      }
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  function bindFilters() {
+    document.querySelectorAll('#ytFilters .chip-cine').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#ytFilters .chip-cine').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentFilter = chip.dataset.filter || 'all';
+        renderVideos();
+      });
+    });
+    const search = $('ytSearch');
+    if (search) search.addEventListener('input', debounce((e) => { searchTerm = e.target.value.trim(); renderVideos(); }, 300));
+    const lm = $('ytLoadMoreBtn');
+    if (lm) lm.addEventListener('click', () => loadVideos(true));
+  }
+
+  function init() {
+    if (!$('ytVideosGrid')) return;
+    if (API_KEY.includes('XXXXX')) {
+      const grid = $('ytVideosGrid');
+      if (grid) grid.innerHTML = `<div class="empty-state-cine" style="grid-column:1/-1"><i class="fa-brands fa-youtube"></i><h4>YouTube not configured</h4><p>Add API key in app.js</p></div>`;
+      return;
+    }
+    bindFilters();
+  }
+
+  return {
+    init,
+    ensureLoaded: () => { if (!allVideos.length && !isLoading) loadVideos(false); },
+    openVideo: (id) => window.open('https://www.youtube.com/watch?v=' + id, '_blank', 'noopener'),
+    reload: () => { try { localStorage.removeItem(CACHE_KEY); } catch(e){} allVideos = []; nextPageToken = ''; uploadsPlaylistId = ''; loadVideos(false); }
+  };
+})();
+
+/* ─────────────── SECTION 20: COMMUNITY CHAT ─────────────── */
 const Chat = (function() {
-  // ═══ CONFIG ═══
   const ROOMS = [
     { id: 'general', name: 'general', icon: 'fa-hashtag', desc: 'Anything & everything' },
     { id: 'dsa', name: 'dsa-help', icon: 'fa-code', desc: 'Algorithms & Data Structures' },
     { id: 'python', name: 'python', icon: 'fa-brands fa-python', desc: 'Python discussion' },
     { id: 'projects', name: 'projects', icon: 'fa-rocket', desc: 'Show off your work' },
-    { id: 'off-topic', name: 'off-topic', icon: 'fa-mug-hot', desc: 'Fun, memes, chill' }
+    { id: 'off-topic', name: 'off-topic', icon: 'fa-mug-hot', desc: 'Fun & chill' }
   ];
 
   const QUICK_REACTIONS = ['👍','❤️','😂','🔥','👏','😮'];
-
-  const EMOJI_SET = [
-    '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩',
-    '😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤗','🤭','🤫','🤔','🤐','😐',
-    '😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕',
-    '🤢','🤮','🥵','🥶','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯',
-    '😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩',
-    '😫','🥱','😤','😡','😠','🤬','😈','👿','💀','🤡','👋','🤚','✋','🖖','👌','🤌',
-    '✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜',
-    '👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','❤️','🧡','💛','💚','💙',
-    '💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✨','⭐','🌟',
-    '🔥','💥','💫','⚡','🎉','🎊','🎁','🏆','🥇','🎯','🚀','🌈','☀️','🌙','☁️','❄️'
-  ];
+  const EMOJI_SET = ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤗','🤭','🤫','🤔','🤐','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','🤡','👋','🤚','✋','🖖','👌','🤌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✨','⭐','🌟','🔥','💥','💫','⚡','🎉','🎊','🎁','🏆','🥇','🎯','🚀','🌈','☀️','🌙','☁️','❄️'];
 
   const GROUP_WINDOW_MS = 5 * 60 * 1000;
   const MAX_MESSAGES = 250;
   const TYPING_TIMEOUT = 2600;
 
-  // ═══ STATE ═══
   const state = {
-    uid: null,
-    name: '',
-    color: '',
-    room: 'general',
-    messages: [],
-    roomListeners: [],
-    online: {},
-    typing: {},
-    unread: 0,
-    soundOn: false,
-    replyTarget: null,
-    editingKey: null,
-    searchTerm: '',
-    firstLoadDone: false,
-    ready: false
+    uid: null, name: '', color: '', room: 'general',
+    messages: [], roomListeners: [], online: {}, typing: {},
+    unread: 0, soundOn: false, replyTarget: null, editingKey: null,
+    searchTerm: '', firstLoadDone: false, ready: false
   };
-
   const el = {};
 
-  // ═══ HELPERS ═══
-  function escapeHtml(str) {
-    return String(str ?? '').replace(/[&<>"']/g, m => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[m]));
-  }
-
-  function formatMsgText(text) {
-    let out = escapeHtml(text);
-    out = out.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-    out = out.replace(/(https?:\/\/[^\s<]+)/g, (url) => '<a href="'+url+'" target="_blank" rel="noopener">'+url+'</a>');
-    out = out.replace(/\n/g, '<br>');
-    return out;
-  }
-
-  function hashStr(str) {
-    let h = 0;
-    const s = String(str || 'x');
-    for (let i = 0; i < s.length; i++) {
-      h = (h << 5) - h + s.charCodeAt(i);
-      h |= 0;
-    }
-    return h;
-  }
-
-  function initialOf(name) {
-    const n = String(name || '?').trim();
-    return n ? n.charAt(0).toUpperCase() : '?';
-  }
-
-  function dayKey(ts) {
-    const d = new Date(ts || Date.now());
-    return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
-  }
-
-  function formatDayLabel(ts) {
-    const d = new Date(ts || Date.now());
-    const today = new Date();
-    const yest = new Date();
-    yest.setDate(today.getDate() - 1);
-
-    if (dayKey(d) === dayKey(today)) return 'Today';
-    if (dayKey(d) === dayKey(yest)) return 'Yesterday';
-    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
-  function formatClock(ts) {
-    return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function debounce(fn, wait) {
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), wait);
-    };
-  }
-
-  // ═══ IDENTITY ═══
   function loadIdentity() {
     let uid = localStorage.getItem('tcs_uid');
-    if (!uid) {
-      uid = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-      localStorage.setItem('tcs_uid', uid);
-    }
+    if (!uid) { uid = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('tcs_uid', uid); }
     state.uid = uid;
-    state.name = localStorage.getItem('tcs_chat_name') || '';
-    state.color = localStorage.getItem('tcs_chat_color') || '';
-
+    state.name = localStorage.getItem('tcs_chat_name') || userProfile?.name || '';
+    state.color = localStorage.getItem('tcs_chat_color') || '#D4AF37';
     const savedRoom = localStorage.getItem('tcs_chat_room');
-    if (savedRoom && ROOMS.some(r => r.id === savedRoom)) {
-      state.room = savedRoom;
-    }
+    if (savedRoom && ROOMS.some(r => r.id === savedRoom)) state.room = savedRoom;
   }
 
   function saveIdentity() {
@@ -1398,48 +1664,46 @@ const Chat = (function() {
     localStorage.setItem('tcs_chat_room', state.room);
   }
 
-  // ═══ CACHE DOM ═══
   function cacheDom() {
-    el.shell = document.getElementById('chatShell') || document.querySelector('.chat-shell-cine');
-    el.sidebar = document.getElementById('chatSidebar');
-    el.sideOpen = document.getElementById('cmMenuBtn');
-    el.sideClose = document.getElementById('csCloseBtn');
-    el.meAvatar = document.getElementById('csMeAvatar');
-    el.meName = document.getElementById('csMeName');
-    el.roomList = document.getElementById('csRooms');
-    el.userList = document.getElementById('csUsers');
-    el.onlineTotal = document.getElementById('csOnlineCount');
-    el.chatSearch = document.getElementById('csSearchInput');
-    el.roomTitle = document.getElementById('cmRoomName');
-    el.roomSub = document.getElementById('cmRoomSub');
-    el.soundBtn = document.getElementById('cmSoundBtn');
-    el.messages = document.getElementById('cmBody');
-    el.typingBar = document.getElementById('cmTyping');
-    el.replyPrev = document.getElementById('cmReplyPreview');
-    el.rpName = document.getElementById('cmRpName');
-    el.rpText = document.getElementById('cmRpText');
-    el.rpCancel = document.getElementById('cmRpCancel');
-    el.emojiPanel = document.getElementById('cmEmojiPanel');
-    el.emojiBtn = document.getElementById('cmEmojiBtn');
-    el.imageBtn = document.getElementById('cmImageBtn');
-    el.imageInput = document.getElementById('cmImageInput');
-    el.imgPreview = document.getElementById('cmImgPreview');
-    el.imgPreviewEl = document.getElementById('cmImgPreviewEl');
-    el.imgRemove = document.getElementById('cmImgRemove');
-    el.form = document.getElementById('cmComposer');
-    el.input = document.getElementById('cmInput');
-    el.sendBtn = document.getElementById('cmSendBtn');
-    el.jumpBtn = document.getElementById('cmJumpBtn');
-    el.jumpBadge = document.getElementById('cmJumpBadge');
-    el.joinOverlay = document.getElementById('cmJoinOverlay');
-    el.joinName = document.getElementById('cmJoinName');
-    el.joinColors = document.getElementById('cmJoinColors');
-    el.joinBtn = document.getElementById('cmJoinBtn');
-    el.joinError = document.getElementById('cmJoinError');
-    el.navBadge = document.getElementById('navChatBadge');
+    el.shell = document.querySelector('.chat-shell-cine');
+    el.sidebar = $('chatSidebar');
+    el.sideOpen = $('cmMenuBtn');
+    el.sideClose = $('csCloseBtn');
+    el.meAvatar = $('csMeAvatar');
+    el.meName = $('csMeName');
+    el.roomList = $('csRooms');
+    el.userList = $('csUsers');
+    el.onlineTotal = $('csOnlineCount');
+    el.chatSearch = $('csSearchInput');
+    el.roomTitle = $('cmRoomName');
+    el.roomSub = $('cmRoomSub');
+    el.soundBtn = $('cmSoundBtn');
+    el.messages = $('cmBody');
+    el.typingBar = $('cmTyping');
+    el.replyPrev = $('cmReplyPreview');
+    el.rpName = $('cmRpName');
+    el.rpText = $('cmRpText');
+    el.rpCancel = $('cmRpCancel');
+    el.emojiPanel = $('cmEmojiPanel');
+    el.emojiBtn = $('cmEmojiBtn');
+    el.imageBtn = $('cmImageBtn');
+    el.imageInput = $('cmImageInput');
+    el.imgPreview = $('cmImgPreview');
+    el.imgPreviewEl = $('cmImgPreviewEl');
+    el.imgRemove = $('cmImgRemove');
+    el.form = $('cmComposer');
+    el.input = $('cmInput');
+    el.sendBtn = $('cmSendBtn');
+    el.jumpBtn = $('cmJumpBtn');
+    el.jumpBadge = $('cmJumpBadge');
+    el.joinOverlay = $('cmJoinOverlay');
+    el.joinName = $('cmJoinName');
+    el.joinColors = $('cmJoinColors');
+    el.joinBtn = $('cmJoinBtn');
+    el.joinError = $('cmJoinError');
+    el.navBadge = $('navChatBadge');
   }
 
-  // ═══ RENDER ROOMS ═══
   function renderRooms() {
     if (!el.roomList) return;
     el.roomList.innerHTML = '';
@@ -1449,9 +1713,7 @@ const Chat = (function() {
       btn.type = 'button';
       btn.innerHTML = `
         <div class="cs-room-ico"><i class="${r.icon.startsWith('fa-brands') ? r.icon : 'fa-solid ' + r.icon}"></i></div>
-        <div class="cs-room-meta">
-          <div class="cs-room-name">#${escapeHtml(r.name)}</div>
-        </div>
+        <div class="cs-room-meta"><div class="cs-room-name">#${escapeHtml(r.name)}</div></div>
         <span class="cs-room-count" data-room="${r.id}">0</span>
       `;
       btn.addEventListener('click', () => switchRoom(r.id));
@@ -1459,73 +1721,41 @@ const Chat = (function() {
     });
   }
 
-  function updateRoomCounts() {
-    // Just placeholder — you could query message count per room for accuracy
-  }
-
-  // ═══ RENDER PROFILE ═══
   function renderProfile() {
     if (el.meName) el.meName.textContent = state.name || 'Guest';
     if (el.meAvatar) {
-      el.meAvatar.textContent = state.name ? initialOf(state.name) : '?';
-      el.meAvatar.style.background = state.color || 'linear-gradient(135deg,#00d4ff,#7c3aed)';
-      el.meAvatar.style.display = 'flex';
-      el.meAvatar.style.alignItems = 'center';
-      el.meAvatar.style.justifyContent = 'center';
-      el.meAvatar.style.fontWeight = '800';
-      el.meAvatar.style.color = '#000';
-      el.meAvatar.src = '';
+      el.meAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(state.name || 'Guest')}&background=${(state.color || '#D4AF37').replace('#','')}&color=000&bold=true`;
     }
   }
 
-  // ═══ RENDER ONLINE USERS ═══
   function renderOnlineUsers() {
     if (!el.userList) return;
-    const list = Object.entries(state.online)
-      .map(([uid, u]) => ({ uid, ...u }))
-      .sort((a, b) => {
-        if (a.uid === state.uid) return -1;
-        if (b.uid === state.uid) return 1;
-        return String(a.name || '').localeCompare(String(b.name || ''));
-      });
-
+    const list = Object.entries(state.online).map(([uid, u]) => ({ uid, ...u }))
+      .sort((a, b) => a.uid === state.uid ? -1 : b.uid === state.uid ? 1 : String(a.name||'').localeCompare(String(b.name||'')));
     if (el.onlineTotal) el.onlineTotal.textContent = list.length;
 
-    if (!list.length) {
-      el.userList.innerHTML = '<div class="cs-loading">No one online</div>';
-    } else {
-      el.userList.innerHTML = list.map(u => `
-        <div class="cs-user">
-          <div class="cs-user-av" style="background:${u.color || '#00d4ff'}">${escapeHtml(initialOf(u.name))}</div>
-          <span class="cs-user-name">${escapeHtml(u.name || 'Anonymous')}</span>
-          ${u.uid === state.uid ? '<span class="cs-user-you">you</span>' : ''}
-        </div>
-      `).join('');
+    if (!list.length) el.userList.innerHTML = '<div class="cs-loading">No one online</div>';
+    else {
+      el.userList.innerHTML = list.map(u => {
+        const initial = (u.name || '?').charAt(0).toUpperCase();
+        return `
+          <div class="cs-user">
+            <div class="cs-user-av" style="background:${u.color || '#D4AF37'}">${escapeHtml(initial)}</div>
+            <span class="cs-user-name">${escapeHtml(u.name || 'Anonymous')}</span>
+            ${u.uid === state.uid ? '<span class="cs-user-you">you</span>' : ''}
+          </div>`;
+      }).join('');
     }
-
-    if (el.roomSub) {
-      const n = list.length;
-      el.roomSub.textContent = n + (n === 1 ? ' member online' : ' members online');
-    }
+    if (el.roomSub) el.roomSub.textContent = list.length + (list.length === 1 ? ' member online' : ' members online');
   }
 
-  // ═══ SCROLL ═══
-  function scrollNearBottom(threshold) {
-    const t = threshold === undefined ? 140 : threshold;
-    return (el.messages.scrollHeight - el.messages.scrollTop - el.messages.clientHeight) < t;
-  }
-
+  function scrollNearBottom(t) { t = t === undefined ? 140 : t; return (el.messages.scrollHeight - el.messages.scrollTop - el.messages.clientHeight) < t; }
   function scrollToBottom(smooth) {
     if (smooth === undefined) smooth = true;
-    try {
-      el.messages.scrollTo({ top: el.messages.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
-    } catch (e) {
-      el.messages.scrollTop = el.messages.scrollHeight;
-    }
-    state.unread = 0;
-    updateJumpBtn();
+    try { el.messages.scrollTo({ top: el.messages.scrollHeight, behavior: smooth ? 'smooth' : 'auto' }); }
+    catch (e) { el.messages.scrollTop = el.messages.scrollHeight; }
+    state.unread = 0; updateJumpBtn();
   }
-
   function updateJumpBtn() {
     if (!el.jumpBtn) return;
     if (state.unread > 0) {
@@ -1538,23 +1768,6 @@ const Chat = (function() {
     }
   }
 
-  function clearUnread() {
-    state.unread = 0;
-    updateJumpBtn();
-    if (el.navBadge) el.navBadge.style.display = 'none';
-  }
-
-  function bumpUnread() {
-    if (activeTab === 'community' && !document.hidden) return;
-    state.unread++;
-    updateJumpBtn();
-    if (el.navBadge) {
-      el.navBadge.style.display = 'flex';
-      el.navBadge.textContent = state.unread > 99 ? '99+' : String(state.unread);
-    }
-  }
-
-  // ═══ MESSAGE NODE ═══
   function buildMessageNode(m, grouped) {
     const mine = m.uid === state.uid;
     const row = document.createElement('div');
@@ -1564,9 +1777,9 @@ const Chat = (function() {
     const av = document.createElement('div');
     av.className = 'cm-msg-avatar' + (grouped ? ' hidden' : '');
     if (!grouped) {
-      av.textContent = initialOf(m.name);
-      av.style.background = m.color || '#00d4ff';
-      av.title = m.name || 'Anonymous';
+      av.textContent = (m.name || '?').charAt(0).toUpperCase();
+      av.style.background = m.color || '#D4AF37';
+      av.style.color = '#fff';
     }
 
     const col = document.createElement('div');
@@ -1575,8 +1788,7 @@ const Chat = (function() {
     if (!grouped && !mine) {
       const author = document.createElement('div');
       author.className = 'cm-msg-author';
-      const hue = Math.abs(hashStr(m.name)) % 360;
-      author.style.color = 'hsl(' + hue + ', 80%, 65%)';
+      author.style.color = 'hsl(' + (Math.abs(hashStr(m.name)) % 360) + ', 80%, 65%)';
       author.textContent = m.name || 'Anonymous';
       col.appendChild(author);
     }
@@ -1588,70 +1800,47 @@ const Chat = (function() {
     if (m.reply && m.reply.text) {
       const q = document.createElement('div');
       q.className = 'cm-quote';
-      q.innerHTML = `
-        <div class="cm-quote-body">
-          <div class="cm-quote-name">${escapeHtml(m.reply.name || 'User')}</div>
-          <div class="cm-quote-text">${escapeHtml(m.reply.text)}</div>
-        </div>`;
+      q.innerHTML = `<div class="cm-quote-body"><div class="cm-quote-name">${escapeHtml(m.reply.name||'User')}</div><div class="cm-quote-text">${escapeHtml(m.reply.text)}</div></div>`;
       q.addEventListener('click', () => {
         const target = el.messages.querySelector('.cm-msg[data-key="' + m.reply.key + '"]');
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          target.style.transition = 'background .4s';
-          target.style.background = 'rgba(0,212,255,.14)';
-          setTimeout(() => { target.style.background = ''; }, 900);
-        }
+        if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); target.style.background = 'rgba(212,175,55,.14)'; setTimeout(() => target.style.background = '', 900); }
       });
       bubble.appendChild(q);
     }
 
-    // Image
     if (m.imageUrl) {
       const img = document.createElement('img');
       img.className = 'cm-chat-img';
       img.src = m.imageUrl;
-      img.alt = 'shared';
       img.loading = 'lazy';
-      img.addEventListener('click', () => {
-        if (window.openImageViewer) window.openImageViewer(m.imageUrl);
-      });
+      img.addEventListener('click', () => openImageViewer(m.imageUrl));
       bubble.appendChild(img);
     }
 
-    // Text
     if (m.text) {
       const textEl = document.createElement('div');
       textEl.className = 'cm-text';
       let html = formatMsgText(m.text);
       if (state.searchTerm) {
-        const safeTerm = state.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        html = html.replace(new RegExp('(' + safeTerm + ')', 'gi'), '<mark style="background:rgba(245,158,11,.4);color:#fff;border-radius:3px;padding:0 2px;">$1</mark>');
+        const safe = state.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        html = html.replace(new RegExp('(' + safe + ')', 'gi'), '<mark style="background:rgba(212,175,55,.4);color:inherit;border-radius:3px;padding:0 2px;">$1</mark>');
       }
       textEl.innerHTML = html;
       bubble.appendChild(textEl);
     }
 
-    // Meta
     const meta = document.createElement('div');
     meta.className = 'cm-bubble-meta';
-    let metaHtml = '';
-    if (m.edited) metaHtml += '<span class="cm-edited-tag">edited</span>';
-    metaHtml += '<span>' + formatClock(m.ts) + '</span>';
-    if (mine) metaHtml += '<i class="fa-solid fa-check"></i>';
-    meta.innerHTML = metaHtml;
+    let mh = '';
+    if (m.edited) mh += '<span class="cm-edited-tag">edited</span>';
+    mh += '<span>' + formatClock(m.ts) + '</span>';
+    if (mine) mh += '<i class="fa-solid fa-check"></i>';
+    meta.innerHTML = mh;
     bubble.appendChild(meta);
-
     col.appendChild(bubble);
 
-    // Reactions
     if (m.reactions && typeof m.reactions === 'object') {
-      const entries = Object.entries(m.reactions)
-        .map(([emoji, users]) => ({
-          emoji,
-          users: users && typeof users === 'object' ? Object.keys(users) : []
-        }))
-        .filter(r => r.users.length > 0);
-
+      const entries = Object.entries(m.reactions).map(([emoji, users]) => ({ emoji, users: users && typeof users === 'object' ? Object.keys(users) : [] })).filter(r => r.users.length > 0);
       if (entries.length) {
         const bar = document.createElement('div');
         bar.className = 'cm-reactions';
@@ -1667,49 +1856,30 @@ const Chat = (function() {
       }
     }
 
-    // Actions
     const actions = document.createElement('div');
     actions.className = 'cm-msg-actions';
-
     QUICK_REACTIONS.slice(0, 4).forEach(emoji => {
       const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = emoji;
-      b.title = 'React ' + emoji;
+      b.type = 'button'; b.textContent = emoji;
       b.addEventListener('click', (ev) => { ev.stopPropagation(); toggleReaction(m.key, emoji); });
       actions.appendChild(b);
     });
-
-    const sep = document.createElement('div');
-    sep.className = 'cm-act-sep';
-    actions.appendChild(sep);
-
+    const sep = document.createElement('div'); sep.className = 'cm-act-sep'; actions.appendChild(sep);
     const replyBtn = document.createElement('button');
-    replyBtn.type = 'button';
-    replyBtn.innerHTML = '<i class="fa-solid fa-reply"></i>';
-    replyBtn.title = 'Reply';
+    replyBtn.type = 'button'; replyBtn.innerHTML = '<i class="fa-solid fa-reply"></i>';
     replyBtn.addEventListener('click', (ev) => { ev.stopPropagation(); setReply(m); });
     actions.appendChild(replyBtn);
-
     const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
-    copyBtn.title = 'Copy';
+    copyBtn.type = 'button'; copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
     copyBtn.addEventListener('click', (ev) => { ev.stopPropagation(); copyText(m.text || ''); });
     actions.appendChild(copyBtn);
-
     if (mine) {
       const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
-      editBtn.title = 'Edit';
+      editBtn.type = 'button'; editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
       editBtn.addEventListener('click', (ev) => { ev.stopPropagation(); startEdit(m); });
       actions.appendChild(editBtn);
-
       const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-      delBtn.title = 'Delete';
+      delBtn.type = 'button'; delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
       delBtn.addEventListener('click', (ev) => { ev.stopPropagation(); deleteMessage(m.key); });
       actions.appendChild(delBtn);
     }
@@ -1720,29 +1890,21 @@ const Chat = (function() {
     return row;
   }
 
-  // ═══ RENDER MESSAGES ═══
   function renderMessages() {
     const box = el.messages;
     if (!box) return;
-    const wasAtBottom = scrollNearBottom(160);
-    const prevHeight = box.scrollHeight;
-    const prevTop = box.scrollTop;
-
+    const wasBottom = scrollNearBottom(160);
+    const prevH = box.scrollHeight;
+    const prevT = box.scrollTop;
     box.innerHTML = '';
 
     if (!state.messages.length) {
-      box.innerHTML = `
-        <div class="cm-empty">
-          <i class="fa-regular fa-comments"></i>
-          <h4>No messages yet</h4>
-          <p>Be the first to say hello in #${escapeHtml(roomName())}</p>
-        </div>`;
+      box.innerHTML = `<div class="cm-empty"><i class="fa-regular fa-comments"></i><h4>No messages yet</h4><p>Be the first to say hello in #${escapeHtml(roomName())}</p></div>`;
       return;
     }
 
     const frag = document.createDocumentFragment();
     let prev = null;
-
     state.messages.forEach(m => {
       if (!prev || dayKey(prev.ts) !== dayKey(m.ts)) {
         const sep = document.createElement('div');
@@ -1750,26 +1912,18 @@ const Chat = (function() {
         sep.innerHTML = '<span>' + formatDayLabel(m.ts) + '</span>';
         frag.appendChild(sep);
       }
-
       const sameDay = prev && dayKey(prev.ts) === dayKey(m.ts);
       const grouped = !!(prev && sameDay && prev.uid === m.uid && (m.ts - prev.ts) < GROUP_WINDOW_MS && !m.reply);
-
       frag.appendChild(buildMessageNode(m, grouped));
       prev = m;
     });
-
     box.appendChild(frag);
-
-    if (wasAtBottom) box.scrollTop = box.scrollHeight;
-    else box.scrollTop = prevTop + (box.scrollHeight - prevHeight);
+    if (wasBottom) box.scrollTop = box.scrollHeight;
+    else box.scrollTop = prevT + (box.scrollHeight - prevH);
   }
 
-  function roomName() {
-    const r = ROOMS.find(x => x.id === state.room);
-    return r ? r.name : state.room;
-  }
+  function roomName() { const r = ROOMS.find(x => x.id === state.room); return r ? r.name : state.room; }
 
-  // ═══ ROOM LISTENERS ═══
   function detachRoomListeners() {
     state.roomListeners.forEach(({ ref, ev, cb }) => ref.off(ev, cb));
     state.roomListeners = [];
@@ -1790,13 +1944,10 @@ const Chat = (function() {
       if (!state.messages.some(x => x.key === msg.key)) {
         state.messages.push(msg);
         state.messages.sort(compareMessages);
-        if (state.messages.length > MAX_MESSAGES) {
-          state.messages = state.messages.slice(-MAX_MESSAGES);
-        }
+        if (state.messages.length > MAX_MESSAGES) state.messages = state.messages.slice(-MAX_MESSAGES);
       }
       const atBottom = scrollNearBottom(180);
       renderMessages();
-
       const isNew = state.firstLoadDone && msg.uid !== state.uid;
       if (isNew) {
         if (atBottom) scrollToBottom(true);
@@ -1808,12 +1959,8 @@ const Chat = (function() {
 
     const onChanged = msgRef.on('child_changed', (snap) => {
       const idx = state.messages.findIndex(x => x.key === snap.key);
-      if (idx !== -1) {
-        state.messages[idx] = normalizeMessage(snap.key, snap.val() || {});
-        renderMessages();
-      }
+      if (idx !== -1) { state.messages[idx] = normalizeMessage(snap.key, snap.val() || {}); renderMessages(); }
     });
-
     const onRemoved = msgRef.on('child_removed', (snap) => {
       state.messages = state.messages.filter(x => x.key !== snap.key);
       renderMessages();
@@ -1823,70 +1970,41 @@ const Chat = (function() {
     state.roomListeners.push({ ref: msgRef, ev: 'child_changed', cb: onChanged });
     state.roomListeners.push({ ref: msgRef, ev: 'child_removed', cb: onRemoved });
 
-    setTimeout(() => {
-      state.firstLoadDone = true;
-      scrollToBottom(false);
-    }, 700);
-
+    setTimeout(() => { state.firstLoadDone = true; scrollToBottom(false); }, 700);
     attachTypingListener(roomId);
   }
 
   function normalizeMessage(key, val) {
     return {
-      key,
-      uid: val.uid || 'anon',
-      name: val.name || 'Anonymous',
-      color: val.color || '#00d4ff',
-      text: val.text || '',
-      imageUrl: val.imageUrl || '',
+      key, uid: val.uid || 'anon', name: val.name || 'Anonymous',
+      color: val.color || '#D4AF37', text: val.text || '', imageUrl: val.imageUrl || '',
       ts: typeof val.ts === 'number' ? val.ts : Date.now(),
-      edited: !!val.edited,
-      reply: val.reply || null,
-      reactions: val.reactions || null
+      edited: !!val.edited, reply: val.reply || null, reactions: val.reactions || null
     };
   }
 
-  function compareMessages(a, b) {
-    return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
-  }
+  function compareMessages(a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : 0; }
 
-  // ═══ PRESENCE ═══
   function attachPresence() {
     const connRef = rtdb.ref('.info/connected');
     connRef.on('value', (snap) => {
       if (snap.val() !== true) return;
       const myRef = rtdb.ref('chat/presence/' + state.uid);
       myRef.onDisconnect().remove();
-      myRef.set({
-        name: state.name || 'Anonymous',
-        color: state.color || '#00d4ff',
-        ts: firebase.database.ServerValue.TIMESTAMP
-      });
+      myRef.set({ name: state.name || 'Anonymous', color: state.color || '#D4AF37', ts: firebase.database.ServerValue.TIMESTAMP });
     });
-
     const presRef = rtdb.ref('chat/presence');
-    const handler = presRef.on('value', (snap) => {
-      state.online = snap.val() || {};
-      renderOnlineUsers();
-    });
+    const handler = presRef.on('value', (snap) => { state.online = snap.val() || {}; renderOnlineUsers(); });
     state.roomListeners.push({ ref: presRef, ev: 'value', cb: handler });
   }
 
   function refreshPresence() {
-    rtdb.ref('chat/presence/' + state.uid).update({
-      name: state.name,
-      color: state.color,
-      ts: firebase.database.ServerValue.TIMESTAMP
-    }).catch(() => {});
+    rtdb.ref('chat/presence/' + state.uid).update({ name: state.name, color: state.color, ts: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
   }
 
-  // ═══ TYPING ═══
-  let typingRef = null;
-  let typingStopTimer = null;
-  let amTyping = false;
+  let typingRef = null, typingStopTimer = null, amTyping = false;
 
   function attachTypingListener(roomId) {
-    detachTypingListeners();
     const ref = rtdb.ref('chat/typing/' + roomId);
     const handler = ref.on('value', (snap) => {
       const val = snap.val() || {};
@@ -1902,24 +2020,14 @@ const Chat = (function() {
     state.roomListeners.push({ ref, ev: 'value', cb: handler });
   }
 
-  function detachTypingListeners() {
-    // handled by detachRoomListeners
-  }
-
   function renderTyping() {
     if (!el.typingBar) return;
     const names = Object.values(state.typing).map(t => t.name || 'Someone');
-    if (!names.length) {
-      el.typingBar.classList.remove('show');
-      el.typingBar.innerHTML = '';
-      return;
-    }
-
+    if (!names.length) { el.typingBar.classList.remove('show'); el.typingBar.innerHTML = ''; return; }
     let label;
     if (names.length === 1) label = names[0] + ' is typing';
     else if (names.length === 2) label = names[0] + ' and ' + names[1] + ' are typing';
     else label = names.length + ' people are typing';
-
     el.typingBar.innerHTML = '<span class="cm-typing-dots"><i></i><i></i><i></i></span><span>' + escapeHtml(label) + '</span>';
     el.typingBar.classList.add('show');
   }
@@ -1930,39 +2038,25 @@ const Chat = (function() {
       typingRef = rtdb.ref('chat/typing/' + state.room + '/' + state.uid);
       typingRef.onDisconnect().remove();
     }
-    if (!amTyping) {
-      amTyping = true;
-      typingRef.set({ name: state.name, ts: Date.now() }).catch(() => {});
-    } else {
-      typingRef.update({ ts: Date.now() }).catch(() => {});
-    }
+    if (!amTyping) { amTyping = true; typingRef.set({ name: state.name, ts: Date.now() }).catch(() => {}); }
+    else typingRef.update({ ts: Date.now() }).catch(() => {});
     clearTimeout(typingStopTimer);
     typingStopTimer = setTimeout(stopTyping, TYPING_TIMEOUT);
   }
+  function stopTyping() { clearTimeout(typingStopTimer); amTyping = false; if (typingRef) typingRef.remove().catch(() => {}); }
 
-  function stopTyping() {
-    clearTimeout(typingStopTimer);
-    amTyping = false;
-    if (typingRef) typingRef.remove().catch(() => {});
-  }
-
-  // ═══ SEND MESSAGE ═══
   let pendingImageUrl = '';
 
   function sendMessage() {
     const text = el.input.value.trim();
     const hasImage = !!pendingImageUrl;
-
     if (!text && !hasImage) return;
     if (!state.name) { openJoin(); return; }
 
     const msgRef = rtdb.ref('chat/' + state.room + '/messages');
 
     if (state.editingKey) {
-      msgRef.child(state.editingKey).update({
-        text,
-        edited: true
-      }).catch(err => console.error('Edit failed:', err));
+      msgRef.child(state.editingKey).update({ text, edited: true }).catch(err => console.error('Edit failed:', err));
       cancelEdit();
       el.input.value = '';
       autoResize();
@@ -1970,30 +2064,13 @@ const Chat = (function() {
       return;
     }
 
-    const payload = {
-      uid: state.uid,
-      name: state.name,
-      color: state.color,
-      text: text || '',
-      ts: firebase.database.ServerValue.TIMESTAMP
-    };
-
-    if (hasImage) {
-      payload.imageUrl = pendingImageUrl;
-    }
-
+    const payload = { uid: state.uid, name: state.name, color: state.color, text: text || '', ts: firebase.database.ServerValue.TIMESTAMP };
+    if (hasImage) payload.imageUrl = pendingImageUrl;
     if (state.replyTarget) {
-      payload.reply = {
-        key: state.replyTarget.key,
-        name: state.replyTarget.name,
-        text: String(state.replyTarget.text || state.replyTarget.imageUrl ? '[image]' : '').slice(0, 140)
-      };
+      payload.reply = { key: state.replyTarget.key, name: state.replyTarget.name, text: String(state.replyTarget.text || '[image]').slice(0, 140) };
     }
 
-    msgRef.push(payload).catch(err => {
-      console.error('Send failed:', err);
-      alert('Could not send message. Check connection.');
-    });
+    msgRef.push(payload).catch(err => { console.error('Send failed:', err); alert('Could not send message. Check connection.'); });
 
     el.input.value = '';
     pendingImageUrl = '';
@@ -2014,11 +2091,7 @@ const Chat = (function() {
     el.input.focus();
     cancelEdit();
   }
-
-  function cancelReply() {
-    state.replyTarget = null;
-    el.replyPrev.classList.remove('show');
-  }
+  function cancelReply() { state.replyTarget = null; el.replyPrev.classList.remove('show'); }
 
   function startEdit(m) {
     state.editingKey = m.key;
@@ -2027,10 +2100,9 @@ const Chat = (function() {
     autoResize();
     updateSendState();
     el.sendBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-    el.input.placeholder = 'Editing message… (Esc to cancel)';
+    el.input.placeholder = 'Editing… (Esc to cancel)';
     cancelReply();
   }
-
   function cancelEdit() {
     state.editingKey = null;
     el.sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
@@ -2046,38 +2118,27 @@ const Chat = (function() {
     if (!state.name) { openJoin(); return; }
     const path = 'chat/' + state.room + '/messages/' + key + '/reactions/' + emoji + '/' + state.uid;
     const ref = rtdb.ref(path);
-    ref.once('value').then(snap => {
-      if (snap.exists()) ref.remove();
-      else ref.set(true);
-    }).catch(err => console.error('Reaction failed:', err));
+    ref.once('value').then(snap => { if (snap.exists()) ref.remove(); else ref.set(true); }).catch(err => console.error('Reaction failed:', err));
   }
 
   function copyText(text) {
     if (!text) return;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => flashToast('Copied!')).catch(() => {});
-    }
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => flashToast('Copied!')).catch(() => {});
   }
 
   let toastTimer = null;
   function flashToast(msg) {
-    let t = document.getElementById('chatToast');
+    let t = $('chatToast');
     if (!t) {
       t = document.createElement('div');
       t.id = 'chatToast';
-      t.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:#202024;border:1px solid rgba(255,255,255,.12);color:#fff;padding:10px 20px;border-radius:9999px;font-size:.85rem;z-index:5000;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.6);font-family:inherit;';
+      t.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg-surface);border:1px solid var(--border-mid);color:var(--text-primary);padding:10px 20px;border-radius:9999px;font-size:.85rem;z-index:5000;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.6);font-family:inherit;';
       document.body.appendChild(t);
     }
     t.textContent = msg;
-    requestAnimationFrame(() => {
-      t.style.opacity = '1';
-      t.style.transform = 'translateX(-50%) translateY(0)';
-    });
+    requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)'; });
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      t.style.opacity = '0';
-      t.style.transform = 'translateX(-50%) translateY(20px)';
-    }, 1800);
+    toastTimer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(20px)'; }, 1800);
   }
 
   function playPing() {
@@ -2087,98 +2148,64 @@ const Chat = (function() {
       const ctx = new Ctx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      osc.connect(gain); gain.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(880, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.09);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.07, ctx.currentTime + 0.012);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.28);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
+      osc.start(); osc.stop(ctx.currentTime + 0.3);
       setTimeout(() => { try { ctx.close(); } catch (e) {} }, 600);
     } catch (e) {}
   }
 
-  // ═══ SWITCH ROOM ═══
   function switchRoom(roomId) {
     if (!ROOMS.some(r => r.id === roomId)) return;
     if (roomId === state.room && state.ready) { closeSidebar(); return; }
     stopTyping();
     state.room = roomId;
     saveIdentity();
-
     const r = ROOMS.find(x => x.id === roomId);
     if (el.roomTitle) el.roomTitle.textContent = r.name;
     if (el.input) el.input.placeholder = 'Message #' + r.name + '...';
-
-    cancelReply();
-    cancelEdit();
-    closeEmoji();
-    closeSidebar();
-    clearUnread();
-    renderRooms();
-    attachRoom(roomId);
+    cancelReply(); cancelEdit(); closeEmoji(); closeSidebar(); clearUnread();
+    renderRooms(); attachRoom(roomId);
   }
 
-  // ═══ EMOJI ═══
   function buildEmojiPanel() {
     if (!el.emojiPanel) return;
     el.emojiPanel.innerHTML = '';
     EMOJI_SET.forEach(e => {
       const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = e;
+      b.type = 'button'; b.textContent = e;
       b.addEventListener('click', () => {
         const input = el.input;
         const start = input.selectionStart || input.value.length;
         const end = input.selectionEnd || input.value.length;
         input.value = input.value.slice(0, start) + e + input.value.slice(end);
         input.selectionStart = input.selectionEnd = start + e.length;
-        input.focus();
-        autoResize();
-        updateSendState();
+        input.focus(); autoResize(); updateSendState();
       });
       el.emojiPanel.appendChild(b);
     });
   }
 
-  function toggleEmoji() {
-    if (!el.emojiPanel) return;
-    el.emojiPanel.classList.toggle('show');
-    el.emojiBtn.classList.toggle('active', el.emojiPanel.classList.contains('show'));
-  }
-
-  function closeEmoji() {
-    if (el.emojiPanel) el.emojiPanel.classList.remove('show');
-    if (el.emojiBtn) el.emojiBtn.classList.remove('active');
-  }
-
+  function toggleEmoji() { el.emojiPanel?.classList.toggle('show'); el.emojiBtn?.classList.toggle('active', el.emojiPanel?.classList.contains('show')); }
+  function closeEmoji() { el.emojiPanel?.classList.remove('show'); el.emojiBtn?.classList.remove('active'); }
   function openSidebar() { el.sidebar?.classList.add('open'); }
   function closeSidebar() { el.sidebar?.classList.remove('open'); }
 
-  function autoResize() {
-    if (!el.input) return;
-    el.input.style.height = 'auto';
-    el.input.style.height = Math.min(el.input.scrollHeight, 130) + 'px';
-  }
-
+  function autoResize() { if (!el.input) return; el.input.style.height = 'auto'; el.input.style.height = Math.min(el.input.scrollHeight, 130) + 'px'; }
   function updateSendState() {
     if (!el.sendBtn || !el.input) return;
     const hasText = el.input.value.trim().length > 0;
     const hasImg = !!pendingImageUrl;
     el.sendBtn.disabled = !(hasText || hasImg);
   }
+  function focusInput() { if (window.innerWidth > 640) el.input?.focus(); }
 
-  function focusInput() {
-    if (window.innerWidth > 640) el.input?.focus();
-  }
-
-  // ═══ JOIN ═══
-  const COLORS = [
-    '#00d4ff', '#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#84cc16', '#06b6d4'
-  ];
+  const COLORS = ['#D4AF37', '#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#84cc16', '#06b6d4'];
   let selectedColor = COLORS[0];
 
   function buildColorPicker() {
@@ -2193,157 +2220,74 @@ const Chat = (function() {
     });
   }
 
-  function openJoin() {
-    el.joinOverlay?.classList.remove('hide');
-    setTimeout(() => el.joinName?.focus(), 150);
-  }
-
-  function closeJoin() {
-    el.joinOverlay?.classList.add('hide');
-  }
+  function openJoin() { el.joinOverlay?.classList.remove('hide'); setTimeout(() => el.joinName?.focus(), 150); }
+  function closeJoin() { el.joinOverlay?.classList.add('hide'); }
 
   function handleJoin() {
     const name = el.joinName.value.trim();
-    if (name.length < 2) {
-      el.joinError.style.display = 'block';
-      el.joinError.textContent = 'Please enter at least 2 characters.';
-      return;
-    }
-    if (name.length > 20) {
-      el.joinError.style.display = 'block';
-      el.joinError.textContent = 'Name must be 20 characters or fewer.';
-      return;
-    }
+    if (name.length < 2) { el.joinError.style.display = 'block'; el.joinError.textContent = 'Please enter at least 2 characters.'; return; }
+    if (name.length > 20) { el.joinError.style.display = 'block'; el.joinError.textContent = 'Max 20 characters.'; return; }
     state.name = name;
     state.color = selectedColor;
-    saveIdentity();
-    renderProfile();
-    refreshPresence();
-    closeJoin();
-    updateSendState();
-    focusInput();
+    saveIdentity(); renderProfile(); refreshPresence(); closeJoin(); updateSendState(); focusInput();
     flashToast('Welcome, ' + name + '!');
   }
 
-  // ═══ SEARCH ═══
-  const onSearch = debounce(function(term) {
-    state.searchTerm = term.trim();
-    renderMessages();
-  }, 250);
+  const onSearch = debounce((term) => { state.searchTerm = term.trim(); renderMessages(); }, 250);
 
-  // ═══ EVENTS ═══
   function bindEvents() {
-    el.form?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      sendMessage();
-    });
-
+    el.form?.addEventListener('submit', (e) => { e.preventDefault(); sendMessage(); });
     el.input?.addEventListener('input', function() {
-      autoResize();
-      updateSendState();
-      if (this.value.trim()) signalTyping();
-      else stopTyping();
+      autoResize(); updateSendState();
+      if (this.value.trim()) signalTyping(); else stopTyping();
     });
-
     el.input?.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
       if (e.key === 'Escape') {
-        if (state.editingKey) {
-          cancelEdit();
-          el.input.value = '';
-          autoResize();
-          updateSendState();
-        } else if (state.replyTarget) {
-          cancelReply();
-        } else closeEmoji();
+        if (state.editingKey) { cancelEdit(); el.input.value = ''; autoResize(); updateSendState(); }
+        else if (state.replyTarget) cancelReply();
+        else closeEmoji();
       }
     });
-
     el.input?.addEventListener('blur', () => setTimeout(stopTyping, 400));
-
-    el.emojiBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleEmoji();
-    });
-
+    el.emojiBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleEmoji(); });
     document.addEventListener('click', (e) => {
-      if (el.emojiPanel?.classList.contains('show') &&
-          !el.emojiPanel.contains(e.target) &&
-          e.target !== el.emojiBtn &&
-          !el.emojiBtn?.contains(e.target)) {
-        closeEmoji();
-      }
+      if (el.emojiPanel?.classList.contains('show') && !el.emojiPanel.contains(e.target) && e.target !== el.emojiBtn && !el.emojiBtn?.contains(e.target)) closeEmoji();
     });
-
     el.rpCancel?.addEventListener('click', cancelReply);
-
-    el.messages?.addEventListener('scroll', () => {
-      if (scrollNearBottom(120) && state.unread > 0) clearUnread();
-    });
-
+    el.messages?.addEventListener('scroll', () => { if (scrollNearBottom(120) && state.unread > 0) clearUnread(); });
     el.jumpBtn?.addEventListener('click', () => scrollToBottom(true));
-
     el.soundBtn?.addEventListener('click', () => {
       state.soundOn = !state.soundOn;
-      el.soundBtn.innerHTML = state.soundOn
-        ? '<i class="fa-solid fa-volume-high"></i>'
-        : '<i class="fa-solid fa-volume-xmark"></i>';
+      el.soundBtn.innerHTML = state.soundOn ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
       el.soundBtn.classList.toggle('active', state.soundOn);
       localStorage.setItem('tcs_chat_sound', state.soundOn ? '1' : '0');
       if (state.soundOn) playPing();
     });
-
     el.sideOpen?.addEventListener('click', openSidebar);
     el.sideClose?.addEventListener('click', closeSidebar);
-
     el.shell?.addEventListener('click', (e) => {
-      if (window.innerWidth <= 900 &&
-          el.sidebar?.classList.contains('open') &&
-          !el.sidebar.contains(e.target) &&
-          e.target !== el.sideOpen &&
-          !el.sideOpen?.contains(e.target)) {
-        closeSidebar();
-      }
+      if (window.innerWidth <= 900 && el.sidebar?.classList.contains('open') && !el.sidebar.contains(e.target) && e.target !== el.sideOpen && !el.sideOpen?.contains(e.target)) closeSidebar();
     });
-
-    el.chatSearch?.addEventListener('input', function() {
-      onSearch(this.value);
-    });
-
+    el.chatSearch?.addEventListener('input', function() { onSearch(this.value); });
     el.joinBtn?.addEventListener('click', handleJoin);
-    el.joinName?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleJoin();
-      }
-    });
+    el.joinName?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleJoin(); } });
 
-    // Image upload
     el.imageBtn?.addEventListener('click', () => el.imageInput?.click());
-
     el.imageInput?.addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (file.size > 10 * 1024 * 1024) {
-        flashToast('Image too large (max 10MB)');
-        return;
-      }
+      if (file.size > 10 * 1024 * 1024) { flashToast('Image too large (max 10MB)'); return; }
       try {
-        flashToast('Uploading image...');
+        flashToast('Uploading...');
         const url = await uploadToImgBB(file);
         pendingImageUrl = url;
         if (el.imgPreview) el.imgPreview.style.display = 'inline-block';
         if (el.imgPreviewEl) el.imgPreviewEl.src = url;
         updateSendState();
-        flashToast('Image ready to send');
-      } catch (err) {
-        flashToast('Upload failed: ' + err.message);
-      } finally {
-        el.imageInput.value = '';
-      }
+        flashToast('Image ready');
+      } catch (err) { flashToast('Upload failed: ' + err.message); }
+      finally { el.imageInput.value = ''; }
     });
 
     el.imgRemove?.addEventListener('click', () => {
@@ -2354,821 +2298,62 @@ const Chat = (function() {
     });
 
     window.addEventListener('beforeunload', () => {
-      try {
-        rtdb.ref('chat/presence/' + state.uid).remove();
-        if (typingRef) typingRef.remove();
-      } catch (e) {}
+      try { rtdb.ref('chat/presence/' + state.uid).remove(); if (typingRef) typingRef.remove(); } catch (e) {}
     });
-
-    window.addEventListener('resize', debounce(() => {
-      if (window.innerWidth > 900) closeSidebar();
-    }, 150));
-
-    window.addEventListener('focus', () => {
-      if (activeTab === 'community') clearUnread();
-    });
+    window.addEventListener('resize', debounce(() => { if (window.innerWidth > 900) closeSidebar(); }, 150));
+    window.addEventListener('focus', () => { if (activeTab === 'community') clearUnread(); });
   }
 
-  // ═══ INIT ═══
   function init() {
     cacheDom();
     loadIdentity();
     state.soundOn = localStorage.getItem('tcs_chat_sound') === '1';
-
     if (el.soundBtn) {
-      el.soundBtn.innerHTML = state.soundOn
-        ? '<i class="fa-solid fa-volume-high"></i>'
-        : '<i class="fa-solid fa-volume-xmark"></i>';
+      el.soundBtn.innerHTML = state.soundOn ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
       el.soundBtn.classList.toggle('active', state.soundOn);
     }
-
-    renderProfile();
-    renderRooms();
-    buildEmojiPanel();
-    buildColorPicker();
-    bindEvents();
-    attachPresence();
+    renderProfile(); renderRooms(); buildEmojiPanel(); buildColorPicker(); bindEvents(); attachPresence();
 
     const r = ROOMS.find(x => x.id === state.room);
     if (el.roomTitle) el.roomTitle.textContent = r.name;
     if (el.input) el.input.placeholder = 'Message #' + r.name + '...';
-
     attachRoom(state.room);
 
-    if (!state.name) {
-      el.joinName.value = '';
-      selectedColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-      buildColorPicker();
-      openJoin();
-    } else {
-      closeJoin();
-    }
+    if (!state.name) { el.joinName.value = ''; selectedColor = COLORS[Math.floor(Math.random() * COLORS.length)]; buildColorPicker(); openJoin(); }
+    else closeJoin();
 
-    updateSendState();
-    autoResize();
+    updateSendState(); autoResize();
     state.ready = true;
   }
 
-  return {
-    init,
-    scrollToBottom,
-    focusInput,
-    switchRoom,
-    clearUnread,
-    getState: () => state
-  };
+  return { init, scrollToBottom, focusInput, clearUnread: () => { state.unread = 0; updateJumpBtn(); if (el.navBadge) el.navBadge.style.display = 'none'; } };
 })();
 
-// ═══ Hook Chat into tab switch ═══
-const _prevSwitchToTabForChat = window.switchToTab;
-window.switchToTab = function(tabId) {
-  _prevSwitchToTabForChat(tabId);
-  if (tabId === 'community') {
-    Chat.clearUnread();
-    setTimeout(() => {
-      Chat.scrollToBottom(false);
-      Chat.focusInput();
-    }, 80);
-  }
-};
+/* ─────────────── HELPER FUNCTIONS ─────────────── */
+function hashStr(str) { let h = 0; const s = String(str || 'x'); for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return h; }
+function dayKey(ts) { const d = new Date(ts || Date.now()); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+function formatDayLabel(ts) {
+  const d = new Date(ts || Date.now());
+  const today = new Date(); const yest = new Date(); yest.setDate(today.getDate() - 1);
+  if (dayKey(d) === dayKey(today)) return 'Today';
+  if (dayKey(d) === dayKey(yest)) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function formatClock(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+function formatMsgText(text) {
+  let out = escapeHtml(text);
+  out = out.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  out = out.replace(/(https?:\/\/[^\s<]+)/g, (url) => '<a href="' + url + '" target="_blank" rel="noopener">' + url + '</a>');
+  out = out.replace(/\n/g, '<br>');
+  return out;
+}
 
-// ═══ Init Chat when app loads ═══
-const _prevInitAppForChat = initApp;
-initApp = function() {
-  _prevInitAppForChat();
-  try {
-    Chat.init();
-  } catch (err) {
-    console.error('Chat init error:', err);
-  }
-};
-
-console.log('💬 Community Chat Loaded');
-/* ══════════════════════════════════════════════════════════════
-   SHOW SOLUTION — Clean, no API needed
-   ══════════════════════════════════════════════════════════════ */
-
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('#showSolutionBtn');
-  if (!btn) return;
-  e.preventDefault();
-
-  if (!currentProblem) {
-    toast('warn', 'No problem loaded');
-    return;
-  }
-
-  const solutionCard = document.getElementById('solutionCard');
-  const codeBody = document.querySelector('.editor-body');
-  const editorFooter = document.querySelector('.editor-footer');
-  const solutionCode = document.getElementById('solutionCode');
-  const solutionExplanation = document.getElementById('solutionExplanation');
-
-  if (!solutionCard) {
-    toast('warn', 'Solution card missing');
-    return;
-  }
-
-  // Fill solution content
-  if (solutionCode) {
-    solutionCode.textContent = currentProblem.solution || '# Solution not available';
-  }
-
-  if (solutionExplanation) {
-    const exp = currentProblem.explanation || 'No explanation available for this problem.';
-    solutionExplanation.innerHTML = `
-      <div style="margin-bottom:.6rem; font-weight:700; color:var(--accent-cyan);">
-        <i class="fa-solid fa-lightbulb"></i> Explanation
-      </div>
-      <div>${escapeHtml(exp).replace(/\n/g, '<br>')}</div>
-    `;
-  }
-
-  // Hide code editor, show solution
-  if (codeBody) codeBody.style.display = 'none';
-  if (editorFooter) editorFooter.style.display = 'none';
-  solutionCard.style.display = 'block';
-
-  // Switch to Solution tab (visual)
-  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
-  const solTab = document.getElementById('tabSolution');
-  if (solTab) solTab.classList.add('active');
-
-  // Scroll to solution
+/* ─────────────── BOOT ─────────────── */
+window.addEventListener('load', () => {
   setTimeout(() => {
-    solutionCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
-
-  toast('success', 'Solution revealed!', 'Study it, then try on your own 💪');
-});
-/* ═══ COPY SOLUTION ═══ */
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('#copySolutionBtn');
-  if (!btn) return;
-  e.preventDefault();
-
-  if (!currentProblem) return;
-  const text = currentProblem.solution || '';
-  
-  if (!text) {
-    toast('warn', 'Nothing to copy');
-    return;
-  }
-
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--accent-green)"></i>';
-    toast('success', 'Solution copied!', 'Paste it in your editor');
-    setTimeout(() => { btn.innerHTML = orig; }, 1500);
-  }).catch(() => {
-    toast('warn', 'Copy failed');
-  });
+    const loader = $('bootLoader');
+    if (loader) loader.classList.add('hide');
+  }, 4000);
 });
 
-/* ═══ BACK TO CODE EDITOR ═══ */
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('#backToCodeBtn');
-  if (!btn) return;
-  e.preventDefault();
-
-  const solutionCard = document.getElementById('solutionCard');
-  const codeBody = document.querySelector('.editor-body');
-  const editorFooter = document.querySelector('.editor-footer');
-
-  if (solutionCard) solutionCard.style.display = 'none';
-  if (codeBody) codeBody.style.display = 'flex';
-  if (editorFooter) editorFooter.style.display = 'flex';
-
-  // Switch tab visual
-  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
-  const codeTab = document.getElementById('tabCode');
-  if (codeTab) codeTab.classList.add('active');
-
-  // Scroll back up
-  const editorCard = document.querySelector('.editor-card');
-  if (editorCard) {
-    editorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-});
-/* ══════════════════════════════════════════════════════════════
-   PARTICLES BACKGROUND — Floating Gold Dots
-   ══════════════════════════════════════════════════════════════ */
-(function initParticles() {
-  const canvas = document.getElementById('particlesCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  const particles = [];
-  const PARTICLE_COUNT = 40;
-
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: Math.random() * 2 + 1,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      alpha: Math.random() * 0.5 + 0.2,
-      hue: Math.random() > 0.5 ? 45 : 265
-    });
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-
-      if (p.x < 0) p.x = canvas.width;
-      if (p.x > canvas.width) p.x = 0;
-      if (p.y < 0) p.y = canvas.height;
-      if (p.y > canvas.height) p.y = 0;
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = p.hue === 45
-        ? `rgba(212,175,55,${p.alpha})`
-        : `rgba(124,58,237,${p.alpha})`;
-      ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-/* ══════════════════════════════════════════════════════════════
-   PROBLEM NAVIGATION — Prev / Next / All Levels
-   ══════════════════════════════════════════════════════════════ */
-
-function updateProblemNavigation() {
-  if (!currentProblem) return;
-
-  const allProblems = window.PROBLEMS_DB || [];
-  const currentIndex = allProblems.findIndex(p => p.id === currentProblem.id);
-
-  const prevBtn = $('prevProblemBtn');
-  const nextBtn = $('nextProblemBtn');
-  const prevTitle = $('prevProblemTitle');
-  const nextTitle = $('nextProblemTitle');
-
-  // Previous
-  if (currentIndex > 0) {
-    const prev = allProblems[currentIndex - 1];
-    if (prevTitle) prevTitle.textContent = prev.title;
-    if (prevBtn) {
-      prevBtn.disabled = false;
-      prevBtn.onclick = () => openProblem(prev.id);
-    }
-  } else {
-    if (prevTitle) prevTitle.textContent = 'No previous';
-    if (prevBtn) prevBtn.disabled = true;
-  }
-
-  // Next
-  if (currentIndex < allProblems.length - 1) {
-    const next = allProblems[currentIndex + 1];
-    if (nextTitle) nextTitle.textContent = next.title;
-    if (nextBtn) {
-      nextBtn.disabled = false;
-      nextBtn.onclick = () => openProblem(next.id);
-    }
-  } else {
-    if (nextTitle) nextTitle.textContent = 'Completed! 🎉';
-    if (nextBtn) nextBtn.disabled = true;
-  }
-}
-
-// All Levels button
-document.addEventListener('click', (e) => {
-  if (e.target.closest('#allLevelsBtn')) {
-    e.preventDefault();
-    switchToTab('python');
-  }
-});
-
-// Keyboard shortcut: ArrowLeft / ArrowRight for prev/next
-document.addEventListener('keydown', (e) => {
-  if (activeTab !== 'problemView') return;
-  
-  // Ignore if focus is in textarea
-  if (document.activeElement?.tagName === 'TEXTAREA') return;
-
-  if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    const btn = $('prevProblemBtn');
-    if (btn && !btn.disabled) btn.click();
-  }
-  if (e.key === 'ArrowRight') {
-    e.preventDefault();
-    const btn = $('nextProblemBtn');
-    if (btn && !btn.disabled) btn.click();
-  }
-});
-
-// ═══ Hook into openProblem — update navigation when problem opens ═══
-const _originalOpenProblem = window.openProblem;
-window.openProblem = function(id) {
-  _originalOpenProblem(id);
-  // Give time for UI to render
-  setTimeout(updateProblemNavigation, 50);
-};
-
-console.log('🧭 Problem Navigation Loaded');
-// Sync solution-card nav buttons with main nav
-function syncSolutionNav() {
-  if (!currentProblem) return;
-  const allProblems = window.PROBLEMS_DB || [];
-  const idx = allProblems.findIndex(p => p.id === currentProblem.id);
-
-  const sPrev = $('solutionPrevBtn');
-  const sNext = $('solutionNextBtn');
-
-  if (sPrev) {
-    if (idx > 0) {
-      sPrev.disabled = false;
-      sPrev.onclick = () => openProblem(allProblems[idx - 1].id);
-    } else {
-      sPrev.disabled = true;
-    }
-  }
-
-  if (sNext) {
-    if (idx < allProblems.length - 1) {
-      sNext.disabled = false;
-      sNext.onclick = () => openProblem(allProblems[idx + 1].id);
-    } else {
-      sNext.disabled = true;
-    }
-  }
-}
-
-// Update navigation whenever solution is shown
-document.addEventListener('click', (e) => {
-  if (e.target.closest('#showSolutionBtn')) {
-    setTimeout(syncSolutionNav, 100);
-  }
-  if (e.target.closest('#backToCodeBtn')) {
-    setTimeout(updateProblemNavigation, 100);
-  }
-});
-
-// Also call in openProblem (already handled by setTimeout updateProblemNavigation)
-/* ══════════════════════════════════════════════════════════════
-   SECTION 26: YOUTUBE FREE COURSES
-   Fetches videos from YouTube Data API v3
-   ══════════════════════════════════════════════════════════════ */
-
-const YouTube = (function() {
-  // ⚠️ अपनी YouTube API Key यहाँ डालो
-  const API_KEY = 'AIzaSyBdHiNJ6VOskm_KAWnZVb53XWJv662fDgw';   // ⚠️ YAHAN APNI KEY
-
-  // तुम्हारा channel ID
-  const CHANNEL_ID = 'UCkxoxW7yaoQri2HW_37FqLQ';
-
-  const API_BASE = 'https://www.googleapis.com/youtube/v3';
-
-  let allVideos = [];
-  let filteredVideos = [];
-  let currentFilter = 'all';
-  let searchTerm = '';
-  let nextPageToken = '';
-  let isLoading = false;
-  let uploadsPlaylistId = '';
-
-  // ═══ Cache helpers (avoid API quota) ═══
-  const CACHE_KEY = 'tcs_yt_cache_v1';
-  const CACHE_TTL = 1000 * 60 * 30; // 30 minutes
-
-  function getCache() {
-    try {
-      const c = JSON.parse(localStorage.getItem(CACHE_KEY));
-      if (c && c.ts && (Date.now() - c.ts) < CACHE_TTL && c.videos) {
-        return c;
-      }
-    } catch (e) {}
-    return null;
-  }
-
-  function setCache(videos, nextToken, playlistId) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        ts: Date.now(),
-        videos: videos.slice(0, 200),
-        nextToken: nextToken || '',
-        playlistId: playlistId || ''
-      }));
-    } catch (e) {}
-  }
-
-  // ═══ Format helpers ═══
-  function formatViews(count) {
-    const n = parseInt(count || 0, 10);
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M views';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K views';
-    return n + ' views';
-  }
-
-  function formatDate(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const diff = Date.now() - d.getTime();
-    const days = Math.floor(diff / 86400000);
-    if (days < 1) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return days + ' days ago';
-    if (days < 30) return Math.floor(days / 7) + ' weeks ago';
-    if (days < 365) return Math.floor(days / 30) + ' months ago';
-    return Math.floor(days / 365) + ' years ago';
-  }
-
-  function formatDuration(iso) {
-    // ISO 8601 duration: PT1H2M3S
-    if (!iso) return '';
-    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!m) return '';
-    const h = parseInt(m[1] || 0, 10);
-    const min = parseInt(m[2] || 0, 10);
-    const s = parseInt(m[3] || 0, 10);
-    if (h > 0) return h + ':' + String(min).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-    return min + ':' + String(s).padStart(2, '0');
-  }
-
-  function durationToSeconds(iso) {
-    if (!iso) return 0;
-    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!m) return 0;
-    return (parseInt(m[1] || 0, 10) * 3600) +
-           (parseInt(m[2] || 0, 10) * 60) +
-           (parseInt(m[3] || 0, 10));
-  }
-
-  // ═══ Step 1: Get uploads playlist ID from channel ═══
-  async function getUploadsPlaylist() {
-    const url = `${API_BASE}/channels?part=contentDetails,statistics&id=${CHANNEL_ID}&key=${API_KEY}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Channel fetch failed: ' + res.status);
-    const data = await res.json();
-    if (!data.items || !data.items.length) throw new Error('Channel not found');
-
-    const channel = data.items[0];
-    uploadsPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads;
-    if (!uploadsPlaylistId) throw new Error('Uploads playlist not found');
-
-    // Update subscriber count
-    const stats = channel.statistics;
-    if (stats?.subscriberCount) {
-      const count = parseInt(stats.subscriberCount, 10);
-      const formatted = count >= 1000000
-        ? (count / 1000000).toFixed(1) + 'M subscribers'
-        : count >= 1000
-          ? (count / 1000).toFixed(1) + 'K subscribers'
-          : count + ' subscribers';
-      const el = document.getElementById('ytSubscriberCount');
-      if (el) el.textContent = formatted + ' · ' + (stats.videoCount || 0) + ' videos';
-    }
-
-    return uploadsPlaylistId;
-  }
-
-  // ═══ Step 2: Get videos from playlist ═══
-  async function fetchVideos(pageToken) {
-    if (!uploadsPlaylistId) {
-      await getUploadsPlaylist();
-    }
-
-    const url = `${API_BASE}/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${uploadsPlaylistId}&key=${API_KEY}${pageToken ? '&pageToken=' + pageToken : ''}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Videos fetch failed: ' + res.status);
-    const data = await res.json();
-
-    const videos = (data.items || []).map(item => {
-      const s = item.snippet;
-      const vid = item.contentDetails?.videoId || s.resourceId?.videoId;
-      return {
-        id: vid,
-        title: s.title || 'Untitled',
-        description: s.description || '',
-        thumbnail: s.thumbnails?.maxres?.url
-          || s.thumbnails?.high?.url
-          || s.thumbnails?.medium?.url
-          || s.thumbnails?.default?.url
-          || '',
-        publishedAt: s.publishedAt,
-        duration: '',  // Filled below
-        views: 0,
-        url: 'https://www.youtube.com/watch?v=' + vid
-      };
-    }).filter(v => v.id);
-
-    // ═══ Step 3: Get duration & views via videos endpoint ═══
-    if (videos.length) {
-      const ids = videos.map(v => v.id).join(',');
-      const detailUrl = `${API_BASE}/videos?part=contentDetails,statistics&id=${ids}&key=${API_KEY}`;
-      const detailRes = await fetch(detailUrl);
-      if (detailRes.ok) {
-        const detailData = await detailRes.json();
-        const detailMap = {};
-        (detailData.items || []).forEach(item => {
-          detailMap[item.id] = {
-            duration: item.contentDetails?.duration || '',
-            views: parseInt(item.statistics?.viewCount || 0, 10)
-          };
-        });
-        videos.forEach(v => {
-          if (detailMap[v.id]) {
-            v.duration = detailMap[v.id].duration;
-            v.views = detailMap[v.id].views;
-          }
-        });
-      }
-    }
-
-    return {
-      videos,
-      nextPageToken: data.nextPageToken || ''
-    };
-  }
-
-  // ═══ Render video card ═══
-  function videoCardHtml(v, index) {
-    const duration = formatDuration(v.duration);
-    const views = formatViews(v.views);
-    const when = formatDate(v.publishedAt);
-    const delay = Math.min(index * 0.03, 0.5);
-
-    return `
-      <div class="yt-video-card" style="animation-delay:${delay}s" onclick="YouTube.openVideo('${v.id}')">
-        <div class="yt-thumb">
-          <img src="${escapeHtml(v.thumbnail)}" alt="${escapeHtml(v.title)}" loading="lazy"
-            onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${v.id}/hqdefault.jpg'">
-          <div class="yt-thumb-overlay">
-            <div class="yt-play-icon">
-              <i class="fa-solid fa-play"></i>
-            </div>
-          </div>
-          ${duration ? `<span class="yt-duration">${escapeHtml(duration)}</span>` : ''}
-        </div>
-        <div class="yt-card-body">
-          <div class="yt-card-title">${escapeHtml(v.title)}</div>
-          <div class="yt-card-meta">
-            <span><i class="fa-regular fa-eye"></i> ${escapeHtml(views)}</span>
-            <span>·</span>
-            <span>${escapeHtml(when)}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  // ═══ Render videos ═══
-  function renderVideos() {
-    const grid = document.getElementById('ytVideosGrid');
-    if (!grid) return;
-
-    let videos = [...allVideos];
-
-    // Filter
-    if (currentFilter === 'latest') {
-      videos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-    } else if (currentFilter === 'popular') {
-      videos.sort((a, b) => b.views - a.views);
-    } else if (currentFilter === 'long') {
-      videos = videos.filter(v => durationToSeconds(v.duration) > 1200); // > 20 min
-    }
-
-    // Search
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      videos = videos.filter(v =>
-        v.title.toLowerCase().includes(q) ||
-        v.description.toLowerCase().includes(q)
-      );
-    }
-
-    filteredVideos = videos;
-
-    if (!videos.length) {
-      grid.innerHTML = `
-        <div class="empty-state-cine" style="grid-column:1/-1">
-          <i class="fa-brands fa-youtube"></i>
-          <h4>No videos found</h4>
-          <p>Try a different filter or search term</p>
-        </div>`;
-      return;
-    }
-
-    grid.innerHTML = videos.map((v, i) => videoCardHtml(v, i)).join('');
-  }
-
-  // ═══ Load videos ═══
-  async function loadVideos(loadMore) {
-    if (isLoading) return;
-    isLoading = true;
-
-    const grid = document.getElementById('ytVideosGrid');
-    const loadMoreWrap = document.getElementById('ytLoadMoreWrap');
-
-    if (!loadMore) {
-      grid.innerHTML = `
-        <div class="loading-cine">
-          <div class="loading-spinner-cine"></div>
-          <p>Loading videos from YouTube…</p>
-        </div>`;
-    }
-
-    try {
-      // Check cache first
-      if (!loadMore) {
-        const cache = getCache();
-        if (cache && cache.videos.length) {
-          allVideos = cache.videos;
-          nextPageToken = cache.nextToken || '';
-          uploadsPlaylistId = cache.playlistId || '';
-          renderVideos();
-          if (nextPageToken && loadMoreWrap) loadMoreWrap.style.display = 'block';
-          isLoading = false;
-          return;
-        }
-      }
-
-      const result = await fetchVideos(nextPageToken);
-      if (loadMore) {
-        allVideos = allVideos.concat(result.videos);
-      } else {
-        allVideos = result.videos;
-      }
-      nextPageToken = result.nextPageToken;
-
-      setCache(allVideos, nextPageToken, uploadsPlaylistId);
-
-      renderVideos();
-
-      if (nextPageToken && loadMoreWrap) {
-        loadMoreWrap.style.display = 'block';
-      } else if (loadMoreWrap) {
-        loadMoreWrap.style.display = 'none';
-      }
-
-    } catch (err) {
-      console.error('YouTube load error:', err);
-      grid.innerHTML = `
-        <div class="empty-state-cine" style="grid-column:1/-1">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-          <h4>Could not load videos</h4>
-          <p style="font-family:var(--font-mono);font-size:.8rem;margin-top:.5rem;">
-            ${escapeHtml(err.message)}
-          </p>
-          <button class="btn-hero-primary" style="margin-top:1rem" onclick="YouTube.reload()">
-            <i class="fa-solid fa-rotate"></i> Retry
-          </button>
-        </div>`;
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  // ═══ Open video (in new tab) ═══
-  function openVideo(id) {
-    window.open('https://www.youtube.com/watch?v=' + id, '_blank', 'noopener');
-  }
-
-  // ═══ Filter chips ═══
-  function bindFilters() {
-    document.querySelectorAll('#ytFilters .chip-cine').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('#ytFilters .chip-cine').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        currentFilter = chip.dataset.filter || 'all';
-        renderVideos();
-      });
-    });
-
-    const searchInput = document.getElementById('ytSearch');
-    if (searchInput) {
-      searchInput.addEventListener('input', debounce((e) => {
-        searchTerm = e.target.value.trim();
-        renderVideos();
-      }, 300));
-    }
-
-    const loadMoreBtn = document.getElementById('ytLoadMoreBtn');
-    if (loadMoreBtn) {
-      loadMoreBtn.addEventListener('click', () => loadVideos(true));
-    }
-  }
-
-  // ═══ Init ═══
-  function init() {
-    if (!document.getElementById('ytVideosGrid')) return;
-    if (API_KEY.includes('XXXXX')) {
-      console.warn('⚠️ YouTube API key not configured');
-      const grid = document.getElementById('ytVideosGrid');
-      if (grid) {
-        grid.innerHTML = `
-          <div class="empty-state-cine" style="grid-column:1/-1">
-            <i class="fa-brands fa-youtube"></i>
-            <h4>YouTube API not configured</h4>
-            <p>Please add your YouTube API key in app.js</p>
-          </div>`;
-      }
-      return;
-    }
-    bindFilters();
-  }
-
-  function reload() {
-    try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
-    allVideos = [];
-    nextPageToken = '';
-    uploadsPlaylistId = '';
-    loadVideos(false);
-  }
-
-  return {
-    init,
-    loadVideos,
-    reload,
-    openVideo,
-    // Lazy load when tab opens
-    ensureLoaded: function() {
-      if (!allVideos.length && !isLoading) {
-        loadVideos(false);
-      }
-    }
-  };
-})();
-
-// ═══ Hook into tab switch ═══
-const _prevSwitchToTabForYT = window.switchToTab;
-window.switchToTab = function(tabId) {
-  _prevSwitchToTabForYT(tabId);
-  if (tabId === 'freeCourses') {
-    YouTube.ensureLoaded();
-  }
-};
-
-// ═══ Init when app loads ═══
-const _prevInitAppForYT = initApp;
-initApp = function() {
-  _prevInitAppForYT();
-  try {
-    YouTube.init();
-  } catch (err) {
-    console.error('YouTube init error:', err);
-  }
-};
-
-// Expose to window for onclick handlers
-window.YouTube = YouTube;
-
-console.log('📺 YouTube Free Courses Loaded');
-
-
-/* ══════════════════════════════════════════════════════════════
-   UNIVERSAL BACK BUTTON
-   ══════════════════════════════════════════════════════════════ */
-
-const tabHistory = ['home'];
-
-// Extend switchToTab to track history
-const _prevSwitchToTabForHistory = window.switchToTab;
-window.switchToTab = function(tabId) {
-  const current = tabHistory[tabHistory.length - 1];
-  if (current !== tabId) {
-    tabHistory.push(tabId);
-    if (tabHistory.length > 20) tabHistory.shift();
-  }
-  _prevSwitchToTabForHistory(tabId);
-  updateBackButton();
-};
-
-function goBack() {
-  if (tabHistory.length > 1) {
-    tabHistory.pop();
-    const prev = tabHistory[tabHistory.length - 1];
-    _prevSwitchToTabForHistory(prev);
-    updateBackButton();
-  } else {
-    _prevSwitchToTabForHistory('home');
-    updateBackButton();
-  }
-}
-window.goBack = goBack;
-
-function updateBackButton() {
-  const btn = document.getElementById('universalBackBtn');
-  if (!btn) return;
-  
-  // Hide back button on home
-  if (activeTab === 'home' || tabHistory.length <= 1) {
-    btn.style.display = 'none';
-  } else {
-    btn.style.display = 'inline-flex';
-  }
-}
+console.log('🚀 The Chairman Show — v3 Loaded');
