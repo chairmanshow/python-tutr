@@ -830,340 +830,171 @@ function launchConfetti() {
   tick();
 }
 
-/* ─────────────── SECTION 12: CHAT WITH CHAIRMAN ─────────────── */
-async function loadDoubts() {
-  const grid = $('doubtsGrid');
-  if (!grid) return;
-  grid.innerHTML = `
-    <div class="empty-state-cine" style="grid-column:1/-1">
-      <div class="loading-spinner-cine" style="margin:0 auto 1rem;"></div>
-      <p>Loading questions...</p>
-    </div>`;
+/* ══════════════════════════════════════════════════════════════
+   SECTION 12: CHAT WITH CHAIRMAN — Real 1-on-1 Chat
+   ══════════════════════════════════════════════════════════════ */
 
-  try {
-    const snap = await db.collection('doubts')
-      .where('userId', '==', currentUser.uid)
-      .limit(50).get();
+const ChairmanChat = (function() {
+  const STORAGE_KEY = 'tcs_chairman_chats_v2';
+  const EMOJI_SET = ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😋','😛','😜','🤪','🤗','🤔','🤐','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','🤡','👋','🤚','✋','🖖','👌','🤌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✨','⭐','🌟','🔥','💥','💫','⚡','🎉','🎊','🎁','🏆','🥇','🎯','🚀','🌈','☀️','🌙','☁️','❄️','🐍','💻','📚','🎓','🧠'];
 
-    const doubts = [];
-    snap.forEach(d => doubts.push({ id: d.id, ...d.data() }));
-    doubts.sort((a, b) => {
-      const ta = a.createdAt?.toDate?.()?.getTime() || 0;
-      const tb = b.createdAt?.toDate?.()?.getTime() || 0;
-      return tb - ta;
-    });
-
-    const filter = document.querySelector('#doubtFilters .chip-cine.active')?.dataset.status || 'all';
-    const filtered = filter === 'all' ? doubts : doubts.filter(d => d.status === filter);
-
-    if (!filtered.length) {
-      grid.innerHTML = `
-        <div class="empty-state-cine" style="grid-column:1/-1">
-          <i class="fa-solid fa-comments"></i>
-          <h4>No questions yet</h4>
-          <p>Ask your first question to chat with the Chairman</p>
-        </div>`;
-      return;
-    }
-
-    grid.innerHTML = filtered.map(d => `
-      <div class="doubt-card-cine" onclick="viewDoubt('${d.id}')">
-        <div class="dc-header">
-          <span class="dc-topic">${escapeHtml(d.subject || 'Code')}</span>
-          <span class="dc-status ${d.status}">${d.status}</span>
-        </div>
-        <div class="dc-question">${escapeHtml((d.question || '').slice(0, 200))}</div>
-        <div class="dc-meta">
-          <span><i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.()?.getTime())}</span>
-          ${d.answerCount ? `<span><i class="fa-solid fa-comments"></i> ${d.answerCount} answers</span>` : ''}
-        </div>
-      </div>
-    `).join('');
-  } catch (err) {
-    console.error(err);
-    grid.innerHTML = `
-      <div class="empty-state-cine" style="grid-column:1/-1">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <h4>Error loading</h4>
-        <p>${escapeHtml(err.message)}</p>
-      </div>`;
-  }
-}
-
-document.querySelectorAll('#doubtFilters .chip-cine').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#doubtFilters .chip-cine').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    loadDoubts();
-  });
-});
-
-$('newDoubtBtn')?.addEventListener('click', () => openModal('newDoubtModal'));
-
-$('doubtImage')?.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const preview = $('doubtImagePreview');
-    if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;border:1px solid var(--border-mid);">`;
+  const state = {
+    chats: [],           // [{ id, title, createdAt, updatedAt, messages: [] }]
+    currentChatId: null,
+    isTyping: false,
+    attachedImage: null,
+    pendingImageUrl: ''
   };
-  reader.readAsDataURL(file);
-});
 
-$('postDoubtBtn')?.addEventListener('click', async () => {
-  const subject = $('doubtSubject').value;
-  const question = $('doubtQuestion').value.trim();
-  const imageFile = $('doubtImage').files[0];
+  const el = {};
 
-  if (!question) { toast('warn', 'Please describe your problem'); return; }
-
-  const btn = $('postDoubtBtn');
-  const origHtml = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
-
-  try {
-    let imageUrl = '';
-    if (imageFile) imageUrl = await uploadToImgBB(imageFile);
-
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...';
-
-    const ref = await db.collection('doubts').add({
-      userId: currentUser.uid,
-      userName: userProfile.name,
-      userPhoto: userProfile.photoURL || '',
-      subject, question, imageUrl,
-      status: 'open',
-      answerCount: 0,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    toast('success', 'Question posted!', 'Chairman is thinking...');
-    closeModal('newDoubtModal');
-    $('doubtQuestion').value = '';
-    $('doubtImage').value = '';
-    $('doubtImagePreview').innerHTML = '';
-
-    loadDoubts();
-    setTimeout(() => viewDoubt(ref.id), 400);
-  } catch (err) {
-    console.error(err);
-    toast('warn', 'Failed', err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = origHtml;
-  }
-});
-
-window.viewDoubt = async function(id) {
-  const modalEl = $('doubtDetailsModal');
-  const bodyEl = $('doubtDetailsBody');
-  if (!modalEl || !bodyEl) return;
-
-  modalEl.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  bodyEl.innerHTML = `
-    <div style="text-align:center;padding:2rem;">
-      <div class="loading-spinner-cine" style="margin:0 auto 1rem;"></div>
-      <p style="color:var(--text-muted);">Loading...</p>
-    </div>`;
-
-  try {
-    const doc = await db.collection('doubts').doc(id).get();
-    if (!doc.exists) {
-      bodyEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Not found</div>';
-      return;
-    }
-    const d = doc.data();
-
-    let existingAnswer = null;
+  /* ═══ STORAGE ═══ */
+  function loadChats() {
     try {
-      const ansSnap = await db.collection('doubts').doc(id).collection('answers')
-        .orderBy('createdAt', 'desc').limit(1).get();
-      if (!ansSnap.empty) existingAnswer = ansSnap.docs[0].data();
-    } catch (e) { console.warn('Answers fetch:', e); }
-
-    bodyEl.innerHTML = `
-      <div style="padding:1.2rem;background:var(--bg-surface-2);border-radius:12px;margin-bottom:1rem;border:1px solid var(--border-gold);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;gap:.5rem;flex-wrap:wrap;">
-          <span style="padding:.25rem .7rem;background:var(--gold-soft);color:var(--gold-primary);border-radius:9999px;font-size:.72rem;font-weight:700;font-family:var(--font-mono);">
-            ${escapeHtml(d.subject || 'Code')}
-          </span>
-          <span style="padding:.25rem .7rem;border-radius:9999px;font-size:.68rem;font-weight:700;background:rgba(245,158,11,.12);color:#d97706;text-transform:uppercase;">
-            ${d.status || 'open'}
-          </span>
-        </div>
-        <div style="font-size:.92rem;line-height:1.7;color:var(--text-primary);white-space:pre-wrap;font-family:var(--font-mono);">${escapeHtml(d.question || '')}</div>
-        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" style="max-width:100%;border-radius:8px;margin-top:.8rem;cursor:pointer;border:1px solid var(--border-mid);" onclick="openImageViewer('${escapeHtml(d.imageUrl)}')">` : ''}
-        <div style="margin-top:.8rem;font-size:.72rem;color:var(--text-muted);font-family:var(--font-mono);">
-          <i class="fa-solid fa-clock"></i> ${formatTime(d.createdAt?.toDate?.()?.getTime())}
-        </div>
-      </div>
-      <div id="answerArea"></div>
-    `;
-
-    const answerArea = $('answerArea');
-    if (existingAnswer) {
-      showAnswerInArea(answerArea, existingAnswer, id);
-    } else {
-      generateAndShowAnswer(answerArea, id, d);
-    }
-  } catch (err) {
-    console.error('viewDoubt error:', err);
-    bodyEl.innerHTML = `<div style="text-align:center;padding:2rem;color:#fca5a5;">Error: ${escapeHtml(err.message)}</div>`;
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (Array.isArray(data)) return data;
+    } catch (e) {}
+    return [];
   }
-};
 
-async function generateAndShowAnswer(area, doubtId, doubtData) {
-  area.innerHTML = `
-    <div class="ai-answer-card">
-      <div class="ai-thinking">
-        <i class="fa-solid fa-crown" style="color:var(--gold-primary);font-size:1.1rem;"></i>
-        <span>Chairman is thinking</span>
-        <span class="ai-thinking-dots"><span></span><span></span><span></span></span>
-      </div>
-    </div>
-  `;
+  function saveChats() {
+    try {
+      // Keep only last 30 chats, 100 messages each
+      const trimmed = state.chats.slice(-30).map(c => ({
+        ...c,
+        messages: c.messages.slice(-100)
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    } catch (e) { console.warn('Save chats failed:', e); }
+  }
 
-  try {
-    console.log('🤖 Calling AI proxy:', CONFIG.AI_PROXY);
-
-    const res = await fetch(CONFIG.AI_PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: doubtData.question,
-        subject: doubtData.subject,
-        class: doubtData.class || 'General'
-      })
-    });
-
-    if (!res.ok) throw new Error('AI service returned ' + res.status);
-    const data = await res.json();
-    if (!data.ok || !data.answer) throw new Error(data.error || 'No answer received');
-
-    const answerObj = {
-      expertName: 'Chairman',
-      expertTitle: 'Your Coding Mentor',
-      expert: { name: 'Chairman', title: 'Your Coding Mentor', exp: '∞', color: '#D4AF37' },
-      text: data.answer,
-      createdAt: new Date()
+  function newChat() {
+    const id = 'chat_' + Date.now();
+    const chat = {
+      id,
+      title: 'New chat',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: []
     };
-
-    showAnswerInArea(area, answerObj, doubtId, true);
-
-    try {
-      await db.collection('doubts').doc(doubtId).collection('answers').add({
-        expertName: 'Chairman',
-        expertTitle: 'Your Coding Mentor',
-        expert: answerObj.expert,
-        text: data.answer,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        helpful: 0
-      });
-      await db.collection('doubts').doc(doubtId).update({
-        status: 'answered',
-        answeredBy: 'Chairman',
-        answeredAt: firebase.firestore.FieldValue.serverTimestamp(),
-        answerCount: firebase.firestore.FieldValue.increment(1)
-      });
-    } catch (saveErr) { console.warn('Save failed:', saveErr); }
-
-  } catch (err) {
-    console.error('AI error:', err);
-    area.innerHTML = `
-      <div class="ai-answer-card" style="border-color:rgba(239,68,68,.3);">
-        <div style="color:#fca5a5;display:flex;align-items:flex-start;gap:8px;">
-          <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px;"></i>
-          <div>
-            <div style="font-weight:600;margin-bottom:4px;">Could not generate answer</div>
-            <div style="font-size:.78rem;color:var(--text-muted);font-family:var(--font-mono);word-break:break-all;">${escapeHtml(err.message)}</div>
-          </div>
-        </div>
-        <button class="btn-hero-ghost" style="margin-top:.8rem;padding:.5rem 1rem;font-size:.8rem;" onclick="retryAnswer('${doubtId}')">
-          <i class="fa-solid fa-rotate-right"></i> Retry
-        </button>
-      </div>
-    `;
+    state.chats.push(chat);
+    state.currentChatId = id;
+    saveChats();
+    return chat;
   }
-}
 
-window.retryAnswer = async function(doubtId) {
-  const area = $('answerArea');
-  if (!area) return;
-  const doc = await db.collection('doubts').doc(doubtId).get();
-  if (doc.exists) generateAndShowAnswer(area, doubtId, doc.data());
-};
+  function currentChat() {
+    return state.chats.find(c => c.id === state.currentChatId);
+  }
 
-function showAnswerInArea(area, answer, doubtId, withTypewriter) {
-  const expert = answer.expert || {
-    name: answer.expertName || 'Chairman',
-    title: answer.expertTitle || 'Your Coding Mentor',
-    color: '#D4AF37'
-  };
-  const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.name)}&background=D4AF37&color=000&bold=true&size=128`;
-  const when = answer.createdAt?.toDate?.() ? formatTime(answer.createdAt.toDate().getTime())
-    : answer.createdAt instanceof Date ? formatTime(answer.createdAt.getTime()) : 'Just now';
+  /* ═══ CACHE DOM ═══ */
+  function cacheDom() {
+    el.shell = document.querySelector('.chairman-chat-shell');
+    el.body = document.getElementById('ccBody');
+    el.form = document.getElementById('ccComposer');
+    el.input = document.getElementById('ccInput');
+    el.sendBtn = document.getElementById('ccSendBtn');
+    el.typingBar = document.getElementById('ccTypingBar');
+    el.statusText = document.getElementById('ccStatusText');
+    el.status = document.getElementById('ccStatus');
+    el.suggestions = document.getElementById('ccSuggestions');
+    el.newChatBtn = document.getElementById('ccNewChatBtn');
+    el.historyBtn = document.getElementById('ccHistoryBtn');
+    el.historyPanel = document.getElementById('ccHistoryPanel');
+    el.historyClose = document.getElementById('ccHistoryClose');
+    el.historyList = document.getElementById('ccHistoryList');
+    el.emojiBtn = document.getElementById('ccEmojiBtn');
+    el.emojiPanel = document.getElementById('ccEmojiPanel');
+    el.attachBtn = document.getElementById('ccAttachBtn');
+    el.attachInput = document.getElementById('ccAttachInput');
+  }
 
-  area.innerHTML = `
-    <div class="ai-answer-card">
-      <div class="ai-answer-header">
-        <img src="${avatar}" alt="">
-        <div style="flex:1;min-width:0;">
-          <div class="name">${escapeHtml(expert.name)}</div>
-          <div class="title">${escapeHtml(expert.title)}</div>
-        </div>
-        <span class="ai-badge"><i class="fa-solid fa-crown"></i> Chairman</span>
-      </div>
-      <div class="ai-answer-text" id="answerText"></div>
-      <div class="ai-answer-footer">
-        <button onclick="copyAnswerText()"><i class="fa-regular fa-copy"></i> Copy</button>
-        <button onclick="markAnswerHelpful('${doubtId}')"><i class="fa-regular fa-thumbs-up"></i> Helpful</button>
-      </div>
-      <div style="margin-top:.8rem;font-size:.7rem;color:var(--text-muted);font-family:var(--font-mono);text-align:right;">
-        <i class="fa-solid fa-clock"></i> ${when}
-      </div>
-    </div>
-  `;
+  /* ═══ RENDER ═══ */
+  function renderAll() {
+    renderMessages();
+    renderSuggestions();
+    renderHistory();
+  }
 
-  const textEl = $('answerText');
-  if (withTypewriter && textEl) {
-    let i = 0;
-    const fullText = answer.text || '';
-    textEl.textContent = '';
-    function type() {
-      if (i < fullText.length) {
-        textEl.textContent += fullText.charAt(i);
-        i++;
-        const modalBody = textEl.closest('.modal-body-cine');
-        if (modalBody) modalBody.scrollTop = modalBody.scrollHeight;
-        setTimeout(type, 8);
-      }
+  function renderMessages() {
+    if (!el.body) return;
+    const chat = currentChat();
+    if (!chat) return;
+
+    el.body.innerHTML = '';
+
+    if (!chat.messages.length) {
+      // Welcome message
+      const welcome = {
+        role: 'chairman',
+        text: `Namaste! 👑\n\nमैं हूँ **The Chairman** — तुम्हारा personal coding mentor.\n\nPython, DSA, Web Dev, या कुछ और — कोई भी सवाल पूछो, main directly जवाब दूँगा. 🚀\n\nReady? नीचे अपना सवाल type करो या quick suggestions use करो.`,
+        ts: Date.now()
+      };
+      appendMessageNode(welcome);
+      return;
     }
-    type();
-  } else if (textEl) {
-    textEl.textContent = answer.text || '';
+
+    let prevRole = null;
+    let prevTs = 0;
+    chat.messages.forEach(m => {
+      // Date separator if day changed
+      if (dayKey(prevTs) !== dayKey(m.ts)) {
+        const sep = document.createElement('div');
+        sep.className = 'cc-date-sep';
+        sep.innerHTML = '<span>' + formatDayLabel(m.ts) + '</span>';
+        el.body.appendChild(sep);
+      }
+      const grouped = (prevRole === m.role) && (m.ts - prevTs < 60000);
+      appendMessageNode(m, grouped);
+      prevRole = m.role;
+      prevTs = m.ts;
+    });
+
+    requestAnimationFrame(scrollToBottom);
   }
-}
 
-window.copyAnswerText = function() {
-  const el = $('answerText');
-  if (!el) return;
-  navigator.clipboard.writeText(el.textContent).then(() => {
-    toast('success', 'Copied!', 'Answer copied');
-  });
-};
+  function appendMessageNode(m, grouped) {
+    if (!el.body) return;
+    const row = document.createElement('div');
+    const isMine = m.role === 'user';
+    row.className = 'cc-msg ' + (isMine ? 'cc-mine' : 'cc-chairman');
 
-window.markAnswerHelpful = function(doubtId) {
-  toast('success', 'Thanks!', 'Marked as helpful');
-};
+    // Avatar
+    const av = document.createElement('div');
+    av.className = 'cc-msg-avatar ' + (isMine ? 'cc-user' : 'cc-chairman') + (grouped ? ' hidden' : '');
+    if (!grouped) {
+      av.innerHTML = isMine
+        ? (userProfile?.photoURL ? `<img src="${userProfile.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : '<i class="fa-solid fa-user"></i>')
+        : '<i class="fa-solid fa-crown"></i>';
+    }
 
-window.openImageViewer = function(url) {
-  if ($('viewerImage')) $('viewerImage').src = url;
-  openModal('imageViewerModal');
-};
+    // Bubble
+    const bubble = document.createElement('div');
+    bubble.className = 'cc-msg-bubble';
+    const textEl = document.createElement('div');
+    textEl.className = 'cc-msg-text';
+    textEl.innerHTML = formatChairmanText(m.text || '');
+    bubble.appendChild(textEl);
 
+    // Meta
+    const meta = document.createElement('div');
+    meta.className = 'cc-msg-meta';
+    meta.innerHTML = `<span>${formatClock(m.ts)}</span>` + (isMine ? '<i class="fa-solid fa-check-double"></i>' : '');
+    bubble.appendChild(meta);
+
+    row.appendChild(av);
+    row.appendChild(bubble);
+    el.body.appendChild(row);
+  }
+
+  function formatChairmanText(text) {
+    let out = escapeHtml(text);
+    // Code blocks
+    out = out.replace(/```([\s\S]*?)```/g, (_, code) => `<pre>${code.trim()}</pre>`);
+    // Inline code
+    out = out.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+    // Bold
+    out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$
 /* ─────────────── SECTION 13: POSTS BY CHAIRMAN ─────────────── */
 async function loadChairmanPosts() {
   const feed = $('postsFeed');
