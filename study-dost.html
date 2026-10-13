@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Dost — GenZ Animated Task Roadmap Tracker | The Chairman Show</title>
+  <meta name="description" content="Turn your daily study to-do list into an epic animated mission roadmap with AI analysis, focus mode timer, XP, and streak milestones.">
+  <meta property="og:title" content="Study Dost — GenZ Task Roadmap Tracker | The Chairman Show">
+  <meta property="og:description" content="Add your tasks → AI generates an epic visual journey → Level up your study streak.">
+  <meta name="theme-color" content="#0a0a0f">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23D4AF37'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='56' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ESD%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="study-dost.css">
+</head>
+<body class="sd-body">
+
+  <!-- Confetti Canvas -->
+  <canvas id="confettiCanvas" class="sd-confetti-canvas"></canvas>
+
+  <!-- Ambient Floating Gradient Orbs Background -->
+  <div class="sd-ambient-bg" aria-hidden="true">
+    <div class="sd-orb sd-orb-gold"></div>
+    <div class="sd-orb sd-orb-purple"></div>
+    <div class="sd-orb sd-orb-cyan"></div>
+    <div class="sd-grid-overlay"></div>
+  </div>
+
+  <!-- Toast Notification Stack -->
+  <div id="toastStack" class="sd-toast-stack"></div>
+
+  <!-- Achievement Popup Modal -->
+  <div id="badgePopup" class="sd-badge-popup" style="display:none;">
+    <div class="sd-badge-popup-card">
+      <div class="sd-badge-shine"></div>
+      <div class="sd-badge-icon" id="badgePopupIcon">🏆</div>
+      <div class="sd-badge-text">
+        <span class="sd-badge-tag">ACHIEVEMENT UNLOCKED</span>
+        <h4 id="badgePopupTitle">Mission Champion</h4>
+        <p id="badgePopupDesc">Completed your task like a pro!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP APP HEADER -->
+  <header class="sd-nav">
+    <div class="sd-nav-container">
+      <div class="sd-nav-brand">
+        <a href="/" class="logo">
+          <div class="logo-mini">
+            <i class="fa-solid fa-crown logo-crown-mini"></i>
+            <span class="logo-text-mini">CS</span>
+          </div>
+          <div class="logo-brand">
+            <span class="logo-brand-the">THE</span>
+            <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
+          </div>
+        </a>
+        <div class="sd-nav-pill">
+          <span class="sd-pulse-dot"></span>
+          <span>STUDY DOST</span>
+          <span class="sd-version-pill">v2.0</span>
+        </div>
+      </div>
+
+      <!-- Quick Level & XP Strip -->
+      <div class="sd-nav-xp-strip">
+        <div class="sd-level-badge" id="navLevelBadge">
+          <i class="fa-solid fa-bolt text-gold"></i>
+          <span id="navLevelTitle">Rookie</span>
+          <span class="sd-level-num" id="navLevelNum">Lv. 1</span>
+        </div>
+        <div class="sd-xp-bar-wrap" title="XP progress towards next level">
+          <div class="sd-xp-bar-fill" id="navXpFill" style="width: 0%;"></div>
+        </div>
+        <span class="sd-xp-text" id="navXpText">0 / 100 XP</span>
+      </div>
+
+        <button id="navSuperRevisionBtn" class="sd-nav-btn" type="button" title="Super Revision: Notes & PPT to Mindmaps">
+          <i class="fa-solid fa-brain text-gold"></i>
+          <span class="hide-mobile">Super Revision</span>
+          <span class="sd-ftab-badge" style="font-size:0.6rem;padding:2px 5px;">NEW</span>
+        </button>
+
+        <a href="/study" class="sd-nav-btn" style="text-decoration:none;" title="Exam Syllabus Day-by-Day Planner">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span class="hide-mobile">Exam Planner</span>
+        </a>
+
+        <button id="viewHistoryBtn" class="sd-nav-btn" type="button" title="Saved Roadmaps">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span class="hide-mobile">History</span>
+        </button>
+
+        <button id="viewBadgesBtn" class="sd-nav-btn" type="button" title="View Badges">
+          <i class="fa-solid fa-award"></i>
+          <span class="hide-mobile">Badges</span>
+          <span class="sd-badge-count-pill" id="navBadgeCountPill">0/6</span>
+        </button>
+
+        <button id="themeToggle" class="theme-toggle" type="button" title="Toggle Theme">
+          <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
+
+        <a href="/" class="sd-nav-back-link" title="Return to Platform Home">
+          <i class="fa-solid fa-house"></i>
+          <span class="hide-mobile">Home</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- DUAL FEATURE MODE SWITCHER BAR -->
+  <nav class="sd-feature-tabs-bar" aria-label="Study Dost Feature Switcher">
+    <div class="sd-tabs-inner">
+      <button type="button" class="sd-ftab active" id="tabRoadmapMode">
+        <i class="fa-solid fa-route"></i>
+        <span>Task Roadmap</span>
+        <span class="sd-ftab-sub hide-mobile">Daily Goal Tracker</span>
+      </button>
+      <button type="button" class="sd-ftab" id="tabSuperRevisionMode">
+        <i class="fa-solid fa-brain text-gold"></i>
+        <span>Chairman Super Revision</span>
+        <span class="sd-ftab-badge">MINDMAPS ⚡</span>
+        <span class="sd-ftab-sub hide-mobile">Notes & PPT to HD Mindmap</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN VIEWPORT -->
+  <main class="sd-main">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCREEN 1: TASK INPUT (GenZ Mission Builder)
+         ═══════════════════════════════════════════════════════════════ -->
+    <section id="screenTaskInput" class="sd-screen active">
+      <div class="sd-input-hero">
+        <div class="sd-hero-badge">
+          <span class="sd-badge-sparkle">✨</span>
+          <span>AI-Powered Study Roadmap Engine</span>
+        </div>
+        <h1 class="sd-hero-title">
+          What's your mission today? <span class="sd-emoji-bounce">🎯</span>
+        </h1>
+        <p class="sd-hero-sub">
+          Add your tasks — we'll turn them into an epic animated journey.
+        </p>
+
+        <!-- Input Box with Neon Glow -->
+        <form id="addTaskForm" class="sd-task-input-box">
+          <div class="sd-input-glow-wrapper">
+            <i class="fa-solid fa-pen-nib sd-input-icon"></i>
+            <input
+              type="text"
+              id="taskTextInput"
+              class="sd-input-field"
+              placeholder="e.g., Complete Python chapter 5, Solve 10 DSA problems, Read recursion..."
+              autocomplete="off"
+              required
+            >
+            <button type="submit" id="addTaskBtn" class="sd-btn-add">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Task</span>
+            </button>
+          </div>
+          <div class="sd-quick-chips-row">
+            <span class="sd-quick-label">⚡ Quick Presets:</span>
+            <button type="button" class="sd-preset-chip" data-task="Revise NEET Biology Genetics & NCERT Diagrams">🩺 NEET Genetics</button>
+            <button type="button" class="sd-preset-chip" data-task="Solve 10 LeetCode / Python DSA problems">💻 10 DSA Problems</button>
+            <button type="button" class="sd-preset-chip" data-task="Read UPSC Indian Polity Articles 14 to 21">🏛️ UPSC Polity</button>
+            <button type="button" class="sd-preset-chip" data-task="Class 12 Physics derivation revision">⚛️ Physics Derivations</button>
+          </div>
+        </form>
+
+        <!-- Staggered Tasks List -->
+        <div class="sd-tasks-section">
+          <div class="sd-tasks-header">
+            <span class="sd-tasks-counter-pill" id="taskCountLabel">0 tasks added</span>
+            <button type="button" id="clearAllTasksBtn" class="sd-clear-btn" style="display:none;">Clear All</button>
+          </div>
+
+          <div id="taskListContainer" class="sd-tasks-list">
+            <div class="sd-empty-tasks" id="emptyTasksNotice">
+              <div class="sd-empty-icon">📝</div>
+              <p>No missions added yet. Type a task above and press <kbd>Enter</kbd>!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="sd-generate-bar">
+          <button type="button" id="generateRoadmapBtn" class="sd-btn-generate" disabled>
+            <span class="sd-btn-sparkle">🚀</span>
+            <span>Generate My Roadmap</span>
+            <i class="fa-solid fa-arrow-right sd-btn-arrow"></i>
+          </button>
+          <div class="sd-generate-hint">Press <kbd>N</kbd> anywhere to focus task input</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCREEN 2: ROADMAP VIEW (Main Animated Journey)
+         ═══════════════════════════════════════════════════════════════ -->
+    <section id="screenRoadmapView" class="sd-screen">
+      
+      <!-- Top Overview Bar -->
+      <div class="sd-roadmap-topbar">
+        <div class="sd-rt-left">
+          <button id="backToInputBtn" class="sd-back-btn" type="button" title="Edit tasks">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Edit Tasks</span>
+          </button>
+          <div>
+            <div class="sd-rt-tag"><i class="fa-solid fa-crown text-gold"></i> THE CHAIRMAN SHOW</div>
+            <h2 class="sd-rt-title">Your Journey <span class="sd-sparkle">🌟</span></h2>
+          </div>
+        </div>
+
+        <!-- Live Dashboard Widgets -->
+        <div class="sd-rt-widgets">
+          <!-- Animated SVG Progress Ring -->
+          <div class="sd-ring-card">
+            <svg class="sd-ring-svg" width="86" height="86" viewBox="0 0 86 86">
+              <circle class="sd-ring-bg" cx="43" cy="43" r="35" />
+              <circle class="sd-ring-fill" id="roadmapRingFill" cx="43" cy="43" r="35" stroke-dasharray="219.9" stroke-dashoffset="219.9" />
+            </svg>
+            <div class="sd-ring-center">
+              <span class="sd-ring-pct" id="ringPctLabel">0%</span>
+              <span class="sd-ring-sub" id="ringCountLabel">0/0</span>
+            </div>
+          </div>
+
+          <!-- Streak & Time Badges -->
+          <div class="sd-metric-pills">
+            <div class="sd-metric-pill streak">
+              <span class="sd-mp-icon">🔥</span>
+              <div class="sd-mp-text">
+                <span class="sd-mp-num" id="roadmapStreakNum">3</span>
+                <span class="sd-mp-lbl">Day Streak</span>
+              </div>
+            </div>
+            <div class="sd-metric-pill time">
+              <span class="sd-mp-icon">⏱️</span>
+              <div class="sd-mp-text">
+                <span class="sd-mp-num" id="roadmapTotalTimeLabel">0 min</span>
+                <span class="sd-mp-lbl">Time Spent</span>
+              </div>
+            </div>
+            <div class="sd-metric-pill xp">
+              <span class="sd-mp-icon">⚡</span>
+              <div class="sd-mp-text">
+                <span class="sd-mp-num" id="roadmapXpNum">+0</span>
+                <span class="sd-mp-lbl">XP Today</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Animated Vertical Timeline -->
+      <div class="sd-roadmap-viewport">
+        <div class="sd-roadmap-path" id="roadmapMilestonesPath">
+          <!-- Milestones injected dynamically with animated pulse connectors -->
+        </div>
+      </div>
+
+      <!-- Bottom Statistics Panel -->
+      <div class="sd-stats-bottom-panel">
+        <div class="sd-sb-header">
+          <h3><i class="fa-solid fa-chart-line text-gold"></i> Today's Study Metrics</h3>
+          <span class="sd-sb-badge">Real-time Adherence</span>
+        </div>
+        <div class="sd-sb-grid">
+          <div class="sd-sb-card">
+            <div class="sd-sb-num" id="statCompletedToday">0</div>
+            <div class="sd-sb-lbl">Tasks Completed Today</div>
+          </div>
+          <div class="sd-sb-card">
+            <div class="sd-sb-num" id="statTimeSpent">0 min</div>
+            <div class="sd-sb-lbl">Total Focus Time</div>
+          </div>
+          <div class="sd-sb-card">
+            <div class="sd-sb-num" id="statCompletionRate">0%</div>
+            <div class="sd-sb-lbl">Task Completion Rate</div>
+          </div>
+          <div class="sd-sb-card">
+            <div class="sd-sb-num" id="statLongestStreak">3 days</div>
+            <div class="sd-sb-lbl">Longest Streak</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCREEN 3: CHAIRMAN SUPER REVISION (Aesthetic Mindmap & PPT Engine)
+         ═══════════════════════════════════════════════════════════════ -->
+    <section id="screenSuperRevision" class="sd-screen">
+      
+      <!-- Super Revision Hero -->
+      <div class="sd-sr-hero">
+        <div class="sd-sr-tag">
+          <i class="fa-solid fa-crown text-gold"></i>
+          <span>THE CHAIRMAN SHOW • SUPER REVISION ENGINE</span>
+        </div>
+        <h1 class="sd-sr-title">
+          Chairman Super Revision <span class="sd-emoji-bounce">🧠</span>
+        </h1>
+        <p class="sd-sr-sub">
+          Convert messy lecture notes, syllabus chapters, or entire PPT slide photos into aesthetic, high-yield interactive mindmaps. Active recall, zoom, pan, and instant HD download.
+        </p>
+
+        <!-- Input Hub Card -->
+        <div class="sd-sr-card" id="superRevisionInputCard">
+          <!-- Input Tabs (Text Notes vs Upload Slides) -->
+          <div class="sd-sr-input-nav">
+            <button type="button" class="sd-sr-in-tab active" id="srTabTextInput">
+              <i class="fa-solid fa-file-lines"></i>
+              <span>1. Text & PPT Notes</span>
+            </button>
+            <button type="button" class="sd-sr-in-tab" id="srTabImageInput">
+              <i class="fa-solid fa-images"></i>
+              <span>2. Upload Notes / PPT Slide Photos</span>
+              <span class="sd-ftab-badge" style="font-size:0.6rem;padding:2px 5px;">AI SCAN</span>
+            </button>
+          </div>
+
+          <!-- Quick Presets Row -->
+          <div class="sd-sr-presets-row">
+            <span class="sd-quick-label" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">⚡ 1-Click Samples:</span>
+            <button type="button" class="sd-sr-preset-chip" data-preset="python_dsa">🐍 Python & DSA (15 Slides PPT)</button>
+            <button type="button" class="sd-sr-preset-chip" data-preset="neet_genetics">🩺 NEET Biology: Genetics & Inheritance</button>
+            <button type="button" class="sd-sr-preset-chip" data-preset="jee_emi">⚛️ JEE Physics: EMI & AC Circuits</button>
+            <button type="button" class="sd-sr-preset-chip" data-preset="upsc_polity">🏛️ UPSC Polity: Fundamental Rights</button>
+            <button type="button" class="sd-sr-preset-chip" data-preset="os_scheduling">💻 OS: CPU Scheduling & Deadlocks</button>
+          </div>
+
+          <!-- PANEL A: TEXT NOTES INPUT -->
+          <div class="sd-sr-panel active" id="srPanelText">
+            <div class="sd-sr-textarea-wrap">
+              <textarea
+                id="srNotesTextInput"
+                class="sd-sr-textarea"
+                placeholder="Paste your lecture notes, PPT text, textbook summary, or syllabus topics here...
+
+Example:
+Slide 1: Introduction to Photosynthesis & Chloroplast Anatomy
+Slide 2: Light Dependent Reaction (Thylakoids, Photosystem I & II, Photophosphorylation, Z-Scheme)
+Slide 3: Calvin Cycle / Dark Reaction (Stroma, RuBisCO enzyme, Carbon fixation, Reduction to G3P, RuBP regeneration)
+Slide 4: Photorespiration (C2 cycle) & C4 / CAM Adaptations (Kranz Anatomy, PEP carboxylase)
+Slide 5: High-yield exam MCQs and pitfall questions..."
+              ></textarea>
+              <div class="sd-sr-meta-bar">
+                <span id="srWordCount">0 words • 0 characters</span>
+                <span>💡 Tip: Paste whole slide text with 'Slide 1, Slide 2' or clean bullet points</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANEL B: UPLOAD NOTES & PPT SLIDE PHOTOS -->
+          <div class="sd-sr-panel" id="srPanelImages" style="display:none;">
+            <div class="sd-dropzone" id="srDropzone">
+              <input type="file" id="srFileInput" multiple accept="image/*" style="display:none;">
+              <i class="fa-solid fa-cloud-arrow-up sd-dz-icon"></i>
+              <div class="sd-dz-title">Drag & drop photos of handwritten notes or PPT slides here</div>
+              <p class="sd-dz-sub">
+                Supports multiple slide screenshots, textbook pages, or handwritten notes (PNG, JPG, WEBP). AI scans every slide and synthesizes an aesthetic, unified master mindmap.
+              </p>
+              <button type="button" class="sd-dz-btn" id="srBrowseFilesBtn">
+                <i class="fa-solid fa-folder-open"></i> Browse Files from Device
+              </button>
+            </div>
+
+            <!-- Uploaded Slides Thumbnails Grid -->
+            <div id="srThumbnailsGrid" class="sd-dz-preview-grid" style="display:none;"></div>
+            <div id="srUploadStatsBar" class="sd-sr-meta-bar" style="display:none;margin-top:10px;">
+              <span id="srUploadCountLabel">0 slides uploaded</span>
+              <button type="button" class="sd-clear-btn" id="srClearImagesBtn">Clear All Slides</button>
+            </div>
+
+            <!-- Additional Focus Field -->
+            <div style="margin-top: 14px;">
+              <input
+                type="text"
+                id="srCustomFocusInput"
+                class="sd-input-field"
+                placeholder="Optional focus: e.g., 'Focus heavily on formulas and exam exceptions'..."
+                style="width: 100%;"
+              >
+            </div>
+          </div>
+
+          <!-- REVISION OPTIONS GRID (LAYOUT, THEME, DETAIL) -->
+          <div class="sd-sr-options-grid">
+            <div class="sd-sr-opt-group">
+              <label class="sd-sr-opt-label" for="srSubjectSelect"><i class="fa-solid fa-bookmark text-gold"></i> Subject Category</label>
+              <select id="srSubjectSelect" class="sd-sr-opt-select">
+                <option value="General Study">General Revision</option>
+                <option value="Computer Science & Coding">Python & Computer Science</option>
+                <option value="NEET Biology & Medical">NEET Biology & Medical</option>
+                <option value="JEE & Physics / Chemistry">JEE & Engineering Science</option>
+                <option value="UPSC & Civil Services">UPSC & General Studies</option>
+                <option value="School Boards (Class 10/12)">School Boards (10th / 12th)</option>
+              </select>
+            </div>
+
+            <div class="sd-sr-opt-group">
+              <label class="sd-sr-opt-label" for="srLayoutSelect"><i class="fa-solid fa-diagram-project text-gold"></i> Mindmap Layout</label>
+              <select id="srLayoutSelect" class="sd-sr-opt-select">
+                <option value="radial">🌐 Radial Organic (360° Flow)</option>
+                <option value="split">🌲 Dual-Wing Tree (Left & Right)</option>
+                <option value="flow">📑 Hierarchical Downward Flow</option>
+              </select>
+            </div>
+
+            <div class="sd-sr-opt-group">
+              <label class="sd-sr-opt-label" for="srThemeSelect"><i class="fa-solid fa-palette text-gold"></i> Aesthetic Palette</label>
+              <select id="srThemeSelect" class="sd-sr-opt-select">
+                <option value="chairman">👑 Chairman Dark Gold</option>
+                <option value="cyber">🌌 Cyber Neon Violet</option>
+                <option value="emerald">🍃 Emerald Bio Green</option>
+                <option value="light">☀️ Crisp Studio Print</option>
+              </select>
+            </div>
+
+            <div class="sd-sr-opt-group">
+              <label class="sd-sr-opt-label" for="srDepthSelect"><i class="fa-solid fa-layer-group text-gold"></i> Revision Depth</label>
+              <select id="srDepthSelect" class="sd-sr-opt-select">
+                <option value="comprehensive">📚 Comprehensive Master Deck</option>
+                <option value="rapid">⚡ 5-Min Exam Rapid Recap</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- GENERATE ACTION BUTTON -->
+          <button type="button" id="srGenerateBtn" class="sd-sr-btn-submit">
+            <i class="fa-solid fa-brain"></i>
+            <span>Generate Super Mindmap 🚀</span>
+          </button>
+
+          <!-- ANIMATED LOADING BOX -->
+          <div id="srLoadingBox" class="sd-sr-loading-box" style="display:none;">
+            <i class="fa-solid fa-circle-notch fa-spin text-gold" style="font-size:2rem;margin-bottom:12px;"></i>
+            <h4 style="margin:0 0 4px;font-size:1.1rem;color:#fff;">Engineering Your Super Revision Mindmap...</h4>
+            <p style="margin:0;font-size:0.85rem;color:var(--text-muted);">Chairman AI is reading every slide, extracting formulas, and drawing curved bezier branches.</p>
+            <div class="sd-sr-loading-steps">
+              <div class="sd-sr-lstep active" id="lstep1"><i class="fa-solid fa-spinner fa-spin"></i> <span>1. Parsing slides and concept hierarchy...</span></div>
+              <div class="sd-sr-lstep" id="lstep2"><i class="fa-regular fa-circle"></i> <span>2. Extracting formulas, mnemonics & exam traps...</span></div>
+              <div class="sd-sr-lstep" id="lstep3"><i class="fa-regular fa-circle"></i> <span>3. Structuring active-recall nodes and branches...</span></div>
+              <div class="sd-sr-lstep" id="lstep4"><i class="fa-regular fa-circle"></i> <span>4. Rendering high-definition interactive vector canvas...</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           MINDMAP DISPLAY WORKSPACE
+           ═══════════════════════════════════════════════════════════════ -->
+      <div id="srWorkspace" class="sd-sr-workspace" style="display:none;">
+        
+        <!-- Workspace Top Bar -->
+        <div class="sd-sr-w-topbar">
+          <div class="sd-sr-w-left">
+            <button type="button" class="sd-back-btn" id="srEditNotesBtn" title="Back to Notes Editor">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Edit Notes</span>
+            </button>
+            <div class="sd-sr-w-title-wrap">
+              <h2 id="srMindmapTitle">
+                <span class="text-gold">👑</span>
+                <span id="srMindmapTitleText">Photosynthesis Master Revision</span>
+              </h2>
+              <div class="sd-sr-w-stats-pill" id="srMindmapStatsPill">
+                4 Major Themes • 16 Concepts • 6 Mnemonics • Active Recall Ready
+              </div>
+            </div>
+          </div>
+
+          <!-- Toolbar Controls -->
+          <div class="sd-sr-w-tools">
+            <button type="button" class="sd-sr-tool-btn" id="srToggleActiveRecallBtn" title="Active Recall: Hide child concepts to test yourself!">
+              <i class="fa-solid fa-eye-slash"></i>
+              <span>Active Recall</span>
+            </button>
+
+            <button type="button" class="sd-sr-tool-btn" id="srExpandAllBtn" title="Expand All Nodes">
+              <i class="fa-solid fa-arrows-split-up-and-left"></i>
+              <span>Expand All</span>
+            </button>
+
+            <button type="button" class="sd-sr-tool-btn" id="srSwitchLayoutQuickBtn" title="Switch between Radial and Tree layouts">
+              <i class="fa-solid fa-diagram-project"></i>
+              <span id="srLayoutQuickLabel">Layout: Radial</span>
+            </button>
+
+            <button type="button" class="sd-sr-tool-btn" id="srSaveMindmapBtn" title="Save this Mindmap to My Saved Library">
+              <i class="fa-solid fa-bookmark text-gold"></i>
+              <span>Save</span>
+            </button>
+
+            <!-- Download Dropdown -->
+            <div class="sd-sr-download-menu">
+              <button type="button" class="sd-sr-tool-btn active" id="srDownloadMenuBtn">
+                <i class="fa-solid fa-download"></i>
+                <span>Download HD</span>
+                <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>
+              </button>
+              <div class="sd-sr-download-dropdown" id="srDownloadDropdown">
+                <button type="button" class="sd-sr-dd-item" id="srDownloadPngBtn">
+                  <i class="fa-solid fa-file-image text-gold"></i>
+                  <span>Download HD Image (PNG)</span>
+                </button>
+                <button type="button" class="sd-sr-dd-item" id="srDownloadSvgBtn">
+                  <i class="fa-solid fa-vector-square text-cyan"></i>
+                  <span>Download Vector (SVG)</span>
+                </button>
+                <button type="button" class="sd-sr-dd-item" id="srExportMarkdownBtn">
+                  <i class="fa-solid fa-file-lines text-purple"></i>
+                  <span>Export Revision Sheet (.MD)</span>
+                </button>
+                <button type="button" class="sd-sr-dd-item" id="srPrintBtn">
+                  <i class="fa-solid fa-print"></i>
+                  <span>Print Mindmap (A4 Landscape)</span>
+                </button>
+                <button type="button" class="sd-sr-dd-item" id="srCopyJsonBtn">
+                  <i class="fa-solid fa-code"></i>
+                  <span>Copy Mindmap Data (JSON)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SVG Mindmap Interactive Viewport -->
+        <div class="sd-sr-viewport" id="srViewport">
+          <div class="sd-sr-grid-overlay"></div>
+          
+          <!-- Interactive SVG -->
+          <svg id="srCanvasSvg" class="sd-sr-canvas-svg" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Drop Shadow and Glow Filters -->
+              <filter id="nodeGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="6" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <filter id="branchGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#D4AF37" />
+                <stop offset="100%" stop-color="#f59e0b" />
+              </linearGradient>
+            </defs>
+            <g id="srSvgRootTransform">
+              <g id="srSvgBranchesLayer"></g>
+              <g id="srSvgNodesLayer"></g>
+            </g>
+          </svg>
+
+          <!-- Bottom Left Zoom Dock -->
+          <div class="sd-sr-zoom-dock">
+            <button type="button" class="sd-sr-zd-btn" id="srZoomOutBtn" title="Zoom Out (-)"><i class="fa-solid fa-minus"></i></button>
+            <span class="sd-sr-zd-label" id="srZoomPctLabel">100%</span>
+            <button type="button" class="sd-sr-zd-btn" id="srZoomInBtn" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
+            <button type="button" class="sd-sr-zd-btn" id="srZoomResetBtn" title="Reset View (100%)"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button type="button" class="sd-sr-zd-btn" id="srZoomFitBtn" title="Fit to Screen"><i class="fa-solid fa-expand"></i></button>
+          </div>
+        </div>
+
+        <!-- Bottom Comprehensive Revision Sheet -->
+        <div class="sd-sr-bottom-sheet">
+          <div class="sd-sr-bs-tabs">
+            <button type="button" class="sd-sr-bs-tab active" id="srBsTabTakeaways">
+              <i class="fa-solid fa-list-check text-gold"></i>
+              <span>High-Yield Revision Points</span>
+            </button>
+            <button type="button" class="sd-sr-bs-tab" id="srBsTabMnemonics">
+              <i class="fa-solid fa-bolt text-purple"></i>
+              <span>Exam Mnemonics & Formulas</span>
+            </button>
+            <button type="button" class="sd-sr-bs-tab" id="srBsTabRecall">
+              <i class="fa-solid fa-brain text-cyan"></i>
+              <span>Active Recall Self-Quiz</span>
+            </button>
+            <button type="button" class="sd-sr-bs-tab" id="srBsTabSaved">
+              <i class="fa-solid fa-bookmark"></i>
+              <span>Saved Mindmaps</span>
+              <span class="sd-badge-count-pill" id="srSavedCountPill">0</span>
+            </button>
+          </div>
+
+          <!-- Panel 1: High Yield Points -->
+          <div class="sd-sr-bs-panel active" id="srBsPanelTakeaways">
+            <div id="srTakeawaysList" class="sd-sr-takeaways-list"></div>
+          </div>
+
+          <!-- Panel 2: Mnemonics & Formulas -->
+          <div class="sd-sr-bs-panel" id="srBsPanelMnemonics">
+            <div id="srMnemonicsGrid" class="sd-sr-mnemonics-grid"></div>
+          </div>
+
+          <!-- Panel 3: Active Recall Self Quiz -->
+          <div class="sd-sr-bs-panel" id="srBsPanelRecall">
+            <div id="srFlashcardsGrid" class="sd-sr-flashcards-grid"></div>
+          </div>
+
+          <!-- Panel 4: Saved Mindmaps Library -->
+          <div class="sd-sr-bs-panel" id="srBsPanelSaved">
+            <div id="srSavedMindmapsList" class="sd-sr-takeaways-list"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FLOATING DRAGGABLE MINI CLOCK TIMER
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="floatingTimerWidget" class="sd-floating-timer" style="display:none;" title="Drag me anywhere!">
+    <div class="sd-ft-header" id="floatingTimerHandle">
+      <span class="sd-ft-title"><i class="fa-solid fa-stopwatch text-gold"></i> <span id="ftTaskNameShort">Focus Timer</span></span>
+      <button type="button" class="sd-ft-btn-close" id="ftCloseBtn" title="Hide mini clock"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sd-ft-body" id="ftExpandClickArea">
+      <!-- Mini SVG Ring -->
+      <div class="sd-ft-ring-wrap">
+        <svg width="56" height="56" viewBox="0 0 56 56">
+          <circle class="sd-ft-ring-bg" cx="28" cy="28" r="22" />
+          <circle class="sd-ft-ring-fill" id="ftRingFill" cx="28" cy="28" r="22" stroke-dasharray="138.2" stroke-dashoffset="138.2" />
+        </svg>
+        <span class="sd-ft-clock-digital" id="ftDigitalTime">25:00</span>
+      </div>
+      <div class="sd-ft-controls">
+        <button type="button" id="ftToggleBtn" class="sd-ft-ctrl-btn" title="Play / Pause"><i class="fa-solid fa-play"></i></button>
+        <button type="button" id="ftDoneBtn" class="sd-ft-ctrl-btn done" title="Mark Done"><i class="fa-solid fa-check"></i></button>
+        <button type="button" id="ftExpandBtn" class="sd-ft-ctrl-btn expand" title="Open Full Screen Focus Mode"><i class="fa-solid fa-expand"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FULL-SCREEN FOCUS MODE OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="focusModeOverlay" class="sd-focus-overlay" style="display:none;">
+    <div class="sd-focus-header">
+      <div class="sd-focus-brand">
+        <i class="fa-solid fa-crown text-gold"></i>
+        <span>THE CHAIRMAN SHOW FOCUS ZONE</span>
+      </div>
+      <button id="exitFocusModeBtn" class="sd-focus-exit-btn" type="button" title="Exit Focus (Esc)">
+        <i class="fa-solid fa-compress"></i> <span>Exit Focus (Esc)</span>
+      </button>
+    </div>
+
+    <div class="sd-focus-center">
+      <span class="sd-focus-category-pill" id="focusTaskCategory">💻 Coding & Practice</span>
+      <h1 class="sd-focus-task-title" id="focusTaskTitle">Install Python and Test Environment</h1>
+
+      <!-- Massive Animated Focus Timer Ring -->
+      <div class="sd-focus-timer-ring">
+        <svg width="280" height="280" viewBox="0 0 280 280">
+          <circle class="sd-f-ring-bg" cx="140" cy="140" r="120" />
+          <circle class="sd-f-ring-fill" id="focusRingFill" cx="140" cy="140" r="120" stroke-dasharray="753.98" stroke-dashoffset="753.98" />
+        </svg>
+        <div class="sd-focus-time-display">
+          <span class="sd-f-digits" id="focusDigitsTime">25:00</span>
+          <span class="sd-f-status-tag" id="focusStatusTag">Focusing</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="sd-focus-actions">
+        <button type="button" id="focusPlayPauseBtn" class="sd-focus-btn primary">
+          <i class="fa-solid fa-pause"></i> <span>Pause</span>
+        </button>
+        <button type="button" id="focusDoneBtn" class="sd-focus-btn success">
+          <i class="fa-solid fa-circle-check"></i> <span>I'm Done ✅</span>
+        </button>
+        <button type="button" id="focusAmbientMusicBtn" class="sd-focus-btn ghost" title="Toggle Lo-fi Ambient Focus Audio">
+          <i class="fa-solid fa-headphones"></i> <span id="ambientSoundLabel">Ambient Sound: Off</span>
+        </button>
+      </div>
+
+      <!-- Rotating Motivational Quote -->
+      <div class="sd-focus-quote-box">
+        <i class="fa-solid fa-quote-left text-gold"></i>
+        <p id="focusQuoteText">"Discipline is choosing between what you want now and what you want most."</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CHAT WITH STUDY DOST FLOATING DRAWER (AI CONTEXT-AWARE HELP)
+       ═══════════════════════════════════════════════════════════════ -->
+  <button id="floatingChatDostBtn" class="sd-floating-chat-btn" type="button" title="Ask Study Dost AI">
+    <span class="sd-fc-icon">🤖</span>
+    <span class="sd-fc-label">Chat Dost</span>
+    <span class="sd-fc-pulse"></span>
+  </button>
+
+  <div id="studyDostChatDrawer" class="sd-chat-drawer">
+    <div class="sd-cd-header">
+      <div class="sd-cd-title">
+        <div class="sd-cd-avatar">🤖</div>
+        <div>
+          <h4>Study Dost AI Mentor</h4>
+          <span class="sd-cd-status"><span class="sd-dot-green"></span> Ready to unblock you</span>
+        </div>
+      </div>
+      <button type="button" id="closeChatDrawerBtn" class="sd-cd-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="sd-cd-messages" id="chatDostMessages">
+      <div class="sd-msg dost">
+        <div class="sd-msg-bubble">
+          Namaste! 👑 I'm your <strong>Study Dost</strong>. Stuck on any milestone or need a concept explained? Ask me anything!
+        </div>
+      </div>
+    </div>
+
+    <div class="sd-cd-quick-chips" id="chatQuickChips">
+      <button type="button" class="sd-cchip" data-q="Explain the current task in simpler words with an example">Explain current task</button>
+      <button type="button" class="sd-cchip" data-q="How can I finish this task faster without losing quality?">How to finish faster?</button>
+      <button type="button" class="sd-cchip" data-q="Give me a quick 3-step action plan for this task">3-step action plan</button>
+    </div>
+
+    <form id="chatDostForm" class="sd-cd-composer">
+      <input type="text" id="chatDostInput" placeholder="Ask Study Dost about your tasks..." autocomplete="off">
+      <button type="submit" id="chatDostSendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+    </form>
+  </div>
+  <div id="chatDrawerOverlay" class="sd-drawer-overlay"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SAVED ROADMAPS HISTORY MODAL
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="historyModal" class="sd-modal-overlay">
+    <div class="sd-modal-card">
+      <div class="sd-modal-header">
+        <h3><i class="fa-solid fa-clock-rotate-left text-gold"></i> Saved Roadmaps</h3>
+        <button type="button" class="sd-modal-close" id="closeHistoryModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="sd-modal-body">
+        <p class="sd-modal-sub">Switch between previous and ongoing roadmaps saved in your cloud journey.</p>
+        <div id="historyListContainer" class="sd-history-list">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BADGES / ACHIEVEMENTS MODAL
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="badgesModal" class="sd-modal-overlay">
+    <div class="sd-modal-card">
+      <div class="sd-modal-header">
+        <h3><i class="fa-solid fa-award text-gold"></i> Your Achievement Badges</h3>
+        <button type="button" class="sd-modal-close" id="closeBadgesModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="sd-modal-body">
+        <p class="sd-modal-sub">Earn XP, complete tasks under time, and maintain daily study streaks to unlock all badges!</p>
+        <div id="badgesGridContainer" class="sd-badges-grid">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       NODE DETAIL INSPECTOR MODAL
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="nodeDetailModal" class="sd-node-modal" style="display:none;">
+    <div class="sd-node-modal-card">
+      <div class="sd-nm-header">
+        <div>
+          <span class="sd-nm-tag" id="nmTag" style="background:var(--gold-soft);color:var(--gold-primary);">CORE CONCEPT</span>
+          <h3 class="sd-nm-title" id="nmTitle">Concept Name</h3>
+        </div>
+        <button type="button" class="sd-nm-close" id="closeNodeDetailBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="sd-nm-summary" id="nmSummary">Summary text...</p>
+      
+      <div id="nmExamBlock" class="sd-nm-detail-block exam" style="display:none;">
+        <div class="sd-nm-block-lbl"><i class="fa-solid fa-lightbulb text-gold"></i> High-Yield Exam Tip</div>
+        <div class="sd-nm-block-val" id="nmExamTip">...</div>
+      </div>
+      
+      <div id="nmMnemonicBlock" class="sd-nm-detail-block mnemonic" style="display:none;">
+        <div class="sd-nm-block-lbl"><i class="fa-solid fa-bolt"></i> Memory Mnemonic / Shortcut</div>
+        <div class="sd-nm-block-val" id="nmMnemonic">...</div>
+      </div>
+      
+      <div id="nmFormulaBlock" class="sd-nm-detail-block" style="display:none;">
+        <div class="sd-nm-block-lbl"><i class="fa-solid fa-square-root-variable"></i> Key Formula / Equation</div>
+        <div class="sd-nm-block-val" id="nmFormula" style="font-family:var(--font-mono);color:var(--cyan-accent);font-size:0.95rem;">...</div>
+      </div>
+
+      <div style="margin-top:16px;text-align:right;">
+        <button type="button" class="sd-btn-add" id="nmDoneReviewBtn" style="padding:6px 14px;font-size:0.8rem;">
+          <i class="fa-solid fa-check"></i> <span>Mark Mastered</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- Client JavaScript -->
+  <script src="study-dost.js"></script>
+</body>
+</html>

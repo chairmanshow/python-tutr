@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Resume Builder | The Chairman Show</title>
+  <meta name="description" content="AI Resume Builder for Indian Students - ATS-optimized resumes with 8 modern templates, AI bullet rewriter, skills suggestions, instant ATS score checker, and PDF export.">
+  <meta property="og:title" content="AI Resume Builder | The Chairman Show">
+  <meta property="og:description" content="Build ATS-friendly resumes in minutes with AI project enhancement, skills generator, ATS scoring, and one-click PDF download.">
+  <meta name="theme-color" content="#0a0a0f">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23D4AF37'/%3E%3Cstop offset='1' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='58' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ECS%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel:wght@400;600;700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="resume.css">
+</head>
+<body class="resume-body">
+
+  <div id="toastStack"></div>
+
+  <!-- TOP APP NAVIGATION -->
+  <header class="resume-nav">
+    <div class="rnav-container">
+      <div class="rnav-brand">
+        <a href="/" class="logo">
+          <div class="logo-mini">
+            <i class="fa-solid fa-crown logo-crown-mini"></i>
+            <span class="logo-text-mini">CS</span>
+          </div>
+          <div class="logo-brand">
+            <span class="logo-brand-the">THE</span>
+            <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
+          </div>
+        </a>
+        <div class="rnav-badge">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>AI Resume Builder</span>
+        </div>
+      </div>
+
+      <!-- Center navigation shortcuts -->
+      <nav class="rnav-center-links hide-mobile">
+        <a href="/" class="rnav-link"><i class="fa-solid fa-house"></i> Home</a>
+        <a href="/career" class="rnav-link"><i class="fa-solid fa-compass"></i> Career AI</a>
+        <a href="/study" class="rnav-link"><i class="fa-solid fa-graduation-cap"></i> Study Dost</a>
+        <span class="rnav-link active"><i class="fa-solid fa-file-lines"></i> Resume Builder</span>
+      </nav>
+
+      <div class="rnav-actions">
+        <!-- Switch View Buttons on Screen 3 -->
+        <button id="navTemplatesBtn" class="rnav-btn" type="button" title="Change Template">
+          <i class="fa-solid fa-layer-group"></i>
+          <span class="hide-mobile">Templates</span>
+        </button>
+
+        <button id="myResumesBtn" class="rnav-btn" type="button" title="Saved Resumes">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span class="hide-mobile">My Resumes</span>
+          <span id="savedCountBadge" class="rnav-badge-count" style="display:none;">0</span>
+        </button>
+
+        <button id="loadSampleBtn" class="rnav-btn rnav-btn-gold" type="button" title="Pre-fill with winning fresher sample">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span class="hide-mobile">Load Sample</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PUBLIC READ-ONLY BANNER (Shown when viewing via ?id=...) -->
+  <div id="publicViewBanner" class="public-banner" style="display:none;">
+    <div class="public-banner-inner">
+      <div class="pb-info">
+        <i class="fa-solid fa-globe"></i>
+        <span>You are viewing a verified shared resume hosted on <strong>The Chairman Show</strong>.</span>
+      </div>
+      <div class="pb-actions">
+        <button id="publicDownloadPdfBtn" class="btn-cine-gold btn-sm"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+        <a href="/resume" class="btn-cine-outline btn-sm"><i class="fa-solid fa-plus"></i> Build Your Own</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="resume-main">
+
+    <!-- ================= SCREEN 1: CHOOSE TEMPLATE ================= -->
+    <section id="screenTemplates" class="screen-section active">
+      <div class="screen-hero">
+        <div class="hero-tag"><i class="fa-solid fa-sparkles"></i> ATS-OPTIMIZED • 100% FREE</div>
+        <h1 class="screen-title">Choose Your Winning <span class="gold-gradient">Resume Template</span></h1>
+        <p class="screen-subtitle">Crafted specifically for Indian engineering & degree students to pass top MNC and startup ATS filters effortlessly.</p>
+      </div>
+
+      <div class="templates-grid" id="templatesGrid">
+        <!-- 8 Dynamic Template Cards -->
+        <!-- 1. Modern Minimal -->
+        <div class="template-card" data-template="modern-minimal">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-modern-minimal">
+              <div class="tm-header"></div>
+              <div class="tm-sub"></div>
+              <div class="tm-line tm-w70"></div>
+              <div class="tm-divider"></div>
+              <div class="tm-line tm-w90"></div>
+              <div class="tm-line tm-w60"></div>
+              <div class="tm-section"></div>
+              <div class="tm-line tm-w100"></div>
+              <div class="tm-line tm-w80"></div>
+            </div>
+            <span class="template-tag">Popular</span>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Modern Minimal</h3>
+              <p class="ti-desc">Clean single-column layout with high scannability and maximum ATS keyword density.</p>
+            </div>
+            <button class="btn-select-template" data-select="modern-minimal">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Classic Professional -->
+        <div class="template-card" data-template="classic-professional">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-classic-professional">
+              <div class="tm-header tm-serif"></div>
+              <div class="tm-sub"></div>
+              <div class="tm-two-col">
+                <div class="tm-col-l"><div class="tm-line"></div><div class="tm-line tm-w80"></div></div>
+                <div class="tm-col-r"><div class="tm-line"></div><div class="tm-line tm-w60"></div></div>
+              </div>
+              <div class="tm-divider"></div>
+              <div class="tm-line tm-w90"></div>
+            </div>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Classic Professional</h3>
+              <p class="ti-desc">Traditional corporate styling with elegant typography and two-column organization.</p>
+            </div>
+            <button class="btn-select-template" data-select="classic-professional">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Creative Purple -->
+        <div class="template-card" data-template="creative-purple">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-creative-purple">
+              <div class="tm-purple-bar"></div>
+              <div class="tm-header" style="background:#a855f7;"></div>
+              <div class="tm-line tm-w70"></div>
+              <div class="tm-section" style="background:#c084fc;"></div>
+              <div class="tm-line tm-w90"></div>
+              <div class="tm-line tm-w60"></div>
+            </div>
+            <span class="template-tag tag-purple">Design & Product</span>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Creative Purple</h3>
+              <p class="ti-desc">Vibrant accent colors with modern card badges, ideal for UI/UX, product, and frontend.</p>
+            </div>
+            <button class="btn-select-template" data-select="creative-purple">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. Tech Dark -->
+        <div class="template-card" data-template="tech-dark">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-tech-dark">
+              <div class="tm-dark-head">
+                <div class="tm-mono-dot"></div>
+                <div class="tm-line tm-w50" style="background:#10b981;"></div>
+              </div>
+              <div class="tm-line tm-w80" style="background:#374151;"></div>
+              <div class="tm-line tm-w60" style="background:#4b5563;"></div>
+              <div class="tm-section" style="background:#10b981;"></div>
+              <div class="tm-line tm-w100" style="background:#374151;"></div>
+            </div>
+            <span class="template-tag tag-code">&lt;Dev/&gt;</span>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Tech Dark</h3>
+              <p class="ti-desc">Developer-themed aesthetic with JetBrains Mono accents and clean code blocks.</p>
+            </div>
+            <button class="btn-select-template" data-select="tech-dark">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. Fresher Friendly -->
+        <div class="template-card featured" data-template="fresher-friendly">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-fresher-friendly">
+              <div class="tm-gold-banner"></div>
+              <div class="tm-header"></div>
+              <div class="tm-section tm-gold-pill"></div>
+              <div class="tm-line tm-w80"></div>
+              <div class="tm-section tm-gold-pill"></div>
+              <div class="tm-line tm-w90"></div>
+              <div class="tm-line tm-w70"></div>
+            </div>
+            <span class="template-tag tag-gold">Chairman Recommended</span>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Fresher Friendly</h3>
+              <p class="ti-desc">Places education, projects, and hackathons front-and-center for students with zero experience.</p>
+            </div>
+            <button class="btn-select-template" data-select="fresher-friendly">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 6. Two-Column Elegant -->
+        <div class="template-card" data-template="two-column-elegant">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-two-column-elegant">
+              <div class="tm-header"></div>
+              <div class="tm-split">
+                <div class="tm-split-col" style="border-right: 1px dashed rgba(212,175,55,0.4);">
+                  <div class="tm-section"></div>
+                  <div class="tm-line tm-w80"></div>
+                  <div class="tm-line tm-w60"></div>
+                </div>
+                <div class="tm-split-col">
+                  <div class="tm-section"></div>
+                  <div class="tm-line tm-w90"></div>
+                  <div class="tm-line tm-w70"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Two-Column Elegant</h3>
+              <p class="ti-desc">Balanced dual columns with golden divider rules and crisp structural spacing.</p>
+            </div>
+            <button class="btn-select-template" data-select="two-column-elegant">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 7. Sidebar Classic -->
+        <div class="template-card" data-template="sidebar-classic">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-sidebar-classic">
+              <div class="tm-side-left">
+                <div class="tm-avatar-circle"></div>
+                <div class="tm-line tm-w70" style="background:#cbd5e1;"></div>
+                <div class="tm-line tm-w50" style="background:#94a3b8;"></div>
+              </div>
+              <div class="tm-side-right">
+                <div class="tm-header"></div>
+                <div class="tm-section"></div>
+                <div class="tm-line tm-w100"></div>
+                <div class="tm-line tm-w80"></div>
+              </div>
+            </div>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Sidebar Classic</h3>
+              <p class="ti-desc">Distinctive left sidebar for contact & skills with prominent main panel for achievements.</p>
+            </div>
+            <button class="btn-select-template" data-select="sidebar-classic">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 8. Timeline Style -->
+        <div class="template-card" data-template="timeline-style">
+          <div class="template-preview-frame">
+            <div class="thumb-mini thumb-timeline-style">
+              <div class="tm-header"></div>
+              <div class="tm-timeline">
+                <div class="tm-tl-node"><div class="tm-tl-dot"></div><div class="tm-line tm-w80"></div></div>
+                <div class="tm-tl-node"><div class="tm-tl-dot"></div><div class="tm-line tm-w90"></div></div>
+                <div class="tm-tl-node"><div class="tm-tl-dot"></div><div class="tm-line tm-w60"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="template-info">
+            <div class="ti-text">
+              <h3 class="ti-name">Timeline Style</h3>
+              <p class="ti-desc">Chronological journey format linking education, internships, and key milestones seamlessly.</p>
+            </div>
+            <button class="btn-select-template" data-select="timeline-style">
+              <span>Use this</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SCREEN 2 & 3: BUILDER WORKSPACE (SPLIT LAYOUT) ================= -->
+    <section id="screenWorkspace" class="screen-section" style="display:none;">
+      
+      <!-- Top Action Bar (always visible in builder mode) -->
+      <div class="workspace-topbar">
+        <div class="wt-left">
+          <button id="backToTemplatesBtn" class="wt-btn" type="button" title="Back to Template Selection">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Templates</span>
+          </button>
+          <div class="wt-current-template">
+            <span class="wt-label">Active:</span>
+            <span id="activeTemplateName" class="wt-value">Fresher Friendly</span>
+          </div>
+        </div>
+
+        <!-- Mobile View Toggle Tabs -->
+        <div class="wt-mobile-toggle show-mobile-only">
+          <button id="tabToggleEditor" class="tab-toggle active" type="button"><i class="fa-solid fa-pen-to-square"></i> Editor</button>
+          <button id="tabTogglePreview" class="tab-toggle" type="button"><i class="fa-solid fa-eye"></i> Preview</button>
+        </div>
+
+        <div class="wt-actions">
+          <button id="topAtsCheckBtn" class="wt-action-btn ats-btn" type="button" title="Analyze ATS Score">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span class="hide-mobile">ATS Score</span>
+            <span id="topAtsScoreBadge" class="ats-badge-pill">--</span>
+          </button>
+
+          <button id="saveCloudBtn" class="wt-action-btn" type="button" title="Save to Firebase Firestore">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span class="hide-mobile">Save to Cloud</span>
+          </button>
+
+          <button id="copyPlainTextBtn" class="wt-action-btn" type="button" title="Copy Plain Text for Job Applications">
+            <i class="fa-regular fa-clipboard"></i>
+            <span class="hide-mobile">Copy Text</span>
+          </button>
+
+          <button id="shareLinkBtn" class="wt-action-btn" type="button" title="Get shareable web link">
+            <i class="fa-solid fa-share-nodes"></i>
+            <span class="hide-mobile">Share Link</span>
+          </button>
+
+          <button id="downloadPdfBtn" class="btn-cine-gold btn-pdf-primary" type="button" title="Download ATS PDF Resume">
+            <i class="fa-solid fa-file-arrow-down"></i>
+            <span>Download PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Split Panel Grid -->
+      <div class="workspace-grid" id="workspaceGrid">
+
+        <!-- LEFT PANEL: FORM EDITOR & OPTIONS -->
+        <div class="workspace-editor-col" id="editorCol">
+          
+          <!-- Stepper Navigation -->
+          <div class="editor-stepper-wrap">
+            <div class="stepper-track">
+              <div class="stepper-progress-fill" id="stepProgressFill"></div>
+            </div>
+            <div class="stepper-dots">
+              <button class="step-dot active" data-step="1" title="Personal Info">
+                <span class="step-num">1</span>
+                <span class="step-title">Personal</span>
+              </button>
+              <button class="step-dot" data-step="2" title="Education">
+                <span class="step-num">2</span>
+                <span class="step-title">Education</span>
+              </button>
+              <button class="step-dot" data-step="3" title="Skills">
+                <span class="step-num">3</span>
+                <span class="step-title">Skills</span>
+              </button>
+              <button class="step-dot" data-step="4" title="Projects">
+                <span class="step-num">4</span>
+                <span class="step-title">Projects</span>
+              </button>
+              <button class="step-dot" data-step="5" title="Experience">
+                <span class="step-num">5</span>
+                <span class="step-title">Experience</span>
+              </button>
+              <button class="step-dot" data-step="6" title="Certifications">
+                <span class="step-num">6</span>
+                <span class="step-title">Certs</span>
+              </button>
+              <button class="step-dot" data-step="7" title="Summary & ATS">
+                <span class="step-num">7</span>
+                <span class="step-title">Summary</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- FORM STEPS CONTAINER -->
+          <div class="editor-steps-container">
+
+            <!-- STEP 1: PERSONAL DETAILS -->
+            <div class="step-pane active" id="stepPane1">
+              <div class="pane-header">
+                <div>
+                  <h2 class="pane-title"><i class="fa-solid fa-user-circle"></i> Step 1: Personal Details</h2>
+                  <p class="pane-desc">Your contact info will be formatted cleanly in the ATS header.</p>
+                </div>
+                <button class="btn-ai-assist" type="button" data-ai-help="personal">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> AI Tip
+                </button>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="fg-group">
+                  <label class="form-label" for="inpFullName">Full Name <span class="req">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-id-card"></i>
+                    <input type="text" id="inpFullName" class="cine-input" placeholder="e.g. Aryan Sharma" value="Aryan Sharma">
+                  </div>
+                </div>
+
+                <div class="fg-group">
+                  <label class="form-label" for="inpEmail">Email Address <span class="req">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="inpEmail" class="cine-input" placeholder="aryan.sharma@gmail.com" value="aryan.sharma@gmail.com">
+                  </div>
+                </div>
+
+                <div class="fg-group">
+                  <label class="form-label" for="inpPhone">Phone Number <span class="req">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-phone"></i>
+                    <input type="tel" id="inpPhone" class="cine-input" placeholder="+91 98765 43210" value="+91 98765 43210">
+                  </div>
+                </div>
+
+                <div class="fg-group">
+                  <label class="form-label" for="inpCity">City & State <span class="req">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <input type="text" id="inpCity" class="cine-input" placeholder="Bengaluru, Karnataka" value="Bengaluru, Karnataka">
+                  </div>
+                </div>
+
+                <div class="fg-group">
+                  <label class="form-label" for="inpLinkedIn">LinkedIn Profile <span class="opt">(Optional)</span></label>
+                  <div class="input-with-icon">
+                    <i class="fa-brands fa-linkedin"></i>
+                    <input type="url" id="inpLinkedIn" class="cine-input" placeholder="linkedin.com/in/aryansharma" value="linkedin.com/in/aryansharma">
+                  </div>
+                </div>
+
+                <div class="fg-group">
+                  <label class="form-label" for="inpGitHub">GitHub Profile <span class="opt">(Optional)</span></label>
+                  <div class="input-with-icon">
+                    <i class="fa-brands fa-github"></i>
+                    <input type="url" id="inpGitHub" class="cine-input" placeholder="github.com/aryansharma" value="github.com/aryansharma">
+                  </div>
+                </div>
+
+                <div class="fg-group fg-span-2">
+                  <label class="form-label" for="inpTargetRole">Target Role / Designation <span class="gold-badge">Used for AI Tuning</span></label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <input type="text" id="inpTargetRole" class="cine-input" placeholder="e.g. Software Engineer / Full Stack Developer" value="Full Stack Developer">
+                  </div>
+                </div>
+
+                <div class="fg-group fg-span-2 photo-upload-row">
+                  <label class="form-label">Profile Photo <span class="opt">(Optional, for visual templates)</span></label>
+                  <div class="photo-upload-wrap">
+                    <div class="photo-preview-circle" id="photoPreviewWrap">
+                      <i class="fa-solid fa-user-tie" id="photoPlaceholderIcon"></i>
+                      <img id="photoPreviewImg" alt="Profile" style="display:none;">
+                    </div>
+                    <div class="photo-actions">
+                      <label class="btn-cine-outline btn-sm" for="inpPhotoFile">
+                        <i class="fa-solid fa-camera"></i> Choose Photo
+                      </label>
+                      <input type="file" id="inpPhotoFile" accept="image/*" style="display:none;">
+                      <button id="removePhotoBtn" class="btn-cine-ghost btn-sm" type="button" style="display:none;">
+                        <i class="fa-solid fa-trash"></i> Remove
+                      </button>
+                      <span class="photo-hint">Square JPG or PNG, max 2MB. Stored locally.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: EDUCATION -->
+            <div class="step-pane" id="stepPane2">
+              <div class="pane-header">
+                <div>
+                  <h2 class="pane-title"><i class="fa-solid fa-graduation-cap"></i> Step 2: Education Details</h2>
+                  <p class="pane-desc">Indian colleges, B.Tech, BCA, MCA, B.Sc or Higher Secondary records.</p>
+                </div>
+                <button class="btn-cine-gold btn-sm" id="addEducationBtn" type="button">
+                  <i class="fa-solid fa-plus"></i> Add Degree
+                </button>
+              </div>
+
+              <div id="educationList" class="dynamic-entries-list">
+                <!-- Education items injected here -->
+              </div>
+            </div>
+
+            <!-- STEP 3: SKILLS -->
+            <div class="step-pane" id="stepPane3">
+              <div class="pane-header">
+                <div>
+                  <h2 class="pane-title"><i class="fa-solid fa-laptop-code"></i> Step 3: Technical & Soft Skills</h2>
+                  <p class="pane-desc">High-priority keywords parsed directly by Applicant Tracking Systems.</p>
+                </div>
+                <button id="aiSuggestSkillsBtn" class="btn-ai-assist" type="button">
+                  <i class="fa-solid fa-sparkles"></i> AI Suggest Skills
+                </button>
+              </div>
+
+              <div class="skills-section-block">
+                <div class="ss-header">
+                  <label class="form-label"><i class="fa-solid fa-code"></i> Technical Skills</label>
+                  <span class="chip-count" id="techSkillsCount">0 added</span>
+                </div>
+                <div class="chip-input-wrap">
+                  <input type="text" id="inpTechSkill" class="cine-input" placeholder="Type a skill (e.g. Python, React, Docker) and press Enter...">
+                  <button id="addTechSkillBtn" class="btn-cine-gold btn-sm" type="button">Add</button>
+                </div>
+                <!-- Quick Suggestions -->
+                <div class="skill-quick-chips">
+                  <span class="sqc-label">Suggestions:</span>
+                  <button type="button" class="sq-chip" data-skill="Python">+ Python</button>
+                  <button type="button" class="sq-chip" data-skill="JavaScript">+ JavaScript</button>
+                  <button type="button" class="sq-chip" data-skill="React">+ React</button>
+                  <button type="button" class="sq-chip" data-skill="Node.js">+ Node.js</button>
+                  <button type="button" class="sq-chip" data-skill="SQL">+ SQL</button>
+                  <button type="button" class="sq-chip" data-skill="Git & GitHub">+ Git</button>
+                  <button type="button" class="sq-chip" data-skill="Data Structures">+ DSA</button>
+                  <button type="button" class="sq-chip" data-skill="REST APIs">+ REST APIs</button>
+                  <button type="button" class="sq-chip" data-skill="Docker">+ Docker</button>
+                  <button type="button" class="sq-chip" data-skill="Tailwind CSS">+ Tailwind</button>
+                </div>
+                <div id="techSkillsChips" class="active-chips-container"></div>
+              </div>
+
+              <div class="skills-section-block" style="margin-top:1.5rem;">
+                <div class="ss-header">
+                  <label class="form-label"><i class="fa-solid fa-users"></i> Soft Skills & Professional Competencies</label>
+                  <span class="chip-count" id="softSkillsCount">0 added</span>
+                </div>
+                <div class="chip-input-wrap">
+                  <input type="text" id="inpSoftSkill" class="cine-input" placeholder="Type soft skill (e.g. Leadership, Problem Solving) & press Enter...">
+                  <button id="addSoftSkillBtn" class="btn-cine-gold btn-sm" type="button">Add</button>
+                </div>
+                <div class="skill-quick-chips">
+                  <span class="sqc-label">Suggestions:</span>
+                  <button type="button" class="sq-chip-soft" data-skill="Problem Solving">+ Problem Solving</button>
+                  <button type="button" class="sq-chip-soft" data-skill="Analytical Thinking">+ Analytical Thinking</button>
+                  <button type="button" class="sq-chip-soft" data-skill="Communication">+ Communication</button>
+                  <button type="button" class="sq-chip-soft" data-skill="Team Collaboration">+ Team Collaboration</button>
+                  <button type="button" class="sq-chip-soft" data-skill="Agile Methodologies">+ Agile</button>
+                </div>
+                <div id="softSkillsChips" class="active-chips-container"></div>
+              </div>
+            </div>
+
+            <!-- STEP 4: PROJECTS -->
+            <div class="step-pane" id="stepPane4">
+              <div class="pane-header">
+                <div>
+                  <h2 class="pane-title"><i class="fa-solid fa-diagram-project"></i> Step 4: Projects (Fresher Highlight)</h2>
+                  <p class="pane-desc">Indian recruiters value 2-4 strong GitHub/Deployed projects with measurable impact.</p>
+                </div>
+                <button class="btn-cine-gold btn-sm" id="addProjectBtn" type="button">
+                  <i class="fa-solid fa-plus"></i> Add Project
+                </button>
+              </div>
+
+              <div id="projectsList" class="dynamic-entries-list">
+                <!-- Projects items injected here -->
+              </div>
+            </div>
+
+            <!-- STEP 5: EXPERIENCE -->
+            <div class="step-pane" id="stepPane5">
+              <div class="pane-header">
+                <div>
+                  <h2 class="pane-title"><i class="fa-solid fa-briefcase"></i> Step 5: Work Experience & Internships</h2>
+                  <p class="pane-desc">Optional for freshers. Include virtual internships, freelancing, or club leadership.</p>
+                </div>
+                <div style="display:flex;gap:0.5rem;">
+                  <button id="aiSuggestVerbsBtn" class="btn-ai-assist" type="button" title="View Action Verbs">
+                    <i class="fa-solid fa-bolt"></i> Action Verbs
+                  </button>
+                  <button class="btn-cine-gold btn-sm" id="addExperienceBtn" type="button">
+                    <i class="fa-solid fa-plus"></i> Add Role
+                  </button>
+                </div>
+              </div>
+
+              <div id="experienceList" class="dynamic-entries-list">
+                <!-- Experience items injected here -->
+              </div>
+            </div>
+
+            <!-- STEP 6: CERTIFICATIONS -->
+            <div class="step-pane" id="stepPane6">
+              <div class="pane-header">
+                <div>
+                  <h2 class="pane-title"><i class="fa-solid fa-award"></i> Step 6: Certifications & Badges</h2>
+                  <p class="pane-desc">NPTEL, Coursera, HackerRank, AWS, Google Cloud, or Chairman Show certificates.</p>
+                </div>
+                <button class="btn-cine-gold btn-sm" id="addCertBtn" type="button">
+                  <i class="fa-solid fa-plus"></i> Add Certificate
+                </button>
+              </div>
+
+              <div id="certificationsList" class="dynamic-entries-list">
+                <!-- Certifications injected here -->
+              </div>
+            </div>
+
+            <!-- STEP 7: SUMMARY & ATS REVIEW -->
+            <div class="step-pane" id="stepPane7">
+              <div class="pane-header">
+                <div>
+                  <h2 class="pane-title"><i class="fa-solid fa-pen-nib"></i> Step 7: Professional Summary & ATS Checker</h2>
+                  <p class="pane-desc">Generate an impactful 3-line hook and run the automated ATS audit.</p>
+                </div>
+                <button id="aiGenerateSummaryBtn" class="btn-ai-assist" type="button">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> AI Generate Summary
+                </button>
+              </div>
+
+              <div class="fg-group">
+                <label class="form-label" for="inpSummary">Executive Career Objective / Summary</label>
+                <textarea id="inpSummary" class="cine-textarea" rows="4" placeholder="Passionate Computer Science student with proven foundation in full-stack web development and algorithm optimization..."></textarea>
+                <div class="char-count-wrap">
+                  <span id="summaryWordCount">0 words</span>
+                  <span class="ideal-hint">Ideal for ATS: 40-70 words</span>
+                </div>
+              </div>
+
+              <!-- ATS SCORE CARD -->
+              <div class="ats-audit-card" id="atsAuditCard">
+                <div class="ats-card-header">
+                  <div class="ach-left">
+                    <div class="ats-gauge-circle" id="atsGauge">
+                      <span id="atsGaugeNumber">--</span>
+                      <small>/100</small>
+                    </div>
+                    <div>
+                      <h4 class="ats-card-title">ATS Readiness Score</h4>
+                      <p class="ats-card-status" id="atsCardStatus">Click below to run a deep AI ATS audit against MNC benchmarks.</p>
+                    </div>
+                  </div>
+                  <button id="runAtsAuditBtn" class="btn-cine-gold" type="button">
+                    <i class="fa-solid fa-shield-halved"></i> Run ATS Check
+                  </button>
+                </div>
+
+                <!-- ATS Details Container -->
+                <div id="atsDetailsBox" class="ats-details-box" style="display:none;">
+                  <div class="ats-section-sub">
+                    <h5><i class="fa-solid fa-triangle-exclamation text-amber"></i> Detected Issues & Missing Keywords</h5>
+                    <ul id="atsIssuesList" class="ats-bullet-list ats-issues"></ul>
+                  </div>
+                  <div class="ats-section-sub">
+                    <h5><i class="fa-solid fa-circle-check text-emerald"></i> Chairman's Optimization Suggestions</h5>
+                    <ul id="atsSuggestionsList" class="ats-bullet-list ats-suggestions"></ul>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div><!-- /editor-steps-container -->
+
+          <!-- Bottom Step Navigation Footer -->
+          <div class="editor-nav-footer">
+            <button id="prevStepBtn" class="btn-cine-outline" type="button" style="visibility:hidden;">
+              <i class="fa-solid fa-arrow-left"></i> Previous
+            </button>
+            <div class="step-indicator-text">
+              Step <span id="currentStepNum">1</span> of 7
+            </div>
+            <button id="nextStepBtn" class="btn-cine-gold" type="button">
+              <span>Next Step</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+
+        </div><!-- /workspace-editor-col -->
+
+        <!-- RIGHT PANEL: LIVE RESUME PREVIEW & CUSTOMIZATION OPTIONS -->
+        <div class="workspace-preview-col" id="previewCol">
+          
+          <!-- Live Preview Control Bar -->
+          <div class="preview-toolbar">
+            <div class="pt-left">
+              <span class="pt-title"><i class="fa-solid fa-desktop"></i> Live ATS Preview</span>
+              <span class="pt-scale-label hide-mobile">Page 1 (A4 Standard)</span>
+            </div>
+
+            <div class="pt-controls">
+              <!-- Font Size selector -->
+              <div class="pt-dropdown-wrap" title="Adjust Typography Scale">
+                <i class="fa-solid fa-font"></i>
+                <select id="selectFontSize" class="pt-select">
+                  <option value="font-compact">Compact (9pt)</option>
+                  <option value="font-standard" selected>Standard (10pt)</option>
+                  <option value="font-relaxed">Relaxed (11pt)</option>
+                </select>
+              </div>
+
+              <!-- Color Palette Picker -->
+              <div class="color-palette-wrap" title="Pick Accent Color">
+                <span class="color-dot color-gold active" data-color="gold" title="Chairman Gold"></span>
+                <span class="color-dot color-blue" data-color="blue" title="Corporate Blue"></span>
+                <span class="color-dot color-emerald" data-color="emerald" title="Tech Emerald"></span>
+                <span class="color-dot color-purple" data-color="purple" title="Royal Purple"></span>
+                <span class="color-dot color-mono" data-color="mono" title="Minimal Slate"></span>
+              </div>
+
+              <!-- Section Visibility Toggle Dropdown -->
+              <button id="toggleSectionsMenuBtn" class="pt-btn-icon" type="button" title="Toggle Sections Visibility">
+                <i class="fa-solid fa-sliders"></i>
+              </button>
+
+              <!-- Zoom Controls -->
+              <div class="zoom-group hide-mobile">
+                <button id="zoomOutBtn" class="pt-btn-sm" type="button" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                <span id="zoomLabel" class="zoom-val">100%</span>
+                <button id="zoomInBtn" class="pt-btn-sm" type="button" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Visibility Floating Menu -->
+          <div id="sectionsMenuModal" class="sections-floating-card" style="display:none;">
+            <div class="sf-header">
+              <span>Section Visibility</span>
+              <button id="closeSectionsMenuBtn" class="btn-icon-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="sf-body">
+              <label class="toggle-row">
+                <input type="checkbox" id="secTogglePhoto" checked>
+                <span>Profile Photo</span>
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" id="secToggleSummary" checked>
+                <span>Professional Summary</span>
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" id="secToggleEducation" checked>
+                <span>Education</span>
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" id="secToggleSkills" checked>
+                <span>Skills</span>
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" id="secToggleProjects" checked>
+                <span>Projects</span>
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" id="secToggleExperience" checked>
+                <span>Work Experience</span>
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" id="secToggleCertifications" checked>
+                <span>Certifications</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- THE SCROLLABLE CANVAS CONTAINER -->
+          <div class="preview-scroll-viewport" id="previewViewport">
+            <!-- A4 PAPER TARGET FOR HTML2CANVAS & PRINT -->
+            <div class="resume-sheet-paper template-modern-minimal font-standard theme-gold" id="resumePreview">
+              <!-- Dynamically populated by JS according to selected template -->
+            </div>
+          </div>
+
+        </div><!-- /workspace-preview-col -->
+
+      </div><!-- /workspace-grid -->
+    </section>
+
+  </main>
+
+  <!-- ================= ACTION VERBS CHEATSHEET MODAL ================= -->
+  <div class="modal-overlay-cine" id="verbsModal" style="display:none;">
+    <div class="modal-content-cine" style="max-width: 620px;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-bolt text-gold"></i> High-Impact ATS Action Verbs</h3>
+        <button id="closeVerbsModalBtn" class="modal-close-btn" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine">
+        <p class="modal-subtext">Click any verb to copy to clipboard or insert directly into your current role:</p>
+        <div class="verbs-category">
+          <span class="vc-tag">Leadership & Execution</span>
+          <div class="verbs-pills">
+            <button class="verb-pill">Spearheaded</button>
+            <button class="verb-pill">Architected</button>
+            <button class="verb-pill">Orchestrated</button>
+            <button class="verb-pill">Pioneered</button>
+            <button class="verb-pill">Directed</button>
+            <button class="verb-pill">Executed</button>
+          </div>
+        </div>
+        <div class="verbs-category">
+          <span class="vc-tag">Development & Engineering</span>
+          <div class="verbs-pills">
+            <button class="verb-pill">Engineered</button>
+            <button class="verb-pill">Implemented</button>
+            <button class="verb-pill">Optimized</button>
+            <button class="verb-pill">Refactored</button>
+            <button class="verb-pill">Automated</button>
+            <button class="verb-pill">Deployed</button>
+            <button class="verb-pill">Scaled</button>
+          </div>
+        </div>
+        <div class="verbs-category">
+          <span class="vc-tag">Impact & Optimization</span>
+          <div class="verbs-pills">
+            <button class="verb-pill">Boosted</button>
+            <button class="verb-pill">Reduced</button>
+            <button class="verb-pill">Accelerated</button>
+            <button class="verb-pill">Maximized</button>
+            <button class="verb-pill">Streamlined</button>
+            <button class="verb-pill">Transformed</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SAVED RESUMES DRAWER ================= -->
+  <div id="resumesDrawerOverlay" class="drawer-overlay"></div>
+  <aside id="resumesDrawer" class="resumes-drawer">
+    <div class="drawer-header">
+      <div class="dh-title">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>My Saved Resumes</span>
+      </div>
+      <button id="closeResumesDrawerBtn" class="dh-close-btn" type="button" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <p class="drawer-desc">All resumes stored in Firestore and local offline cache.</p>
+      <div id="savedResumesList" class="saved-resumes-list">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= SHARE LINK MODAL ================= -->
+  <div class="modal-overlay-cine" id="shareModal" style="display:none;">
+    <div class="modal-content-cine" style="max-width: 500px;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-share-nodes text-gold"></i> Shareable Resume Link</h3>
+        <button id="closeShareModalBtn" class="modal-close-btn" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine">
+        <p class="modal-subtext">Anyone with this link can view and download your verified resume in read-only mode.</p>
+        <div class="share-input-group">
+          <input type="text" id="shareUrlInput" class="cine-input" readonly>
+          <button id="copyShareUrlBtn" class="btn-cine-gold"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+        <div class="share-social-btns" style="margin-top:1.2rem;display:flex;gap:0.75rem;">
+          <button id="shareWhatsappBtn" class="btn-cine-outline" style="flex:1;"><i class="fa-brands fa-whatsapp text-emerald"></i> WhatsApp</button>
+          <button id="shareLinkedInBtn" class="btn-cine-outline" style="flex:1;"><i class="fa-brands fa-linkedin text-blue"></i> LinkedIn</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE COMPAT SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- HTML2CANVAS & JSPDF FOR ATS-PERFECT PDF GENERATION -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- RESUME APP LOGIC -->
+  <script src="resume.js"></script>
+</body>
+</html>

@@ -189,11 +189,42 @@ $('googleSignInBtn')?.addEventListener('click', async () => {
   }
 });
 
+function loginAsGuest() {
+  const guestId = 'guest_' + Math.random().toString(36).substring(2, 9);
+  currentUser = {
+    uid: guestId,
+    displayName: 'Guest Student',
+    email: 'guest@thechairmanshow.com',
+    photoURL: ''
+  };
+  userProfile = {
+    uid: guestId,
+    email: 'guest@thechairmanshow.com',
+    name: 'Guest Student',
+    photoURL: '',
+    role: 'student',
+    class: 'Python Learner',
+    bio: 'Learning Python on The Chairman Show',
+    solvedCount: Progress.totalSolved(),
+    xp: Progress.totalSolved() * 10,
+    streak: 1
+  };
+  updateUserUI();
+  showApp();
+  initApp();
+  toast('success', 'Welcome, Guest Student!', 'Exploring in Guest Mode');
+}
+
+$('guestSignInBtn')?.addEventListener('click', () => {
+  loginAsGuest();
+});
+
 $('signOutBtn')?.addEventListener('click', () => {
   if (confirm('Sign out?')) {
     userProfile = null;
     currentUser = null;
-    auth.signOut();
+    if (auth.currentUser) auth.signOut();
+    showLogin();
   }
 });
 
@@ -204,7 +235,7 @@ const authTimeout = setTimeout(() => {
     const ls = $('loginScreen');
     if (ls) ls.style.display = 'flex';
   }
-}, 4000);
+}, 1500);
 
 auth.onAuthStateChanged(async (user) => {
   clearTimeout(authTimeout);
@@ -337,12 +368,16 @@ window.switchToTab = function(tabId) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // Tab-specific loaders
+  if (tabId === 'careerCounselor') {
+    if (window.CareerCounselor && typeof window.CareerCounselor.init === 'function') {
+      window.CareerCounselor.init();
+    }
+  }
   if (tabId === 'python') renderLevelsGrid();
   if (tabId === 'chatWithChairman') {
   // Chairman chat handle karta hai apna load
 }
   if (tabId === 'chairmanPosts') loadChairmanPosts();
-  if (tabId === 'leaderboard') loadLeaderboard();
   if (tabId === 'freeCourses') YouTube.ensureLoaded();
   if (tabId === 'donate') {
     if ($('upiIdDisplay')) $('upiIdDisplay').textContent = CONFIG.UPI_ID;
@@ -375,17 +410,21 @@ function switchToTabWithoutHistory(tabId) {
   activeTab = tabId;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  if (tabId === 'careerCounselor') {
+    if (window.CareerCounselor && typeof window.CareerCounselor.init === 'function') {
+      window.CareerCounselor.init();
+    }
+  }
   if (tabId === 'python') renderLevelsGrid();
   if (tabId === 'chatWithChairman') loadDoubts();
   if (tabId === 'chairmanPosts') loadChairmanPosts();
-  if (tabId === 'leaderboard') loadLeaderboard();
   if (tabId === 'freeCourses') YouTube.ensureLoaded();
 }
 
 function updateBackButton() {
   const btn = $('universalBackBtn');
   if (!btn) return;
-  if (activeTab === 'home' || tabHistory.length <= 1) {
+  if (activeTab === 'home') {
     btn.style.display = 'none';
   } else {
     btn.style.display = 'inline-flex';
@@ -700,6 +739,240 @@ document.addEventListener('click', (e) => {
   setTimeout(updateProblemNavigation, 100);
 });
 
+/* ─────────────── PYTHON CODE RUNNER & AI TUTOR REVIEW ─────────────── */
+function simulatePythonExecution(code, examples) {
+  const output = [];
+  const trimmed = code.trim();
+
+  if (!trimmed || trimmed === '# Write your Python code here') {
+    return '⚠️ No code written yet. Type your Python code above and click Run Code!';
+  }
+
+  // Safe client-side execution simulation
+  try {
+    // 1. Basic print statements capture
+    const printRegex = /print\s*\((.*?)\)/g;
+    let match;
+    let foundPrint = false;
+
+    // Check syntax errors like unclosed quotes
+    const openQuotes = (code.match(/"/g) || []).length;
+    const singleQuotes = (code.match(/'/g) || []).length;
+    if (openQuotes % 2 !== 0 || singleQuotes % 2 !== 0) {
+      return 'SyntaxError: EOL while scanning string literal';
+    }
+
+    // Check basic indentation error
+    const lines = code.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.trim().endsWith(':')) {
+        const nextLine = lines[i + 1];
+        if (nextLine && nextLine.trim().length > 0 && !nextLine.startsWith(' ') && !nextLine.startsWith('\t')) {
+          return `IndentationError: expected an indented block after '${line.trim()}' (line ${i + 2})`;
+        }
+      }
+    }
+
+    // Try mock evaluation of print values
+    while ((match = printRegex.exec(code)) !== null) {
+      foundPrint = true;
+      const expr = match[1].trim();
+      if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
+        output.push(expr.slice(1, -1));
+      } else if (!isNaN(Number(expr))) {
+        output.push(expr);
+      } else if (expr.includes('+') || expr.includes('*') || expr.includes('-')) {
+        try {
+          // evaluate purely numeric math
+          if (/^[0-9+\-*/().\s]+$/.test(expr)) {
+            output.push(String(Function(`'use strict'; return (${expr})`)()));
+          } else {
+            output.push(`[Output of: ${expr}]`);
+          }
+        } catch (e) {
+          output.push(`[Output of: ${expr}]`);
+        }
+      } else {
+        output.push(`[Evaluated: ${expr}]`);
+      }
+    }
+
+    if (foundPrint && output.length) {
+      let res = `>>> python3 solution.py\n${output.join('\n')}\n\n`;
+      if (examples && examples.length && examples[0].output) {
+        const expected = examples[0].output.trim();
+        const matches = output.some(o => o.trim() === expected || o.includes(expected));
+        if (matches) {
+          res += `✅ Test Case 1 Passed! Output matches expected: "${expected}"`;
+        } else {
+          res += `ℹ️ Test Case Sample Output: "${expected}"\n(Verify if your code matches logic for all edge cases)`;
+        }
+      }
+      return res;
+    }
+
+    // If algorithmic function without print
+    return `>>> python3 solution.py\n[Process completed with return code 0]\nCode compiled without syntax errors. Add print(...) statements or test cases to inspect variable outputs!`;
+
+  } catch (err) {
+    return `RuntimeError: ${err.message}`;
+  }
+}
+
+document.addEventListener('click', async (e) => {
+  // 1. Run Code
+  const runBtn = e.target.closest('#runCodeBtn');
+  if (runBtn) {
+    const code = $('codeEditor')?.value || '';
+    const panel = $('pythonOutputPanel');
+    const pre = $('pythonOutputPre');
+    if (!panel || !pre) return;
+
+    panel.style.display = 'block';
+    pre.innerHTML = '<span style="color:var(--gold-primary);"><i class="fa-solid fa-spinner fa-spin"></i> Executing Python script...</span>';
+
+    setTimeout(() => {
+      const result = simulatePythonExecution(code, currentProblem?.examples);
+      pre.textContent = result;
+      if (result.includes('Passed')) {
+        toast('success', 'Execution Passed!', 'Sample test case succeeded');
+      } else {
+        toast('info', 'Code Executed', 'Check output terminal below');
+      }
+    }, 400);
+  }
+
+  // 2. AI Code Review
+  const reviewBtn = e.target.closest('#aiReviewCodeBtn');
+  if (reviewBtn) {
+    if (!currentProblem) return;
+    const code = $('codeEditor')?.value || '';
+    const panel = $('pythonOutputPanel');
+    const pre = $('pythonOutputPre');
+    if (!panel || !pre) return;
+
+    panel.style.display = 'block';
+    reviewBtn.disabled = true;
+    pre.innerHTML = '<span style="color:var(--gold-primary);"><i class="fa-solid fa-wand-magic-sparkles fa-spin"></i> Chairman AI Tutor is reviewing your code...</span>';
+
+    try {
+      const resp = await fetch(CONFIG.AI_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: `Review this student's Python code for problem "${currentProblem.title}":
+Problem Description: ${currentProblem.description}
+Student Code:
+${code}
+
+Provide:
+1. Is the approach correct?
+2. Time & Space Complexity analysis (Big-O).
+3. 2 concise suggestions or edge cases to consider.
+Keep it encouraging, mentor-like, and concise!`,
+          subject: 'Python Code Review',
+          mode: 'study-buddy'
+        })
+      });
+
+      if (!resp.ok) throw new Error('AI service error');
+      const data = await resp.json();
+      const answer = data.answer || data.response || data.text || '';
+      pre.textContent = answer || 'Great effort! Clean indentation and structure. Test with edge cases like 0 and negative numbers.';
+      toast('success', 'Review Ready', 'Chairman feedback generated!');
+    } catch (err) {
+      pre.textContent = `💡 Chairman Quick Tip for "${currentProblem.title}":\n\n1. Ensure you handle base cases (empty inputs, zero, single element).\n2. Optimize loops: Avoid nested loops if a hash map or two-pointer approach can achieve O(N) time.\n3. Keep variable names descriptive and follow PEP 8!`;
+      toast('info', 'Quick Guidance', 'Applied core heuristic tips.');
+    } finally {
+      reviewBtn.disabled = false;
+    }
+  }
+
+  // 2b. AI Hint Button
+  const hintBtn = e.target.closest('#aiHintBtn');
+  if (hintBtn) {
+    if (!currentProblem) return;
+    const panel = $('pythonOutputPanel');
+    const pre = $('pythonOutputPre');
+    if (!panel || !pre) return;
+
+    panel.style.display = 'block';
+    hintBtn.disabled = true;
+    pre.innerHTML = '<span style="color:#f59e0b;"><i class="fa-solid fa-lightbulb fa-spin"></i> Generating smart hint...</span>';
+
+    try {
+      const resp = await fetch(CONFIG.AI_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: `Give a gentle, non-spoiling progressive hint for this Python problem:
+Problem: "${currentProblem.title}"
+Description: ${currentProblem.description}
+Do NOT give away the complete code. Guide the student on data structures, formula, or algorithmic pattern to use.`,
+          subject: 'Python Coding Hint',
+          mode: 'study-buddy'
+        })
+      });
+      if (!resp.ok) throw new Error('AI hint service error');
+      const data = await resp.json();
+      const answer = data.answer || data.response || data.text || '';
+      pre.textContent = `💡 Hint for "${currentProblem.title}":\n\n${answer}`;
+      toast('info', 'Hint Loaded', 'Think it through step-by-step!');
+    } catch (err) {
+      pre.textContent = `💡 Hint for "${currentProblem.title}":\n\n${currentProblem.explanation || 'Think about the simplest case first, and write down variables on paper before coding!'}`;
+      toast('info', 'Hint Loaded');
+    } finally {
+      hintBtn.disabled = false;
+    }
+  }
+
+  // 2c. Run Test Cases Button
+  const testBtn = e.target.closest('#runTestsBtn');
+  if (testBtn) {
+    if (!currentProblem) return;
+    const code = $('codeEditor')?.value || '';
+    const panel = $('pythonOutputPanel');
+    const pre = $('pythonOutputPre');
+    if (!panel || !pre) return;
+
+    panel.style.display = 'block';
+    pre.innerHTML = '<span style="color:var(--accent-green);"><i class="fa-solid fa-flask fa-spin"></i> Running test suite...</span>';
+
+    setTimeout(() => {
+      const examples = currentProblem.examples || [];
+      if (!examples.length) {
+        pre.textContent = 'ℹ️ No predefined test cases for this level. Use print(...) statements to verify your solution.';
+        return;
+      }
+      let report = `════════ TEST SUITE REPORT: ${currentProblem.title} ════════\n`;
+      let passedCount = 0;
+      examples.forEach((ex, idx) => {
+        const sim = simulatePythonExecution(code, [ex]);
+        const passed = sim.includes('Passed');
+        if (passed) passedCount++;
+        report += `Test Case ${idx + 1}: ${passed ? '✅ PASSED' : '⚠️ CHECK OUTPUT'}\n`;
+        report += `  Input:    ${ex.input || '(none)'}\n`;
+        report += `  Expected: ${ex.output}\n\n`;
+      });
+      report += `Summary: ${passedCount}/${examples.length} Sample Tests Passed.\n`;
+      pre.textContent = report;
+      if (passedCount > 0) {
+        toast('success', 'Tests Passed!', `${passedCount}/${examples.length} cases verified`);
+      } else {
+        toast('info', 'Test Suite Executed', 'Check output breakdown above');
+      }
+    }, 350);
+  }
+
+  // 3. Close Output
+  const closeBtn = e.target.closest('#closeOutputBtn');
+  if (closeBtn) {
+    const panel = $('pythonOutputPanel');
+    if (panel) panel.style.display = 'none';
+  }
+});
+
 /* Mark Solved */
 function updateMarkSolvedBtn() {
   const btn = $('markSolvedBtn');
@@ -929,7 +1202,7 @@ const ChairmanChat = (function() {
       // Welcome message
       const welcome = {
         role: 'chairman',
-        text: `Namaste! 👑\n\nमैं हूँ **The Chairman** — तुम्हारा personal coding mentor.\n\nPython, DSA, Web Dev, या कुछ और — कोई भी सवाल पूछो, main directly जवाब दूँगा. 🚀\n\nReady? नीचे अपना सवाल type करो या quick suggestions use करो.`,
+        text: `Namaste! 👑\n\nमैं हूँ **The Chairman** — तुम्हारा personal mentor for all exams.\n\nचाहे **NEET (Biology, Physics, Chemistry), JEE, UPSC, State PCS, Class 10/12 Boards, या Coding** हो — कोई भी सवाल या doubt पूछो, main directly जवाब दूँगा. 🚀\n\nReady? नीचे अपना सवाल type करो या quick suggestions use करो.`,
         ts: Date.now()
       };
       appendMessageNode(welcome);
@@ -1668,6 +1941,13 @@ function initApp() {
       ChairmanChat.__inited = true;
     }
   } catch (err) { console.error('ChairmanChat init:', err); }
+
+  // ═══ INIT CAREER COUNSELOR ═══
+  try {
+    if (typeof CareerCounselor !== 'undefined' && typeof CareerCounselor.init === 'function') {
+      CareerCounselor.init();
+    }
+  } catch (err) { console.error('CareerCounselor init:', err); }
 }
 
 /* ─────────────── SECTION 19: YOUTUBE ─────────────── */

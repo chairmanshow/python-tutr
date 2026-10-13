@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Study Dost | The Chairman Show</title>
+  <meta name="description" content="AI Study Dost - Personalized day-by-day learning plans, daily progress tracking, streaks, and instant tutoring for Indian students.">
+  <meta property="og:title" content="AI Study Dost | The Chairman Show">
+  <meta property="og:description" content="Enter your goal & time -> Get your customized day-by-day study roadmap -> Track daily streaks.">
+  <meta name="theme-color" content="#0a0a0f">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23D4AF37'/%3E%3Cstop offset='1' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='58' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ECS%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="study.css">
+</head>
+<body class="study-body">
+
+  <div id="toastStack"></div>
+  <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
+
+  <!-- TOP HEADER -->
+  <header class="study-nav">
+    <div class="snav-container">
+      <div class="snav-brand">
+        <a href="/" class="logo">
+          <div class="logo-mini">
+            <i class="fa-solid fa-crown logo-crown-mini"></i>
+            <span class="logo-text-mini">CS</span>
+          </div>
+          <div class="logo-brand">
+            <span class="logo-brand-the">THE</span>
+            <span class="logo-brand-main">CHAIRMAN <em>SHOW</em></span>
+          </div>
+        </a>
+        <div class="snav-badge">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>AI Study Dost</span>
+        </div>
+      </div>
+
+      <div class="snav-actions">
+        <a href="/resume" class="snav-btn" style="text-decoration:none;" title="AI Resume Builder">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span class="hide-mobile">Resume Builder</span>
+        </a>
+
+        <a href="/study-dost" class="snav-btn" style="text-decoration:none;border-color:var(--border-gold);color:var(--gold-primary);" title="GenZ Task Roadmap Tracker">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span class="hide-mobile">Task Roadmap</span>
+        </a>
+
+        <a href="/super-revision" class="snav-btn" style="text-decoration:none;border-color:var(--border-gold);color:var(--gold-primary);" title="Chairman Super Revision Mindmaps">
+          <i class="fa-solid fa-brain"></i>
+          <span class="hide-mobile">Super Revision</span>
+        </a>
+
+        <button id="plansHistoryBtn" class="snav-btn" type="button" title="My Saved Study Plans">
+          <i class="fa-solid fa-book-bookmark"></i>
+          <span class="hide-mobile">My Plans</span>
+          <span id="plansBadge" class="snav-badge-count" style="display:none;">0</span>
+        </button>
+
+        <button id="badgesBtn" class="snav-btn" type="button" title="View Earned Badges">
+          <i class="fa-solid fa-award"></i>
+          <span class="hide-mobile">Badges</span>
+          <span id="badgeCountLabel" class="snav-badge-count">0/4</span>
+        </button>
+
+        <button id="dailyReminderBtn" class="snav-btn" type="button" title="Enable Daily Browser Reminder">
+          <i class="fa-regular fa-bell"></i>
+          <span class="hide-mobile" id="reminderBtnText">Reminder</span>
+        </button>
+
+        <button id="themeToggle" class="theme-toggle" type="button" title="Toggle Theme">
+          <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
+
+        <a href="/" class="snav-back-link">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Home</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="study-main">
+
+    <!-- ================= SCREEN 1: GOAL SETUP FORM ================= -->
+    <section id="studySetupView" class="study-view active">
+      <div class="setup-hero">
+        <div class="setup-crown-pill">
+          <i class="fa-solid fa-sparkles"></i> Personalized AI Learning Companion
+        </div>
+        <h1 class="setup-title">
+          Build Your Custom <span class="gold-gradient-text">Daily Study Roadmap</span>
+        </h1>
+        <p class="setup-subtitle">
+          Tell your AI Study Dost what you want to master and how much time you have. Get a tailored, day-by-day learning curriculum with curated resources, milestone checklists, and streak tracking.
+        </p>
+
+        <!-- Quick Presets -->
+        <div class="setup-presets-bar">
+          <span class="presets-label"><i class="fa-solid fa-bolt"></i> Popular Plans:</span>
+          <button type="button" class="preset-chip" data-preset="neetbio30">🩺 NEET Biology (30 Days)</button>
+          <button type="button" class="preset-chip" data-preset="jeephys30">⚛️ JEE Physics (30 Days)</button>
+          <button type="button" class="preset-chip" data-preset="upscgs60">🏛️ UPSC GS & Polity (60 Days)</button>
+          <button type="button" class="preset-chip" data-preset="class12boards30">📚 Class 12 Boards (30 Days)</button>
+          <button type="button" class="preset-chip" data-preset="python30">🐍 Python Basics (30 Days)</button>
+          <button type="button" class="preset-chip" data-preset="dsa60">💻 DSA Coding (60 Days)</button>
+        </div>
+      </div>
+
+      <div class="setup-card">
+        <form id="studyGoalForm" novalidate>
+          <div class="form-sections-stack">
+
+            <!-- 1. What to Learn -->
+            <div class="form-row">
+              <label class="section-label" for="studyGoalSelect">
+                <i class="fa-solid fa-crosshairs field-icon"></i>
+                <span>1. What do you want to learn / prepare for?</span>
+                <span class="req">*</span>
+              </label>
+              <div class="select-wrapper">
+                <select id="studyGoalSelect" required>
+                  <!-- NEET & Medical -->
+                  <optgroup label="🩺 NEET & Medical Aspirants">
+                    <option value="NEET Biology (Botany & Zoology)">NEET Biology (Botany, Zoology, NCERT Deep Dive)</option>
+                    <option value="NEET Physics">NEET Physics (Mechanics, Optics, Thermodynamics, Modern Physics)</option>
+                    <option value="NEET Chemistry">NEET Chemistry (Physical, Organic & Inorganic NCERT)</option>
+                  </optgroup>
+                  <!-- JEE & Engineering -->
+                  <optgroup label="⚛️ JEE Mains & Advanced">
+                    <option value="JEE Physics">JEE Physics (Rotational Dynamics, Electromagnetism, Waves)</option>
+                    <option value="JEE Mathematics">JEE Mathematics (Calculus, Coordinate Geometry, Algebra)</option>
+                    <option value="JEE Chemistry">JEE Chemistry (Organic Reaction Mechanisms, Chemical Bonding)</option>
+                  </optgroup>
+                  <!-- UPSC & Civil Services -->
+                  <optgroup label="🏛️ UPSC & State Civil Services">
+                    <option value="UPSC General Studies & Polity">UPSC GS Paper II (Indian Polity, Constitution, Governance)</option>
+                    <option value="UPSC Modern History & Geography">UPSC GS Paper I (Modern Indian History, Physical Geography)</option>
+                    <option value="UPSC Economy & Current Affairs">UPSC GS Paper III (Indian Economy, Agriculture, Science & Tech)</option>
+                    <option value="State PCS Exam Prep">State PCS (State History, General Studies, Aptitude)</option>
+                  </optgroup>
+                  <!-- School Boards -->
+                  <optgroup label="📚 School Boards (Class 9 - 12)">
+                    <option value="Class 12 Board Exam (PCM/PCB)">Class 12 Boards (Physics, Chemistry, Math/Bio Complete Revision)</option>
+                    <option value="Class 10 Board Exam (Science & Math)">Class 10 Board Exam (Science, Mathematics, NCERT Exemplar)</option>
+                  </optgroup>
+                  <!-- Coding & Computer Science -->
+                  <optgroup label="💻 Coding & Computer Science">
+                    <option value="Python Basics">Python Basics (Syntax, Loops, Functions, OOP)</option>
+                    <option value="Python Advanced">Python Advanced (Decorators, Generators, AsyncIO, Metaclasses)</option>
+                    <option value="DSA in Python">DSA in Python (Arrays, Trees, Graphs, DP & LeetCode)</option>
+                    <option value="Web Development (HTML+CSS+JS)">Web Development (HTML5, Modern CSS, JavaScript ES6+)</option>
+                    <option value="React">React.js (Hooks, State Management, Router, Best Practices)</option>
+                    <option value="Full Stack Development">Full Stack Development (Node.js, Express, MongoDB/SQL & Frontend)</option>
+                    <option value="Data Science">Data Science (Pandas, NumPy, Matplotlib, Data Wrangling)</option>
+                    <option value="Machine Learning">Machine Learning (Scikit-Learn, Regression, Neural Networks)</option>
+                    <option value="SQL & Databases">SQL & Databases (Schema Design, Joins, Indexing, Transactions)</option>
+                    <option value="Competitive Programming">Competitive Programming (Codeforces, Number Theory, Math)</option>
+                  </optgroup>
+                  <option value="Custom">Custom Exam / Subject (Enter your own target)...</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+
+              <!-- Custom Goal Input (Hidden by default) -->
+              <div id="customGoalWrap" class="custom-goal-wrap" style="display:none;">
+                <input type="text" id="customGoalInput" placeholder="e.g. NEET Biology Genetics, UPSC Ethics (GS 4), Class 11 Chemistry, or Flutter Apps">
+              </div>
+            </div>
+
+            <!-- 2. Current Level -->
+            <div class="form-row">
+              <label class="section-label">
+                <i class="fa-solid fa-chart-simple field-icon"></i>
+                <span>2. What is your current knowledge level?</span>
+                <span class="req">*</span>
+              </label>
+              <div class="level-cards-grid" id="levelCardsGrid">
+                <label class="level-card selected">
+                  <input type="radio" name="studentLevel" value="Absolute Beginner" checked>
+                  <div class="lc-content">
+                    <div class="lc-icon"><i class="fa-solid fa-seedling"></i></div>
+                    <div class="lc-title">Absolute Beginner</div>
+                    <div class="lc-desc">Starting from zero. Need simple fundamentals and baby steps.</div>
+                  </div>
+                </label>
+
+                <label class="level-card">
+                  <input type="radio" name="studentLevel" value="Some Basics">
+                  <div class="lc-content">
+                    <div class="lc-icon"><i class="fa-solid fa-book-open-reader"></i></div>
+                    <div class="lc-title">Some Basics</div>
+                    <div class="lc-desc">Know syntax and basics, but struggle with building real things.</div>
+                  </div>
+                </label>
+
+                <label class="level-card">
+                  <input type="radio" name="studentLevel" value="Intermediate">
+                  <div class="lc-content">
+                    <div class="lc-icon"><i class="fa-solid fa-fire"></i></div>
+                    <div class="lc-title">Intermediate</div>
+                    <div class="lc-desc">Comfortable with code. Looking for deep dive & interview readiness.</div>
+                  </div>
+                </label>
+
+                <label class="level-card">
+                  <input type="radio" name="studentLevel" value="Advanced">
+                  <div class="lc-content">
+                    <div class="lc-icon"><i class="fa-solid fa-rocket"></i></div>
+                    <div class="lc-title">Advanced</div>
+                    <div class="lc-desc">Speedrun complex patterns, optimizations, and capstone architecture.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3. Time Available Per Day -->
+            <div class="form-row">
+              <div class="slider-header">
+                <label class="section-label" for="timeSlider">
+                  <i class="fa-solid fa-clock field-icon"></i>
+                  <span>3. Time you can commit per day</span>
+                  <span class="req">*</span>
+                </label>
+                <div class="slider-val-badge" id="sliderValBadge">1 Hour / Day</div>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="timeSlider" min="1" max="5" step="1" value="2" list="timeMarkers">
+                <datalist id="timeMarkers">
+                  <option value="1" label="30 min"></option>
+                  <option value="2" label="1 hour"></option>
+                  <option value="3" label="2 hours"></option>
+                  <option value="4" label="3 hours"></option>
+                  <option value="5" label="4+ hours"></option>
+                </datalist>
+                <div class="slider-labels">
+                  <span>30 min</span>
+                  <span>1 hour</span>
+                  <span>2 hours</span>
+                  <span>3 hours</span>
+                  <span>4+ hours</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Target Deadline -->
+            <div class="form-row">
+              <label class="section-label" for="deadlineSelect">
+                <i class="fa-solid fa-calendar-check field-icon"></i>
+                <span>4. Target Deadline / Plan Duration</span>
+                <span class="req">*</span>
+              </label>
+              <div class="deadline-toggle-grid">
+                <div class="select-wrapper">
+                  <select id="deadlineSelect">
+                    <option value="1 week">1 Week (7 Days - Quick Sprint)</option>
+                    <option value="2 weeks">2 Weeks (14 Days - Accelerated)</option>
+                    <option value="1 month" selected>1 Month (30 Days - Standard Mastery)</option>
+                    <option value="2 months">2 Months (60 Days - Comprehensive)</option>
+                    <option value="3 months">3 Months (90 Days - Industry Ready)</option>
+                    <option value="6 months">6 Months (180 Days - Complete Transformation)</option>
+                  </select>
+                  <i class="fa-solid fa-chevron-down select-arrow"></i>
+                </div>
+                <div class="date-picker-wrap">
+                  <span class="or-separator">OR Custom Date:</span>
+                  <input type="date" id="customDatePicker" title="Or pick a specific target date">
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Preferred Learning Style -->
+            <div class="form-row">
+              <label class="section-label">
+                <i class="fa-solid fa-shapes field-icon"></i>
+                <span>5. Preferred Learning Style (Pick all that apply)</span>
+                <span class="req">*</span>
+              </label>
+              <div class="style-chips-grid" id="styleChipsGrid">
+                <button type="button" class="style-chip selected" data-style="Videos">
+                  <i class="fa-solid fa-video"></i>
+                  <span>Videos & Visuals</span>
+                  <i class="fa-solid fa-check check-mark"></i>
+                </button>
+                <button type="button" class="style-chip selected" data-style="Practice">
+                  <i class="fa-solid fa-terminal"></i>
+                  <span>Hands-on Practice & Code</span>
+                  <i class="fa-solid fa-check check-mark"></i>
+                </button>
+                <button type="button" class="style-chip" data-style="Reading">
+                  <i class="fa-solid fa-book"></i>
+                  <span>Reading & Documentation</span>
+                  <i class="fa-solid fa-check check-mark"></i>
+                </button>
+                <button type="button" class="style-chip selected" data-style="Projects">
+                  <i class="fa-solid fa-laptop-code"></i>
+                  <span>Building Projects</span>
+                  <i class="fa-solid fa-check check-mark"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="setup-actions">
+            <button type="submit" id="generatePlanBtn" class="study-primary-btn">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Generate My AI Study Roadmap</span>
+              <i class="fa-solid fa-arrow-right arrow-icon"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= SCREEN 2: AI GENERATING PLAN (ANIMATED PROCESSING) ================= -->
+    <section id="studyGeneratingView" class="study-view">
+      <div class="generating-card">
+        <div class="generating-orbit-wrap">
+          <div class="orbit-glow"></div>
+          <div class="orbit-circle-dashed"></div>
+          <div class="orbit-center-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div class="orbit-sat sat-top"><i class="fa-solid fa-book"></i></div>
+          <div class="orbit-sat sat-right"><i class="fa-solid fa-terminal"></i></div>
+          <div class="orbit-sat sat-left"><i class="fa-solid fa-laptop-code"></i></div>
+        </div>
+
+        <h2 class="gen-headline">Study Dost is Building Your Roadmap...</h2>
+        <p class="gen-sub" id="genStatusText">Analyzing syllabus scope and calibrating daily milestones</p>
+
+        <!-- Progress Bar -->
+        <div class="gen-progress-bar-wrap">
+          <div class="gen-progress-track">
+            <div class="gen-progress-fill" id="genProgressFill" style="width: 15%;"></div>
+          </div>
+          <span class="gen-progress-pct" id="genProgressPct">15%</span>
+        </div>
+
+        <!-- Live Step Tickers -->
+        <div class="gen-tickers-box">
+          <div class="gen-tick-item active" id="gtick1"><i class="fa-solid fa-circle-check"></i> Scaffolding syllabus from foundations to advanced topics</div>
+          <div class="gen-tick-item" id="gtick2"><i class="fa-solid fa-spinner fa-spin"></i> Breaking down curriculum into balanced daily timeboxes</div>
+          <div class="gen-tick-item" id="gtick3"><i class="fa-solid fa-circle-dot"></i> Curating video lectures, reading docs & coding practice exercises</div>
+          <div class="gen-tick-item" id="gtick4"><i class="fa-solid fa-circle-dot"></i> Generating milestone checkpoints & adaptive streak tracker</div>
+        </div>
+
+        <div class="gen-badge-footer" style="display:flex;justify-content:space-between;align-items:center;width:100%;max-width:520px;padding:8px 16px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>The Chairman Show · AI Study Companion</span>
+          </div>
+          <button type="button" id="genScreenBackBtn" class="pctrl-btn" style="padding:6px 14px;font-size:0.8rem;color:var(--text-secondary);border:1px solid var(--border-soft);border-radius:9999px;">
+            <i class="fa-solid fa-arrow-left"></i> <span>Back to Setup</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SCREEN 3: PLAN DISPLAY (MAIN DASHBOARD) ================= -->
+    <section id="studyPlanView" class="study-view">
+
+      <!-- Plan Dashboard Header Banner -->
+      <div class="plan-dashboard-header">
+        <div class="pdh-left">
+          <div class="pdh-tag">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span id="planGoalTag">Python Basics</span>
+            <span class="dot-sep">•</span>
+            <span id="planLevelTag">Beginner</span>
+          </div>
+          <h1 class="pdh-title" id="planGoalTitle">Your 30-Day Python Mastery Roadmap</h1>
+          <div class="pdh-meta">
+            <span><i class="fa-regular fa-clock"></i> <strong id="planHoursLabel">1 Hour / day</strong></span>
+            <span><i class="fa-regular fa-calendar"></i> <strong id="planDaysLabel">Day 1 of 30</strong></span>
+            <span><i class="fa-solid fa-list-check"></i> <strong id="planCompletedLabel">0 Completed</strong></span>
+          </div>
+        </div>
+
+        <div class="pdh-right">
+          <!-- Streak Badge -->
+          <div class="streak-badge-card" id="streakBadgeCard">
+            <div class="streak-flame"><i class="fa-solid fa-fire"></i></div>
+            <div class="streak-info">
+              <div class="streak-num" id="streakNumber">0</div>
+              <div class="streak-label">Day Streak</div>
+            </div>
+          </div>
+
+          <!-- SVG Circular Progress Ring -->
+          <div class="progress-ring-card">
+            <svg class="progress-ring-svg" width="94" height="94">
+              <circle class="ring-bg" stroke="rgba(255,255,255,0.08)" stroke-width="8" fill="transparent" r="38" cx="47" cy="47"/>
+              <circle class="ring-fill" id="progressRingFill" stroke="url(#goldGradient)" stroke-width="8" stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke-linecap="round" fill="transparent" r="38" cx="47" cy="47"/>
+              <defs>
+                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#F4D03F"/>
+                  <stop offset="100%" stop-color="#D4AF37"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="ring-center-text">
+              <span class="ring-pct" id="ringPctText">0%</span>
+              <span class="ring-lbl">Done</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls Strip -->
+      <div class="plan-controls-bar">
+        <div class="pc-left">
+          <button id="backToSetupBtn" class="pctrl-btn" type="button" title="Back to Goal Setup">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back</span>
+          </button>
+          <button id="exportPdfBtn" class="pctrl-btn" type="button" title="Download Complete Plan as PDF">
+            <i class="fa-solid fa-file-pdf"></i>
+            <span>Export PDF</span>
+          </button>
+          <button id="weeklyEmailBtn" class="pctrl-btn" type="button" title="Weekly Summary Email Digest">
+            <i class="fa-regular fa-envelope"></i>
+            <span>Weekly Digest</span>
+          </button>
+          <button id="openBadgesModalBtn" class="pctrl-btn" type="button" title="View Earned Achievements">
+            <i class="fa-solid fa-award"></i>
+            <span>Badges</span>
+          </button>
+          <button id="chatDostHeaderBtn" class="pctrl-btn pctrl-gold" type="button" title="Ask Study Dost AI for Help">
+            <i class="fa-solid fa-comments"></i>
+            <span>Ask Study Dost</span>
+          </button>
+        </div>
+        <div class="pc-right">
+          <button id="restartPlanBtn" class="pctrl-btn pctrl-danger" type="button" title="Create New Goal / Restart">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>New Plan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Daily Motivation Quote Card -->
+      <div class="motivation-quote-card" id="motivationQuoteCard">
+        <div class="mqc-icon"><i class="fa-solid fa-quote-left"></i></div>
+        <div class="mqc-body">
+          <div class="mqc-text" id="dailyQuoteText">"Consistency is what transforms average into excellence. 1 hour today is better than 10 hours next month."</div>
+          <div class="mqc-author" id="dailyQuoteAuthor">— Chairman's Study Dost</div>
+        </div>
+      </div>
+
+      <!-- ================= TODAY'S TASKS CARD (PROMINENT HIGHLIGHT) ================= -->
+      <div class="today-focus-card" id="todayCard">
+        <div class="tfc-badge-row">
+          <span class="tfc-day-badge" id="todayDayBadge">Day 1 Focus · Today</span>
+          <span class="tfc-time-badge" id="todayTimeBadge"><i class="fa-regular fa-clock"></i> 60 min</span>
+        </div>
+
+        <h2 class="tfc-title" id="todayTitle">Loading Today's Milestone...</h2>
+
+        <!-- Topics checklist -->
+        <div class="tfc-section">
+          <div class="tfc-section-title"><i class="fa-solid fa-list-check"></i> Key Topics to Master:</div>
+          <ul class="tfc-topics-list" id="todayTopicsList">
+            <!-- Topics injected here -->
+          </ul>
+        </div>
+
+        <!-- Curated Resources -->
+        <div class="tfc-section">
+          <div class="tfc-section-title"><i class="fa-solid fa-link"></i> Curated Learning Resources:</div>
+          <div class="tfc-resources-grid" id="todayResourcesGrid">
+            <!-- Resources injected here -->
+          </div>
+        </div>
+
+        <!-- Notes Input -->
+        <div class="tfc-section">
+          <div class="tfc-section-title"><i class="fa-solid fa-pen-to-square"></i> My Study Notes & Key Takeaways:</div>
+          <textarea id="todayNotesInput" class="today-notes-textarea" rows="2" placeholder="Write down what you learned, any doubts, or code snippets here... (Auto-saves)"></textarea>
+          <div class="tfc-notes-saved" id="todayNotesSavedMsg"><i class="fa-solid fa-check"></i> Notes saved</div>
+        </div>
+
+        <!-- Big Actions -->
+        <div class="tfc-actions-row">
+          <button id="markCompleteBtn" class="tfc-complete-btn" type="button">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Mark Day as Complete</span>
+          </button>
+          <button id="skipDayBtn" class="tfc-skip-btn" type="button">
+            <i class="fa-solid fa-forward-step"></i>
+            <span>Skip Day</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= TOMORROW'S PREVIEW CARD ================= -->
+      <div class="tomorrow-preview-card" id="tomorrowCard">
+        <div class="tpc-header" id="tomorrowHeaderToggle">
+          <div class="tpc-title-wrap">
+            <span class="tpc-badge" id="tomorrowBadge">Tomorrow's Preview · Day 2</span>
+            <h4 class="tpc-title" id="tomorrowTitle">Sneak Peek into Tomorrow</h4>
+          </div>
+          <button type="button" class="tpc-expand-btn"><i class="fa-solid fa-chevron-down" id="tomorrowExpandIcon"></i></button>
+        </div>
+        <div class="tpc-body" id="tomorrowBody">
+          <p class="tpc-desc" id="tomorrowDesc">Loading next milestone preview...</p>
+          <div class="tpc-topics-preview" id="tomorrowTopicsPreview"></div>
+        </div>
+      </div>
+
+      <!-- ================= FULL PLAN TIMELINE ACCORDION ================= -->
+      <div class="full-plan-timeline-wrap">
+        <div class="timeline-header-row">
+          <div class="th-left">
+            <h3><i class="fa-solid fa-route text-gold"></i> Complete Roadmap Timeline</h3>
+            <span class="th-sub" id="timelineCountSub">30 Days Total</span>
+          </div>
+          <div class="th-filters">
+            <button type="button" class="tl-filter-btn active" data-filter="all">All Days</button>
+            <button type="button" class="tl-filter-btn" data-filter="pending">Upcoming</button>
+            <button type="button" class="tl-filter-btn" data-filter="completed">Completed</button>
+          </div>
+        </div>
+
+        <div class="timeline-container" id="timelineContainer">
+          <!-- Timeline Days injected dynamically -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FLOATING CHAT WITH STUDY DOST DRAWER ================= -->
+  <div id="studyChatDrawerOverlay" class="drawer-overlay"></div>
+  <aside id="studyChatDrawer" class="study-chat-drawer">
+    <div class="sc-header">
+      <div class="sc-header-info">
+        <div class="sc-avatar"><i class="fa-solid fa-robot"></i></div>
+        <div>
+          <div class="sc-title">Study Dost AI</div>
+          <div class="sc-status"><span class="dot-online"></span> Always Online · Here to Help</div>
+        </div>
+      </div>
+      <button id="closeStudyChatBtn" class="sc-close-btn" type="button"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Chat Messages Scroll Container -->
+    <div class="sc-messages" id="studyChatMessages">
+      <div class="sc-msg dost">
+        <div class="sc-bubble">
+          Namaste! 🙏 I'm your <strong>AI Study Dost</strong>. Whether you're preparing for <strong>NEET (Biology, Physics, Chemistry), JEE, UPSC, State PCS, Boards, or Coding</strong> — ask any question or concept doubt, and I'll explain step-by-step!
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Question Chips -->
+    <div class="sc-quick-chips" id="chatQuickChips">
+      <button type="button" class="sc-chip" data-q="Explain today's topic in simpler words with a clear NCERT / exam-oriented example.">Explain in simple words</button>
+      <button type="button" class="sc-chip" data-q="Give me 3 high-yield exam practice questions / PYQ pattern on this topic.">Exam practice questions</button>
+      <button type="button" class="sc-chip" data-q="What is the best study and retention strategy for this topic?">How to study this?</button>
+    </div>
+
+    <!-- Chat Composer Form -->
+    <form id="studyChatForm" class="sc-composer">
+      <input type="text" id="studyChatInput" placeholder="Ask Study Dost about today's topic..." autocomplete="off">
+      <button type="submit" id="studyChatSendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+    </form>
+  </aside>
+
+  <!-- Floating Trigger Button -->
+  <button id="floatingChatBtn" class="floating-dost-btn" type="button" title="Chat with Study Dost">
+    <i class="fa-solid fa-comments"></i>
+    <span class="fdb-label">Study Dost</span>
+    <span class="fdb-pulse"></span>
+  </button>
+
+  <!-- ================= ACHIEVEMENTS / BADGES MODAL ================= -->
+  <div class="modal-overlay-cine" id="badgesModal">
+    <div class="modal-content-cine" style="max-width: 600px;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-award text-gold"></i> Your Study Dost Achievements</h3>
+        <button class="close-modal-cine" id="closeBadgesModalBtn" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine">
+        <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:20px;">
+          Unlock badges as you consistently complete your daily milestones and maintain streaks!
+        </p>
+        <div class="badges-grid" id="badgesGrid">
+          <!-- Badges dynamically rendered -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MY SAVED PLANS HISTORY DRAWER ================= -->
+  <div id="plansDrawerOverlay" class="drawer-overlay"></div>
+  <aside id="plansDrawer" class="history-drawer">
+    <div class="drawer-header">
+      <div class="dh-title">
+        <i class="fa-solid fa-book-bookmark"></i>
+        <span>My Saved Study Plans</span>
+      </div>
+      <button id="closePlansDrawerBtn" class="dh-close-btn" type="button"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-body">
+      <p class="drawer-desc">Switch between ongoing and completed study roadmaps.</p>
+      <div id="plansList" class="history-list">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= SKIP DAY REASON MODAL ================= -->
+  <div class="modal-overlay-cine" id="skipDayModal">
+    <div class="modal-content-cine" style="max-width: 480px;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-forward-step text-gold"></i> Take a Rest Day</h3>
+        <button class="close-modal-cine" id="closeSkipModalBtn" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine">
+        <p style="color:var(--text-secondary);font-size:0.86rem;margin-bottom:14px;">
+          Life happens! We'll freeze your milestone so you can pick it up tomorrow without losing momentum.
+        </p>
+        <div class="form-group-cine">
+          <label style="font-size:0.84rem;font-weight:600;margin-bottom:6px;display:block;">Reason for skipping today:</label>
+          <select id="skipReasonSelect" class="form-control" style="width:100%;padding:10px;background:var(--bg-surface-2);color:var(--text-primary);border:1px solid var(--border-soft);border-radius:var(--r-md);">
+            <option value="College / School Exams">College / School Exams</option>
+            <option value="Health / Rest Needed">Feeling Tired / Health Rest</option>
+            <option value="Travel / Family Event">Travel / Family Event</option>
+            <option value="Already Covered Earlier">Already Covered this Earlier</option>
+            <option value="Other">Other Personal Reason</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+          <button type="button" class="ra-btn ra-btn-ghost" id="cancelSkipBtn">Cancel</button>
+          <button type="button" class="ra-btn ra-btn-gold" id="confirmSkipBtn">Confirm & Advance</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= WEEKLY SUMMARY EMAIL MODAL (SENDGRID COMPATIBLE) ================= -->
+  <div class="modal-overlay-cine" id="weeklyEmailModal">
+    <div class="modal-content-cine" style="max-width: 520px;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-regular fa-envelope text-gold"></i> Weekly Progress Digest</h3>
+        <button class="close-modal-cine" id="closeWeeklyEmailModalBtn" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine">
+        <p style="color:var(--text-secondary);font-size:0.86rem;margin-bottom:16px;">
+          Get an AI-curated weekly breakdown of completed milestones, upcoming topics, and personalized Chairman motivation in your inbox.
+        </p>
+
+        <!-- Live Digest Preview Card -->
+        <div class="email-preview-card" style="background:var(--bg-surface-2);border:1px solid var(--border-gold);border-radius:var(--r-md);padding:16px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:0.75rem;text-transform:uppercase;color:var(--gold-primary);font-weight:700;letter-spacing:0.5px;">Digest Preview</span>
+            <span id="weStreakBadge" style="background:var(--gold-soft);color:var(--gold-primary);border:1px solid var(--border-gold);padding:2px 8px;border-radius:9999px;font-size:0.75rem;font-weight:700;">🔥 0 Day Streak</span>
+          </div>
+          <h4 id="weGoalTitle" style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin:0 0 6px;">Python Mastery Roadmap</h4>
+          <p id="weStatsLine" style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 8px;">Milestones Completed: 0 / 30 Days (0%)</p>
+          <div id="weUpcomingList" style="font-size:0.8rem;color:var(--text-muted);background:var(--bg-surface-3);padding:8px 10px;border-radius:6px;">
+            Upcoming this week: Foundations, Variables & Logic
+          </div>
+        </div>
+
+        <form id="weeklyEmailForm">
+          <div class="form-group-cine" style="margin-bottom:14px;">
+            <label for="weEmailInput" style="font-size:0.84rem;font-weight:600;margin-bottom:6px;display:block;">Your Email Address:</label>
+            <input type="email" id="weEmailInput" required placeholder="student@example.com" class="form-control" style="width:100%;padding:11px 14px;background:var(--bg-surface-2);color:var(--text-primary);border:1px solid var(--border-mid);border-radius:var(--r-md);font-family:var(--font-sans);font-size:0.88rem;">
+          </div>
+
+          <label style="display:flex;align-items:center;gap:10px;font-size:0.84rem;color:var(--text-secondary);cursor:pointer;margin-bottom:20px;">
+            <input type="checkbox" id="weAutoSundayCheck" checked style="accent-color:var(--gold-primary);width:16px;height:16px;">
+            <span>Automatically email me every Sunday morning (via SendGrid digest)</span>
+          </label>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button type="button" class="ra-btn ra-btn-ghost" id="cancelWeeklyEmailBtn">Cancel</button>
+            <button type="submit" class="ra-btn ra-btn-gold" id="sendDigestNowBtn">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Send Digest Now</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- JSPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- APP SCRIPT -->
+  <script src="study.js"></script>
+</body>
+</html>

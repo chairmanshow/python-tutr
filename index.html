@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Chairman Show | Learn Python. Master DSA. Get Hired.</title>
-<meta name="description" content="Learn Python from Level 1 to 100. Chat with Chairman live. Free coding platform for Indian students.">
+<title>The Chairman Show | NEET • JEE • UPSC • Coding • Boards</title>
+<meta name="description" content="Universal student preparation platform for India: NEET, JEE, UPSC, State Civil Services, School Boards, and Coding. 100% Free AI Study Dost, Career Roadmaps, and Live AI Doubt Solving.">
+<meta property="og:title" content="The Chairman Show | NEET • JEE • UPSC • Coding • Boards">
+<meta property="og:description" content="Universal student preparation platform for India: NEET, JEE, UPSC, State Civil Services, School Boards, and Coding. 100% Free AI Study Dost, Career Roadmaps, and Live AI Doubt Solving.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23D4AF37'/%3E%3Cstop offset='1' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Ctext x='50' y='68' font-size='58' font-family='monospace' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ECS%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="career.css">
 </head>
 <body>
 
@@ -74,6 +77,11 @@
       <span>Continue with Google</span>
     </button>
 
+    <button id="guestSignInBtn" class="guest-btn">
+      <i class="fa-solid fa-user-astronaut"></i>
+      <span>Continue as Guest</span>
+    </button>
+
     <p class="login-terms">By signing in, you agree to our Terms & Privacy Policy</p>
     <div id="loginError" class="login-error"></div>
   </div>
@@ -107,10 +115,12 @@
 
       <ul class="nav-links">
         <li><button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i><span class="nav-text">Home</span></button></li>
+        <li><a href="/study" class="nav-item-link" id="navStudyDost"><i class="fa-solid fa-graduation-cap"></i><span class="nav-text">Study Dost</span></a></li>
+        <li><a href="/resume" class="nav-item-link" id="navResumeBuilder"><i class="fa-solid fa-file-invoice"></i><span class="nav-text">Resume</span></a></li>
+        <li><button class="nav-item" data-tab="careerCounselor" id="navCareerCounselor"><i class="fa-solid fa-compass"></i><span class="nav-text">Career AI</span></button></li>
         <li><button class="nav-item" data-tab="python" id="navPython"><i class="fa-brands fa-python"></i><span class="nav-text">Practice</span></button></li>
         <li><button class="nav-item" data-tab="chatWithChairman" id="navChatWithChairman"><i class="fa-solid fa-comments"></i><span class="nav-text">Chat</span></button></li>
         <li><button class="nav-item" data-tab="chairmanPosts" id="navChairmanPosts"><i class="fa-solid fa-bullhorn"></i><span class="nav-text">Posts</span></button></li>
-        <li><button class="nav-item" data-tab="leaderboard"><i class="fa-solid fa-trophy"></i><span class="nav-text">Leaderboard</span></button></li>
         <li><button class="nav-item" data-tab="community" id="navCommunity"><i class="fa-solid fa-users"></i><span class="nav-text">Community</span><span class="nav-badge-cine" id="navChatBadge" style="display:none;">0</span></button></li>
         <li><button class="nav-item" data-tab="freeCourses" id="navFreeCourses"><i class="fa-solid fa-graduation-cap"></i><span class="nav-text">Courses</span></button></li>
         <li><button class="nav-item" data-tab="support"><i class="fa-solid fa-headset"></i><span class="nav-text">Support</span></button></li>
@@ -135,6 +145,11 @@
             </div>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" data-goto="profile"><i class="fa-solid fa-user"></i> My Profile</button>
+            <a href="/super-revision" class="dropdown-item" style="text-decoration:none;"><i class="fa-solid fa-brain text-gold"></i> Chairman Super Revision (Mindmaps)</a>
+            <a href="/study-dost" class="dropdown-item" style="text-decoration:none;"><i class="fa-solid fa-map-location-dot"></i> Study Dost Task Roadmap</a>
+            <a href="/study" class="dropdown-item" style="text-decoration:none;"><i class="fa-solid fa-graduation-cap"></i> AI Study Dost (Exams)</a>
+            <a href="/resume" class="dropdown-item" style="text-decoration:none;"><i class="fa-solid fa-file-invoice"></i> AI Resume Builder</a>
+            <button class="dropdown-item" data-goto="careerCounselor"><i class="fa-solid fa-compass"></i> AI Career Counselor</button>
             <button class="dropdown-item" data-goto="python"><i class="fa-brands fa-python"></i> Python Practice</button>
             <button class="dropdown-item" data-goto="chatWithChairman"><i class="fa-solid fa-comments"></i> Chat with Chairman</button>
             <button class="dropdown-item" data-goto="donate"><i class="fa-solid fa-heart"></i> Support Us</button>
@@ -160,23 +175,37 @@
         <div class="hero-content">
           <div class="hero-badge">
             <i class="fa-solid fa-crown hero-crown"></i>
-            <span>India's Student-First Coding Platform</span>
+            <span>India's Universal Student & Exam Preparation Platform</span>
           </div>
           <h1 class="hero-title">
-            <span class="title-line line-1">Learn Python.</span>
-            <span class="title-line line-2">Master DSA.</span>
-            <span class="title-line line-3"><span class="gradient-text">Get Hired.</span></span>
+            <span class="title-line line-1">NEET • JEE • Coding.</span>
+            <span class="title-line line-2">UPSC • State Exams • Boards.</span>
+            <span class="title-line line-3"><span class="gradient-text">Master Everything.</span></span>
           </h1>
           <p class="hero-sub">
-            100 levels of handpicked Python problems. Chat with Chairman live for instant answers.
-            Progress tracking that actually matters. <strong>100% free — forever.</strong>
+            All-in-one preparation ecosystem for Indian aspirants. Biology, Physics, Chemistry, UPSC GS, State PCS, Coding & School Boards. 100% Free AI Tutoring, Study Roadmaps, and ATS Resumes.
           </p>
           <div class="hero-ctas">
-            <button class="btn-hero-primary" data-goto="python">
-              <i class="fa-brands fa-python"></i><span>Start Python Practice</span><i class="fa-solid fa-arrow-right btn-arrow"></i>
+            <a href="/super-revision" class="btn-hero-primary" style="text-decoration:none;">
+              <i class="fa-solid fa-brain"></i><span>Super Revision Mindmaps</span><i class="fa-solid fa-arrow-right btn-arrow"></i>
+            </a>
+            <a href="/study-dost" class="btn-hero-ghost" style="border-color:var(--border-gold);color:var(--gold-primary);text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+              <i class="fa-solid fa-map-location-dot"></i><span>Study Dost Roadmap</span>
+            </a>
+            <a href="/study" class="btn-hero-ghost" style="border-color:var(--border-gold);color:var(--gold-primary);text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+              <i class="fa-solid fa-graduation-cap"></i><span>Exam Syllabus Planner</span>
+            </a>
+            <button class="btn-hero-ghost" data-goto="python" style="border-color:var(--border-gold);color:var(--gold-primary);">
+              <i class="fa-brands fa-python"></i><span>Python Practice Arena</span>
+            </button>
+            <a href="/resume" class="btn-hero-ghost" style="border-color:var(--border-gold);color:var(--gold-primary);text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+              <i class="fa-solid fa-file-invoice"></i><span>AI Resume Builder</span>
+            </a>
+            <button class="btn-hero-ghost" data-goto="careerCounselor" style="border-color:var(--border-gold);color:var(--gold-primary);">
+              <i class="fa-solid fa-compass"></i><span>AI Career Counselor</span>
             </button>
             <button class="btn-hero-ghost" data-goto="chatWithChairman">
-              <i class="fa-solid fa-comments"></i><span>Chat with Chairman</span>
+              <i class="fa-solid fa-comments"></i><span>Ask Chairman Any Subject</span>
             </button>
           </div>
           <div class="hero-terminal">
@@ -215,20 +244,498 @@
       </div>
 
       <div class="features-cinematic">
-        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #D4AF37"><i class="fa-solid fa-terminal"></i></div><h3>Real Code Editor</h3><p>Write Python code, learn from expert solutions. No setup needed — works in your browser.</p></div>
-        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #7c3aed"><i class="fa-solid fa-graduation-cap"></i></div><h3>Learn by Doing</h3><p>Not just videos — solve real problems. Every concept backed by practice.</p></div>
-        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #00d4ff"><i class="fa-solid fa-comments"></i></div><h3>Chat with Chairman</h3><p>Stuck? Ask directly. Get instant AI-powered answers to your coding doubts.</p></div>
-        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #10b981"><i class="fa-solid fa-chart-line"></i></div><h3>Track Progress</h3><p>See your growth daily. Streaks, XP, badges — the dopamine you need to keep going.</p></div>
+        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #D4AF37"><i class="fa-solid fa-graduation-cap"></i></div><h3>Study Dost AI</h3><p>Personalized day-by-day study roadmaps for NEET Biology, JEE Physics, UPSC GS, and Coding with daily streak tracking.</p></div>
+        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #7c3aed"><i class="fa-solid fa-compass"></i></div><h3>Career Counselor</h3><p>Strategic path analysis, college cutoffs, exam calendars, and backup plans for Science, Commerce, and Arts.</p></div>
+        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #00d4ff"><i class="fa-solid fa-comments"></i></div><h3>Ask Chairman Live</h3><p>Instant explanations for Biology questions, Math equations, Indian Polity, or Python scripts.</p></div>
+        <div class="feature-cine-card"><div class="fc-icon" style="--fc-color: #10b981"><i class="fa-solid fa-file-invoice"></i></div><h3>ATS Resume Builder</h3><p>8 ATS-optimized templates, AI bullet rewriter, and instant ATS scoring for internships and college applications.</p></div>
       </div>
 
       <div class="cta-banner">
         <div class="cta-banner-bg"></div>
         <div class="cta-banner-content">
           <div class="cta-crown"><i class="fa-solid fa-crown"></i></div>
-          <h2>Ready to start your coding journey?</h2>
-          <p>Join thousands of Indian students mastering Python — one problem at a time.</p>
-          <button class="btn-hero-primary" data-goto="python"><i class="fa-solid fa-play"></i> Start Level 1 Now</button>
+          <h2>Ready to conquer your target exam?</h2>
+          <p>Join thousands of Indian aspirants preparing for NEET, JEE, UPSC, State Civil Services, Boards, and Coding.</p>
+          <a href="/study" class="btn-hero-primary" style="text-decoration:none;"><i class="fa-solid fa-rocket"></i> Launch AI Study Dost</a>
         </div>
+      </div>
+    </section>
+
+    <!-- AI CAREER COUNSELOR TAB (WIZARD INTERFACE IN MAIN VIEW) -->
+    <section id="careerCounselor" class="tab-content">
+      <div class="career-tab-container">
+        
+        <!-- Top Banner Bar with History Drawer Button -->
+        <div class="counselor-top-bar">
+          <div class="ctb-title-wrap">
+            <div class="ctb-badge">
+              <i class="fa-solid fa-compass"></i>
+              <span>AI Career Counselor</span>
+            </div>
+            <h2>Chairman's Career Roadmap Advisory</h2>
+          </div>
+          <div class="ctb-actions">
+            <button id="historyToggleBtn" class="cnav-btn" type="button" title="View Recent Reports">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>Report History</span>
+              <span id="historyBadge" class="cnav-badge" style="display:none;">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3-STEP PROGRESS INDICATOR -->
+        <div class="wizard-tracker-wrap">
+          <div class="wizard-tracker">
+            <div class="wizard-step active" id="dotStep1" data-step="1">
+              <div class="step-circle"><i class="fa-solid fa-user-graduate"></i></div>
+              <div class="step-label">1. Student Details</div>
+            </div>
+            <div class="wizard-line" id="line1"></div>
+            <div class="wizard-step" id="dotStep2" data-step="2">
+              <div class="step-circle"><i class="fa-solid fa-microchip"></i></div>
+              <div class="step-label">2. Chairman AI Analysis</div>
+            </div>
+            <div class="wizard-line" id="line2"></div>
+            <div class="wizard-step" id="dotStep3" data-step="3">
+              <div class="step-circle"><i class="fa-solid fa-award"></i></div>
+              <div class="step-label">3. Career Report</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIZARD VIEWPORT (WITH ANIMATED STEP TRANSITIONS) -->
+        <div class="wizard-viewport">
+
+          <!-- STEP 1: STUDENT DETAILS FORM -->
+          <div id="step1View" class="wizard-card-view active">
+            <div class="counselor-hero">
+              <div class="hero-crown-badge">
+                <i class="fa-solid fa-crown"></i> 100% Data-Driven Counseling for Bharat
+              </div>
+              <h1 class="counselor-title">
+                Discover Your Ideal <span class="gold-gradient-text">Career Trajectory</span>
+              </h1>
+              <p class="counselor-subtitle">
+                Input your current academic standing, favorite subjects, and ambitions. Chairman's AI models evaluate entrance exams, top tier Indian institutes, roadmap milestones, and salary outcomes tailored specifically for you.
+              </p>
+              <div class="demo-prefill-strip">
+                <span class="strip-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Quick Test:</span>
+                <button type="button" class="demo-chip" data-preset="pcm">Class 11 PCM (Software)</button>
+                <button type="button" class="demo-chip" data-preset="pcb">Class 12 PCB (Medical/Biotech)</button>
+                <button type="button" class="demo-chip" data-preset="commerce">Class 12 Commerce (FinTech/CA)</button>
+                <button type="button" class="demo-chip" data-preset="college">College CS (AI/ML Engineer)</button>
+              </div>
+            </div>
+
+            <form id="careerForm" class="counselor-form" novalidate>
+              <div class="form-grid">
+                <!-- Class Dropdown -->
+                <div class="field-group">
+                  <label for="studentClass">
+                    <i class="fa-solid fa-graduation-cap field-icon"></i>
+                    <span>Current Class / Level</span>
+                    <span class="req">*</span>
+                  </label>
+                  <div class="select-wrap">
+                    <select id="studentClass" name="class" required>
+                      <option value="">Select your class...</option>
+                      <option value="9">Class 9 (Early Foundation)</option>
+                      <option value="10">Class 10 (Board Year)</option>
+                      <option value="11" selected>Class 11 (Stream Specialization)</option>
+                      <option value="12">Class 12 (Board & Entrances)</option>
+                      <option value="College">College / Undergrad</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                  </div>
+                  <div class="field-hint">Stream options adapt automatically to your selected level</div>
+                </div>
+
+                <!-- Stream Dropdown (Conditional) -->
+                <div class="field-group" id="streamFieldGroup">
+                  <label for="studentStream">
+                    <i class="fa-solid fa-layer-group field-icon"></i>
+                    <span>Stream / Specialization</span>
+                    <span class="req">*</span>
+                  </label>
+                  <div class="select-wrap">
+                    <select id="studentStream" name="stream" required>
+                      <option value="PCM" selected>PCM (Physics, Chemistry, Maths)</option>
+                      <option value="PCB">PCB (Physics, Chemistry, Biology)</option>
+                      <option value="PCMB">PCMB (Both Maths & Biology)</option>
+                      <option value="Commerce with Maths">Commerce with Maths / Applied Maths</option>
+                      <option value="Commerce without Maths">Commerce without Maths</option>
+                      <option value="Arts / Humanities">Arts / Humanities</option>
+                      <option value="CS / IT">Computer Science / IT</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                  </div>
+                  <div class="field-hint" id="streamHint">Select your current academic discipline</div>
+                </div>
+
+                <!-- Marks Input -->
+                <div class="field-group">
+                  <label for="studentMarks">
+                    <i class="fa-solid fa-percent field-icon"></i>
+                    <span>Current Marks / Percentage</span>
+                    <span class="req">*</span>
+                  </label>
+                  <div class="input-wrap marks-input-wrap">
+                    <input type="number" id="studentMarks" name="marks" min="30" max="100" placeholder="e.g. 78" value="78" required>
+                    <span class="input-addon">%</span>
+                  </div>
+                  <div class="quick-marks-chips">
+                    <button type="button" class="mark-btn" data-val="65">65%</button>
+                    <button type="button" class="mark-btn" data-val="78">78%</button>
+                    <button type="button" class="mark-btn" data-val="88">88%</button>
+                    <button type="button" class="mark-btn" data-val="95">95%</button>
+                  </div>
+                </div>
+
+                <!-- Preferred Location -->
+                <div class="field-group">
+                  <label for="studentLocation">
+                    <i class="fa-solid fa-location-dot field-icon"></i>
+                    <span>Preferred Study & Work Location</span>
+                    <span class="req">*</span>
+                  </label>
+                  <div class="select-wrap">
+                    <select id="studentLocation" name="location" required>
+                      <option value="Bangalore" selected>Bangalore (Tech Capital)</option>
+                      <option value="Delhi">Delhi / NCR</option>
+                      <option value="Mumbai">Mumbai / Pune</option>
+                      <option value="Hyderabad">Hyderabad</option>
+                      <option value="Anywhere in India">Anywhere in India (Top IITs/NITs/IIMs)</option>
+                      <option value="Abroad">Abroad (USA / Germany / Singapore / UK)</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                  </div>
+                  <div class="field-hint">Target college filters and job market dynamics depend on this</div>
+                </div>
+              </div>
+
+              <!-- Favorite Subjects Multi-Select Chips -->
+              <div class="field-group full-width">
+                <label>
+                  <i class="fa-solid fa-book-open field-icon"></i>
+                  <span>Favorite Subjects (Select 1 to 5)</span>
+                  <span class="req">*</span>
+                </label>
+                <div class="subjects-chip-grid" id="subjectsChipGrid">
+                  <button type="button" class="subject-chip selected" data-subject="Math">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span>Math</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip selected" data-subject="Physics">
+                    <i class="fa-solid fa-atom"></i>
+                    <span>Physics</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip" data-subject="Chemistry">
+                    <i class="fa-solid fa-flask"></i>
+                    <span>Chemistry</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip" data-subject="Biology">
+                    <i class="fa-solid fa-dna"></i>
+                    <span>Biology</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip selected" data-subject="CS">
+                    <i class="fa-solid fa-code"></i>
+                    <span>Computer Science</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip" data-subject="English">
+                    <i class="fa-solid fa-pen-nib"></i>
+                    <span>English</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip" data-subject="Economics">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Economics</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip" data-subject="Business">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <span>Business</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip" data-subject="History">
+                    <i class="fa-solid fa-landmark"></i>
+                    <span>History</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                  <button type="button" class="subject-chip" data-subject="Geography">
+                    <i class="fa-solid fa-earth-asia"></i>
+                    <span>Geography</span>
+                    <i class="fa-solid fa-check check-icon"></i>
+                  </button>
+                </div>
+                <div class="field-hint" id="subjectSelectionCount">3 subjects selected (Math, Physics, CS)</div>
+              </div>
+
+              <!-- Career Goals (Optional Text) -->
+              <div class="field-group full-width">
+                <label for="studentGoal">
+                  <i class="fa-solid fa-bullseye field-icon"></i>
+                  <span>Aspirations & Dream Roles <span class="opt">(Optional)</span></span>
+                </label>
+                <div class="input-wrap">
+                  <input type="text" id="studentGoal" name="goal" placeholder="e.g., Software Engineer at Google, Quantum Researcher, or Quantitative Trader" value="Software Engineer at a top tech company">
+                </div>
+                <div class="field-hint">Any specific company, domain, or role you are aiming for? The AI will chart the exact path.</div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" id="generateReportBtn" class="counselor-cta-btn">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <span>Generate Chairman's AI Career Report</span>
+                  <i class="fa-solid fa-arrow-right btn-arrow"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- STEP 2: AI PROCESSING SCREEN -->
+          <div id="step2View" class="wizard-card-view">
+            <div class="processing-card">
+              <div class="processing-crown-orbit">
+                <div class="orbit-glow"></div>
+                <div class="orbit-ring"></div>
+                <div class="orbit-icon-crown"><i class="fa-solid fa-crown"></i></div>
+                <div class="orbit-satellite sat-1"><i class="fa-solid fa-microchip"></i></div>
+                <div class="orbit-satellite sat-2"><i class="fa-solid fa-building-columns"></i></div>
+                <div class="orbit-satellite sat-3"><i class="fa-solid fa-chart-line"></i></div>
+              </div>
+
+              <h2 class="processing-headline">Chairman AI is Analyzing...</h2>
+              <p class="processing-sub" id="processingStatusText">Evaluating your academic profile & matching career vectors</p>
+
+              <!-- Dynamic Progress Bar -->
+              <div class="processing-progress-container">
+                <div class="processing-progress-bar">
+                  <div class="processing-progress-fill" id="processingProgressFill" style="width: 15%;"></div>
+                </div>
+                <div class="processing-pct" id="processingPctText">15%</div>
+              </div>
+
+              <!-- Animated Live Ticker -->
+              <div class="processing-ticker-box">
+                <div class="ticker-item active" id="tickItem1"><i class="fa-solid fa-check-circle"></i> Analyzing marks, class standing, and cognitive subject affinities</div>
+                <div class="ticker-item" id="tickItem2"><i class="fa-solid fa-spinner fa-spin"></i> Cross-referencing 100+ Indian entrance exams (JEE, NEET, CUET, BITSAT, CAT)</div>
+                <div class="ticker-item" id="tickItem3"><i class="fa-solid fa-circle-dot"></i> Computing rank percentiles & cutoffs for Tier-1/Tier-2 colleges</div>
+                <div class="ticker-item" id="tickItem4"><i class="fa-solid fa-circle-dot"></i> Synthesizing 4-year milestone roadmap, technical stack, and market compensation</div>
+              </div>
+
+              <div class="processing-meta-badge">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Personalized AI Guidance · The Chairman Show</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: CAREER REPORT DISPLAY -->
+          <div id="step3View" class="wizard-card-view">
+            <div class="report-header-banner">
+              <div class="rh-top-row">
+                <div class="rh-badge">
+                  <i class="fa-solid fa-crown"></i>
+                  <span>Official Chairman Advisory Report</span>
+                </div>
+                <div class="rh-timestamp" id="reportTimestamp">Generated Just Now</div>
+              </div>
+
+              <h1 class="rh-title" id="reportTitle">Personalized Career Blueprint</h1>
+              <p class="rh-summary" id="reportProfileSummary">Prepared for Class 11 PCM Student · 78% Score · Math & Physics Focus</p>
+
+              <!-- Sticky Actions Bar -->
+              <div class="report-actions-bar">
+                <div class="ra-left">
+                  <button id="downloadPdfBtn" class="ra-btn ra-btn-gold" type="button">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Download PDF</span>
+                  </button>
+                  <button id="shareWhatsappBtn" class="ra-btn ra-btn-green" type="button">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>Share on WhatsApp</span>
+                  </button>
+                  <button id="regenerateBtn" class="ra-btn ra-btn-outline" type="button">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Regenerate Report</span>
+                  </button>
+                  <button id="editInputsBtn" class="ra-btn ra-btn-ghost" type="button">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Edit Details</span>
+                  </button>
+                </div>
+                <div class="ra-right">
+                  <button id="filterBookmarksBtn" class="ra-btn ra-btn-star" type="button" title="Show Bookmarked Sections Only">
+                    <i class="fa-regular fa-star" id="bookmarkFilterIcon"></i>
+                    <span id="bookmarkFilterText">Bookmarked (0)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 8 REPORT SECTION CARDS GRID -->
+            <div class="report-cards-grid" id="reportCardsGrid">
+              <!-- 1. Best Career Path -->
+              <article class="report-section-card" id="cardBestPath" data-section="bestPath">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-gold"><i class="fa-solid fa-bullseye"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Best Career Path</h3>
+                      <span class="rsc-sub">Top 3 Recommended Trajectories</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="bestPath" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentBestPath"></div>
+              </article>
+
+              <!-- 2. Recommended Exams -->
+              <article class="report-section-card" id="cardExams" data-section="exams">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-purple"><i class="fa-solid fa-clipboard-list"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Recommended Exams</h3>
+                      <span class="rsc-sub">Entrance Tests, Schedules & Timelines</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="exams" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentExams"></div>
+              </article>
+
+              <!-- 3. Target Colleges -->
+              <article class="report-section-card" id="cardColleges" data-section="colleges">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-cyan"><i class="fa-solid fa-building-columns"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Target Colleges & Cutoffs</h3>
+                      <span class="rsc-sub">Tier 1 & Tier 2 Benchmarks</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="colleges" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentColleges"></div>
+              </article>
+
+              <!-- 4. Career Roadmap -->
+              <article class="report-section-card" id="cardRoadmap" data-section="roadmap">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-green"><i class="fa-solid fa-route"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Career Roadmap</h3>
+                      <span class="rsc-sub">4-Year Milestone Progression Plan</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="roadmap" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentRoadmap"></div>
+              </article>
+
+              <!-- 5. Skills to Learn Now -->
+              <article class="report-section-card" id="cardSkills" data-section="skills">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-orange"><i class="fa-solid fa-laptop-code"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Skills to Learn Now</h3>
+                      <span class="rsc-sub">Technical, Practical & Soft Competencies</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="skills" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentSkills"></div>
+              </article>
+
+              <!-- 6. Expected Salary Range -->
+              <article class="report-section-card" id="cardSalary" data-section="salary">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-gold"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Expected Salary Range</h3>
+                      <span class="rsc-sub">Fresher CTC to 5-Year Senior Trajectory</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="salary" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentSalary"></div>
+              </article>
+
+              <!-- 7. Backup Options -->
+              <article class="report-section-card" id="cardBackup" data-section="backup">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-red"><i class="fa-solid fa-shield-cat"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Backup Options</h3>
+                      <span class="rsc-sub">Low-Risk Strategic Pivots</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="backup" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentBackup"></div>
+              </article>
+
+              <!-- 8. Scholarships -->
+              <article class="report-section-card" id="cardScholarships" data-section="scholarships">
+                <div class="rsc-header">
+                  <div class="rsc-title-group">
+                    <div class="rsc-icon icon-gold"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div>
+                      <h3 class="rsc-title">Scholarships to Apply For</h3>
+                      <span class="rsc-sub">Government & Merit Funding Opportunities</span>
+                    </div>
+                  </div>
+                  <button class="bookmark-btn" data-section="scholarships" type="button" title="Bookmark this section">
+                    <i class="fa-regular fa-bookmark"></i>
+                  </button>
+                </div>
+                <div class="rsc-content" id="contentScholarships"></div>
+              </article>
+            </div>
+
+            <!-- Report Footer Callout -->
+            <div class="report-footer-callout">
+              <div class="rfc-content">
+                <div class="rfc-crown"><i class="fa-solid fa-crown"></i></div>
+                <div>
+                  <h4>Want 1-on-1 Guidance on Your Preparation?</h4>
+                  <p>Chat directly with Chairman live, ask your doubts, and master coding problems from Level 1 to 100.</p>
+                </div>
+              </div>
+              <div class="rfc-btns">
+                <button class="counselor-cta-btn" type="button" data-goto="chatWithChairman">
+                  <i class="fa-solid fa-comments"></i>
+                  <span>Chat with Chairman Live</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div> <!-- /wizard-viewport -->
       </div>
     </section>
 
@@ -302,8 +809,29 @@
               <textarea id="codeEditor" class="code-textarea" spellcheck="false" placeholder="# Write your Python code here..."></textarea>
             </div>
             <div class="editor-footer">
-              <button class="btn-run-cine" id="showSolutionBtn"><i class="fa-solid fa-lightbulb"></i> Show Solution</button>
-              <button class="btn-mark-solved" id="markSolvedBtn"><i class="fa-regular fa-circle-check"></i> Mark as Solved</button>
+              <button class="btn-hero-primary btn-run-code" id="runCodeBtn" style="padding:.5rem 1rem;font-size:.85rem;">
+                <i class="fa-solid fa-play"></i> Run Code
+              </button>
+              <button class="btn-cine-outline" id="runTestsBtn" style="font-size:.82rem;padding:.5rem .9rem;">
+                <i class="fa-solid fa-vial-circle-check" style="color:var(--accent-green);"></i> Test Cases
+              </button>
+              <button class="btn-cine-outline" id="aiHintBtn" style="font-size:.82rem;padding:.5rem .9rem;">
+                <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i> Hint
+              </button>
+              <button class="btn-cine-outline" id="aiReviewCodeBtn" style="font-size:.82rem;padding:.5rem .9rem;">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--gold-primary);"></i> AI Review
+              </button>
+              <button class="btn-run-cine" id="showSolutionBtn"><i class="fa-solid fa-lightbulb"></i> Solution</button>
+              <button class="btn-mark-solved" id="markSolvedBtn"><i class="fa-regular fa-circle-check"></i> Mark Solved</button>
+            </div>
+
+            <!-- Execution Console & AI Feedback Terminal -->
+            <div class="python-output-panel" id="pythonOutputPanel" style="display:none;background:#0b0c13;border-top:1px solid var(--border-soft);padding:1rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+                <span style="font-family:var(--font-mono);font-size:.78rem;color:var(--gold-primary);font-weight:700;"><i class="fa-solid fa-terminal"></i> Terminal Output</span>
+                <button type="button" id="closeOutputBtn" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.8rem;"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <pre id="pythonOutputPre" style="margin:0;font-family:var(--font-mono);font-size:.82rem;color:#e5e7eb;white-space:pre-wrap;line-height:1.5;max-height:180px;overflow-y:auto;background:rgba(0,0,0,.4);padding:.75rem;border-radius:6px;border:1px solid rgba(255,255,255,.05);"></pre>
             </div>
           </div>
 
@@ -396,10 +924,11 @@
 
     <!-- ═══ QUICK SUGGESTIONS ═══ -->
     <div class="cc-suggestions" id="ccSuggestions">
-      <button class="cc-suggestion" data-q="What is Python?">What is Python? 🐍</button>
-      <button class="cc-suggestion" data-q="Explain for loop">Explain for loop</button>
-      <button class="cc-suggestion" data-q="How to reverse a string?">Reverse a string</button>
-      <button class="cc-suggestion" data-q="What is DSA?">What is DSA?</button>
+      <button class="cc-suggestion" data-q="Explain Photosynthesis and C3 vs C4 cycle for NEET Biology">NEET Biology 🩺</button>
+      <button class="cc-suggestion" data-q="Explain Rotational Dynamics and Moment of Inertia for JEE">JEE Physics ⚛️</button>
+      <button class="cc-suggestion" data-q="Explain Fundamental Rights Articles 14 to 21 for UPSC Polity">UPSC GS / Polity 🏛️</button>
+      <button class="cc-suggestion" data-q="How to prepare Class 12 Boards in 30 days?">12th Boards 📚</button>
+      <button class="cc-suggestion" data-q="Explain Python functions and loops with easy examples">Python Coding 🐍</button>
     </div>
 
     <!-- ═══ TYPING INDICATOR ═══ -->
@@ -459,19 +988,6 @@
 
       <div class="posts-feed" id="postsFeed">
         <div class="loading-cine"><div class="loading-spinner-cine"></div><p>Loading posts...</p></div>
-      </div>
-    </section>
-
-    <!-- LEADERBOARD TAB -->
-    <section id="leaderboard" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-solid fa-trophy"></i> Leaderboard</div>
-        <h2 class="section-title-cine">Top Coders This Week</h2>
-        <p class="section-sub-cine">Solve more, rank higher.</p>
-      </div>
-      <div class="lb-podium-cine" id="lbPodium"></div>
-      <div class="lb-list-cine" id="lbList">
-        <div class="loading-cine"><div class="loading-spinner-cine"></div><p>Loading leaderboard...</p></div>
       </div>
     </section>
 
@@ -732,6 +1248,24 @@
     </div>
   </div>
 
+  <!-- History Drawer for Career Counselor -->
+  <div id="historyDrawerOverlay" class="drawer-overlay"></div>
+  <aside id="historyDrawer" class="history-drawer">
+    <div class="drawer-header">
+      <div class="dh-title">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Report History</span>
+      </div>
+      <button id="closeHistoryDrawerBtn" class="dh-close-btn" title="Close" type="button">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <p class="drawer-desc">Your last 5 generated career reports are preserved here.</p>
+      <div id="historyReportsList" class="history-list"></div>
+    </div>
+  </aside>
+
   <footer class="footer-cine">
     <div class="footer-content">
       <div class="footer-brand">
@@ -754,14 +1288,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <!-- APP SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="problems.js"></script>
 <script src="app.js"></script>
+<script src="career.js"></script>
 
 <script>
   setTimeout(() => {
     const loader = document.getElementById('bootLoader');
     if (loader) loader.classList.add('hide');
-  }, 4000);
+  }, 1500);
 
   window.addEventListener('error', (e) => {
     console.error('Global error:', e.message);
@@ -788,16 +1324,6 @@
 
 
 
-<script>
-  atOptions = {
-    'key' : 'b82fa0cad92703a949150b165b9c13d3',
-    'format' : 'iframe',
-    'height' : 250,
-    'width' : 300,
-    'params' : {}
-  };
-</script>
-<script src="https://www.highrevenueformat.com/b82fa0cad92703a949150b165b9c13d3/invoke.js"></script>
 
 
 
@@ -807,31 +1333,14 @@
 
 
 
-<script>
-  atOptions = {
-    'key' : 'c1149f9227db2d2c32e48550806b256c',
-    'format' : 'iframe',
-    'height' : 50,
-    'width' : 320,
-    'params' : {}
-  };
-</script>
-<script src="https://www.highrevenueformat.com/c1149f9227db2d2c32e48550806b256c/invoke.js"></script>
 
 
 
 
 
-<script>
-  atOptions = {
-    'key' : 'c860ff071a31d95060847d5d8024268e',
-    'format' : 'iframe',
-    'height' : 90,
-    'width' : 728,
-    'params' : {}
-  };
-</script>
-<script src="https://www.highrevenueformat.com/c860ff071a31d95060847d5d8024268e/invoke.js"></script>
+
+
+
 
 
 

@@ -1,0 +1,8 @@
+{
+  "name": "The Chairman Show",
+  "description": "Universal preparation platform for Indian students: NEET, JEE, UPSC, State Civil Services, School Boards, and Python coding. Free AI Study Dost, Career Counseling, Live doubts, and ATS Resumes.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
