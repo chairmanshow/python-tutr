@@ -1,10 +1,8 @@
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAcK3HBwcuN1YAjB6EtVUVSP-A2ZKSG9TM",
-  authDomain: "the-chaiman-show.firebaseapp.com",
-  projectId: "the-chaiman-show",
-  storageBucket: "the-chaiman-show.firebasestorage.app",
-  messagingSenderId: "341824161860",
-  appId: "1:341824161860:web:7856a58f756b9f6906d411",
-  measurementId: "G-HD3LYE5SS6"
+  apiKey: "AIzaSyARBlTKDAEI67aI62WMtiLQyKzR9mQPZO0",
+  authDomain: "golden-bruin-t8f9p.firebaseapp.com",
+  projectId: "golden-bruin-t8f9p",
+  storageBucket: "golden-bruin-t8f9p.firebasestorage.app",
+  messagingSenderId: "136967711261",
+  appId: "1:136967711261:web:fc321c257eaaf0e66674f4"
 };
