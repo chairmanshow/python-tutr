@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="career.css">
+<link rel="stylesheet" href="courses.css">
 </head>
 <body>
 
@@ -793,63 +794,129 @@
         </div>
 
         <div class="problem-right">
-          <div class="editor-card">
+          <div class="editor-card" id="practiceEditorCard">
             <div class="editor-header">
               <div class="editor-tabs">
-                <button class="editor-tab active" id="tabCode"><i class="fa-solid fa-code"></i> Code</button>
-                <button class="editor-tab" id="tabSolution"><i class="fa-solid fa-lightbulb"></i> Solution</button>
+                <button class="editor-tab active" id="tabCode" data-tab="code">
+                  <i class="fa-solid fa-code"></i> Code
+                </button>
+                <button class="editor-tab" id="tabSolution" data-tab="solution">
+                  <i class="fa-solid fa-lightbulb"></i> Solution
+                </button>
+                <button class="editor-tab" id="tabAiHelp" data-tab="ai">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> AI Tutor
+                </button>
               </div>
               <div class="editor-actions">
-                <button class="editor-btn" id="resetCodeBtn" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
-                <button class="editor-btn" id="copyCodeBtn" title="Copy"><i class="fa-regular fa-copy"></i></button>
+                <button class="editor-btn" id="resetCodeBtn" title="Reset Code"><i class="fa-solid fa-rotate-left"></i></button>
+                <button class="editor-btn" id="copyCodeBtn" title="Copy Current Code"><i class="fa-regular fa-copy"></i></button>
               </div>
             </div>
-            <div class="editor-body">
-              <div class="editor-line-numbers" id="editorLineNumbers"></div>
-              <textarea id="codeEditor" class="code-textarea" spellcheck="false" placeholder="# Write your Python code here..."></textarea>
+
+            <!-- Tab 1: Code Editor View -->
+            <div class="editor-view-pane" id="paneCode">
+              <div class="editor-body">
+                <div class="editor-line-numbers" id="editorLineNumbers"></div>
+                <textarea id="codeEditor" class="code-textarea" spellcheck="false" placeholder="# Write your Python code here..."></textarea>
+              </div>
             </div>
-            <div class="editor-footer">
-              <button class="btn-hero-primary btn-run-code" id="runCodeBtn" style="padding:.5rem 1rem;font-size:.85rem;">
+
+            <!-- Tab 2: Solution View Pane (Integrated inside Editor Card) -->
+            <div class="editor-view-pane" id="paneSolution" style="display:none;">
+              <div class="solution-inner-body" style="padding:1rem 1.2rem;overflow-y:auto;max-height:480px;background:var(--bg-base);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="badge-solution"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> Official Solution</span>
+                    <span id="solutionLevelBadge" style="font-size:.75rem;padding:2px 8px;border-radius:12px;background:var(--gold-soft);color:var(--gold-primary);font-weight:700;">Level 1</span>
+                  </div>
+                  <div style="display:flex;gap:.5rem;align-items:center;">
+                    <button type="button" class="btn-cine-outline" id="runSolutionInTerminalBtn" style="font-size:.78rem;padding:5px 11px;">
+                      <i class="fa-solid fa-play" style="color:var(--accent-green);"></i> Run Solution
+                    </button>
+                    <button type="button" class="btn-cine-outline" id="insertSolutionToEditorBtn" style="font-size:.78rem;padding:5px 11px;">
+                      <i class="fa-solid fa-arrow-turn-down-left" style="color:var(--gold-primary);"></i> Copy to Editor
+                    </button>
+                    <button type="button" class="editor-btn" id="copySolutionBtn" title="Copy Solution Code">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <pre id="solutionCode" style="margin:0 0 1rem;background:#0d0d14;border:1px solid var(--border-soft);border-radius:8px;padding:1rem;color:#f3f4f6;font-family:var(--font-mono);font-size:.88rem;line-height:1.6;overflow-x:auto;tab-size:4;"></pre>
+                <div class="solution-explanation" id="solutionExplanation"></div>
+              </div>
+            </div>
+
+            <!-- Tab 3: AI Tutor View Pane -->
+            <div class="editor-view-pane" id="paneAiHelp" style="display:none;">
+              <div class="ai-help-body" style="padding:1.2rem;overflow-y:auto;max-height:480px;background:var(--bg-base);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;padding-bottom:.8rem;border-bottom:1px solid var(--border-soft);">
+                  <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold-primary),#b8860b);display:flex;align-items:center;justify-content:center;color:#0a0a0f;font-size:1.1rem;box-shadow:0 0 15px var(--gold-glow);">
+                    <i class="fa-solid fa-crown"></i>
+                  </div>
+                  <div>
+                    <h4 style="margin:0;font-size:.95rem;color:var(--gold-primary);font-weight:700;">Chairman AI Practice Mentor</h4>
+                    <span style="font-size:.78rem;color:var(--text-muted);">Instant hints, code review & complexity analysis for all levels</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                  <button type="button" class="btn-cine-outline" id="aiTabHintBtn" style="font-size:.8rem;padding:.45rem .85rem;">
+                    <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i> Progressive Hint
+                  </button>
+                  <button type="button" class="btn-cine-outline" id="aiTabReviewBtn" style="font-size:.8rem;padding:.45rem .85rem;">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--gold-primary);"></i> Review My Code
+                  </button>
+                  <button type="button" class="btn-cine-outline" id="aiTabComplexityBtn" style="font-size:.8rem;padding:.45rem .85rem;">
+                    <i class="fa-solid fa-chart-line" style="color:var(--accent-blue);"></i> Big-O Complexity
+                  </button>
+                </div>
+                <div id="aiHelpOutput" style="background:#0b0c13;border:1px solid var(--border-soft);border-radius:8px;padding:1rem;font-size:.85rem;line-height:1.65;color:#e5e7eb;min-height:120px;white-space:pre-wrap;">
+Click a button above to receive customized AI guidance for this problem, or ask your doubt below.
+                </div>
+                <form id="aiPracticeDoubtForm" style="display:flex;gap:.5rem;margin-top:.8rem;">
+                  <input type="text" id="aiPracticeDoubtInput" placeholder="Stuck? Ask Chairman AI anything about this problem..." style="flex:1;background:var(--bg-glass);border:1px solid var(--border-soft);border-radius:6px;padding:.5rem .8rem;color:var(--text-primary);font-size:.85rem;">
+                  <button type="submit" class="btn-hero-primary" style="padding:.5rem 1rem;font-size:.85rem;">Ask AI</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Persistent Editor Footer (NEVER hidden when switching tabs or running code!) -->
+            <div class="editor-footer" id="practiceEditorFooter">
+              <button class="btn-hero-primary btn-run-code" id="runCodeBtn" title="Execute Python Code (Ctrl+Enter)">
                 <i class="fa-solid fa-play"></i> Run Code
               </button>
-              <button class="btn-cine-outline" id="runTestsBtn" style="font-size:.82rem;padding:.5rem .9rem;">
+              <button class="btn-cine-outline" id="runTestsBtn" style="font-size:.82rem;padding:.5rem .9rem;" title="Run Sample Test Cases">
                 <i class="fa-solid fa-vial-circle-check" style="color:var(--accent-green);"></i> Test Cases
               </button>
-              <button class="btn-cine-outline" id="aiHintBtn" style="font-size:.82rem;padding:.5rem .9rem;">
+              <button class="btn-cine-outline" id="quickRunSolutionBtn" style="font-size:.82rem;padding:.5rem .9rem;" title="Run Official Solution Directly">
+                <i class="fa-solid fa-circle-play" style="color:var(--gold-primary);"></i> Run Solution
+              </button>
+              <button class="btn-cine-outline" id="aiHintBtn" style="font-size:.82rem;padding:.5rem .9rem;" title="Progressive AI Hint">
                 <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i> Hint
               </button>
-              <button class="btn-cine-outline" id="aiReviewCodeBtn" style="font-size:.82rem;padding:.5rem .9rem;">
+              <button class="btn-cine-outline" id="aiReviewCodeBtn" style="font-size:.82rem;padding:.5rem .9rem;" title="AI Code Review">
                 <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--gold-primary);"></i> AI Review
               </button>
-              <button class="btn-run-cine" id="showSolutionBtn"><i class="fa-solid fa-lightbulb"></i> Solution</button>
-              <button class="btn-mark-solved" id="markSolvedBtn"><i class="fa-regular fa-circle-check"></i> Mark Solved</button>
+              <button class="btn-run-cine" id="showSolutionBtn" title="Toggle Official Solution">
+                <i class="fa-solid fa-lightbulb"></i> <span id="showSolutionBtnText">Solution</span>
+              </button>
+              <button class="btn-mark-solved" id="markSolvedBtn">
+                <i class="fa-regular fa-circle-check"></i> Mark Solved
+              </button>
             </div>
 
             <!-- Execution Console & AI Feedback Terminal -->
             <div class="python-output-panel" id="pythonOutputPanel" style="display:none;background:#0b0c13;border-top:1px solid var(--border-soft);padding:1rem;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
-                <span style="font-family:var(--font-mono);font-size:.78rem;color:var(--gold-primary);font-weight:700;"><i class="fa-solid fa-terminal"></i> Terminal Output</span>
-                <button type="button" id="closeOutputBtn" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.8rem;"><i class="fa-solid fa-xmark"></i></button>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-family:var(--font-mono);font-size:.78rem;color:var(--gold-primary);font-weight:700;"><i class="fa-solid fa-terminal"></i> Terminal Output</span>
+                  <span id="pyEngineStatus" style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:rgba(212,175,55,.15);color:var(--gold-primary);font-family:var(--font-mono);">Python 3.12 Engine</span>
+                </div>
+                <div style="display:flex;gap:.4rem;">
+                  <button type="button" id="clearOutputBtn" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.75rem;padding:2px 6px;" title="Clear Output"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                  <button type="button" id="closeOutputBtn" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.8rem;padding:2px 6px;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
               </div>
-              <pre id="pythonOutputPre" style="margin:0;font-family:var(--font-mono);font-size:.82rem;color:#e5e7eb;white-space:pre-wrap;line-height:1.5;max-height:180px;overflow-y:auto;background:rgba(0,0,0,.4);padding:.75rem;border-radius:6px;border:1px solid rgba(255,255,255,.05);"></pre>
-            </div>
-          </div>
-
-          <div class="solution-card" id="solutionCard" style="display:none;">
-            <div class="solution-header">
-              <span><i class="fa-solid fa-lightbulb"></i> Official Solution</span>
-              <div style="display:flex; gap:.4rem;">
-                <button class="editor-btn" id="copySolutionBtn" title="Copy"><i class="fa-regular fa-copy"></i></button>
-                <button class="editor-btn" id="backToCodeBtn" title="Back"><i class="fa-solid fa-code"></i></button>
-              </div>
-            </div>
-            <div class="solution-body">
-              <pre id="solutionCode"></pre>
-              <div class="solution-explanation" id="solutionExplanation"></div>
-              <div class="solution-nav">
-                <button id="solutionPrevBtn"><i class="fa-solid fa-arrow-left"></i> Previous</button>
-                <button id="solutionNextBtn">Next <i class="fa-solid fa-arrow-right"></i></button>
-              </div>
+              <pre id="pythonOutputPre" style="margin:0;font-family:var(--font-mono);font-size:.82rem;color:#e5e7eb;white-space:pre-wrap;line-height:1.5;max-height:220px;overflow-y:auto;background:rgba(0,0,0,.5);padding:.85rem;border-radius:6px;border:1px solid rgba(255,255,255,.07);"></pre>
             </div>
           </div>
 
@@ -1075,45 +1142,181 @@
       </div>
     </section>
 
-    <!-- FREE COURSES -->
+    <!-- COURSES & MASTERCLASSES ACADEMY -->
     <section id="freeCourses" class="tab-content">
-      <div class="section-head-cinematic">
-        <div class="section-tag"><i class="fa-brands fa-youtube"></i> Free Content</div>
-        <h2 class="section-title-cine">FREE Courses</h2>
-        <p class="section-sub-cine">सारी videos from <strong style="color:var(--gold-primary);">The Chairman Show</strong> YouTube channel</p>
-      </div>
+      <div class="courses-container">
+        <div class="section-head-cinematic">
+          <div class="section-tag"><i class="fa-solid fa-graduation-cap"></i> The Chairman Academy</div>
+          <h2 class="section-title-cine">Courses & Live Masterclasses</h2>
+          <p class="section-sub-cine">Interactive courses, direct YouTube Live classrooms, and exam-grade roadmaps by The Chairman Show</p>
+        </div>
 
-      <div class="yt-channel-banner">
-        <div class="yt-channel-info">
-          <div class="yt-channel-avatar"><i class="fa-brands fa-youtube"></i></div>
-          <div class="yt-channel-meta">
-            <h3>THE CHAIRMAN SHOW</h3>
-            <p id="ytSubscriberCount">Loading…</p>
+        <!-- Top Navigation & Admin Control Strip -->
+        <div class="courses-control-bar">
+          <div class="courses-nav-tabs">
+            <button class="c-nav-btn active" id="tabBtn_allCourses">
+              <i class="fa-solid fa-graduation-cap"></i> <span>All Masterclasses</span>
+            </button>
+            <button class="c-nav-btn" id="tabBtn_liveSchedule">
+              <span class="c-live-dot"></span> <span>Live Sessions</span>
+            </button>
+            <button class="c-nav-btn" id="tabBtn_ytVault">
+              <i class="fa-brands fa-youtube"></i> <span>YouTube Vault</span>
+            </button>
+            <button class="c-nav-btn" id="tabBtn_adminStudio" style="display:none;">
+              <i class="fa-solid fa-user-shield"></i> <span>Admin Studio</span>
+            </button>
+          </div>
+
+          <div class="courses-admin-actions">
+            <button id="courseAdminToggleBtn" class="btn-admin-toggle" title="Toggle Admin Mode for Course Management">
+              <i class="fa-solid fa-shield-halved"></i> <span>Admin Mode: OFF</span>
+            </button>
+            <button class="btn-create-course-primary" onclick="CoursesManager.openCreateModal()" title="Create New Course">
+              <i class="fa-solid fa-plus"></i> <span>Create Course</span>
+            </button>
           </div>
         </div>
-        <a href="https://www.youtube.com/@THE_CHAIRMAN_SHOW?sub_confirmation=1" target="_blank" rel="noopener" class="yt-subscribe-btn">
-          <i class="fa-brands fa-youtube"></i><span>Subscribe</span>
-        </a>
-      </div>
 
-      <div class="yt-filter-bar">
-        <div class="filter-chips-cine" id="ytFilters">
-          <button class="chip-cine active" data-filter="all"><i class="fa-solid fa-layer-group"></i> All</button>
-          <button class="chip-cine" data-filter="latest"><i class="fa-solid fa-clock"></i> Latest</button>
-          <button class="chip-cine" data-filter="popular"><i class="fa-solid fa-fire"></i> Popular</button>
-          <button class="chip-cine" data-filter="long"><i class="fa-solid fa-hourglass"></i> Full Courses</button>
+        <!-- Admin Alert Banner when Admin Mode is Active -->
+        <div class="admin-mode-banner" id="adminModeBanner">
+          <div class="admin-banner-text">
+            <i class="fa-solid fa-shield-cat" style="font-size:1.2rem;"></i>
+            <div>
+              <strong>Admin Mode Active</strong>
+              <div style="font-size:0.75rem; color:var(--text-secondary);">You can create, edit, delete courses, set pricing/UPI/Razorpay, schedule YouTube live streams, and approve students.</div>
+            </div>
+          </div>
+          <div class="admin-banner-actions">
+            <button class="admin-banner-btn" onclick="CoursesManager.switchCoursesTab('adminStudio')">
+              <i class="fa-solid fa-sliders"></i> Admin Studio
+            </button>
+            <button class="admin-banner-btn" onclick="CoursesManager.openCreateModal()">
+              <i class="fa-solid fa-plus"></i> New Course
+            </button>
+            <button class="admin-banner-btn" onclick="CoursesManager.toggleAdminMode()" style="color:#ef4444; border-color:rgba(239,68,68,0.4);">
+              <i class="fa-solid fa-power-off"></i> Exit Admin
+            </button>
+          </div>
         </div>
-        <div class="filter-search-cine">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="ytSearch" placeholder="Search videos...">
-        </div>
-      </div>
 
-      <div class="yt-videos-grid" id="ytVideosGrid">
-        <div class="loading-cine"><div class="loading-spinner-cine"></div><p>Loading videos from YouTube…</p></div>
-      </div>
-      <div class="yt-load-more-wrap" id="ytLoadMoreWrap" style="display:none;">
-        <button class="btn-hero-ghost" id="ytLoadMoreBtn"><i class="fa-solid fa-rotate"></i><span>Load More Videos</span></button>
+        <!-- PANE 1: ALL COURSES (DEFAULT) -->
+        <div id="paneAllCourses" class="courses-pane">
+          <div class="courses-filter-bar">
+            <div class="courses-filter-chips" id="coursesFilterChips">
+              <button class="c-chip active" data-filter="all"><i class="fa-solid fa-layer-group"></i> All Courses</button>
+              <button class="c-chip" data-filter="free"><i class="fa-solid fa-gift"></i> 100% Free</button>
+              <button class="c-chip" data-filter="paid"><i class="fa-solid fa-crown"></i> Paid Masterclasses</button>
+              <button class="c-chip" data-filter="live"><i class="fa-brands fa-youtube" style="color:#ef4444"></i> Live YouTube</button>
+              <button class="c-chip" data-filter="Coding"><i class="fa-solid fa-code"></i> Coding & Tech</button>
+              <button class="c-chip" data-filter="Exam"><i class="fa-solid fa-book"></i> NEET / JEE Prep</button>
+            </div>
+            <div class="courses-search-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="coursesSearchInput" placeholder="Search courses, live classes...">
+            </div>
+          </div>
+
+          <!-- Courses Cards Grid -->
+          <div class="courses-grid" id="coursesCardsGrid">
+            <div class="loading-cine"><div class="loading-spinner-cine"></div><p>Loading Chairman Academy courses…</p></div>
+          </div>
+        </div>
+
+        <!-- PANE 2: LIVE SCHEDULE & STREAM HUB -->
+        <div id="paneLiveSchedule" class="courses-pane" style="display:none;">
+          <div style="background:var(--bg-surface); border:1px solid var(--border-mid); border-radius:14px; padding:1.25rem; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-size:1.15rem; color:var(--text-primary); margin-bottom:0.25rem;"><i class="fa-brands fa-youtube" style="color:#ef4444"></i> Live Stream Schedule</h3>
+              <p style="font-size:0.83rem; color:var(--text-secondary);">Direct interactive classes streamed through YouTube with real-time doubt resolution.</p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <a href="https://www.youtube.com/@THE_CHAIRMAN_SHOW?sub_confirmation=1" target="_blank" rel="noopener" class="btn-card-primary" style="background:#ef4444; color:#fff; text-decoration:none;">
+                <i class="fa-brands fa-youtube"></i> Subscribe on YouTube
+              </a>
+            </div>
+          </div>
+          <div id="liveScheduleList"></div>
+        </div>
+
+        <!-- PANE 3: ADMIN STUDIO -->
+        <div id="paneAdminStudio" class="courses-pane" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-size:1.2rem; color:var(--gold-light);"><i class="fa-solid fa-user-shield"></i> Course Management & Admin Studio</h3>
+              <p style="font-size:0.83rem; color:var(--text-secondary);">Create courses, set thumbnails, configure UPI / Razorpay pricing, schedule YouTube live streams, and approve students.</p>
+            </div>
+            <button class="btn-create-course-primary" onclick="CoursesManager.openCreateModal()">
+              <i class="fa-solid fa-plus"></i> Create New Course
+            </button>
+          </div>
+
+          <!-- Courses Management Table -->
+          <div style="background:var(--bg-surface); border:1px solid var(--border-mid); border-radius:14px; padding:1.25rem; margin-bottom:1.75rem; overflow-x:auto;">
+            <h4 style="font-size:0.95rem; color:var(--text-primary); margin-bottom:1rem;">All Created Courses</h4>
+            <table style="width:100%; border-collapse:collapse; text-align:left;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border-mid); color:var(--text-secondary); font-size:0.78rem; text-transform:uppercase;">
+                  <th style="padding:0.6rem 0.5rem;">Course</th>
+                  <th style="padding:0.6rem 0.5rem;">Pricing</th>
+                  <th style="padding:0.6rem 0.5rem;">UPI / Payment</th>
+                  <th style="padding:0.6rem 0.5rem;">Student Access</th>
+                  <th style="padding:0.6rem 0.5rem;">YouTube Live</th>
+                  <th style="padding:0.6rem 0.5rem; text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminCoursesTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Student Payment Submissions / Allow Requests -->
+          <div style="background:var(--bg-surface); border:1px solid var(--border-mid); border-radius:14px; padding:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <h4 style="font-size:0.95rem; color:var(--text-primary);">
+                <i class="fa-solid fa-receipt" style="color:var(--gold-primary);"></i> Student Payment Submissions & Allow Requests
+              </h4>
+              <button class="btn-cas" onclick="CoursesManager.renderAdminStudio()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            </div>
+            <div id="adminEnrollmentRequestsList"></div>
+          </div>
+        </div>
+
+        <!-- PANE 4: YOUTUBE CHANNEL VAULT -->
+        <div id="paneYtVault" class="courses-pane" style="display:none;">
+          <div class="yt-channel-banner">
+            <div class="yt-channel-info">
+              <div class="yt-channel-avatar"><i class="fa-brands fa-youtube"></i></div>
+              <div class="yt-channel-meta">
+                <h3>THE CHAIRMAN SHOW</h3>
+                <p id="ytSubscriberCount">Loading…</p>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/@THE_CHAIRMAN_SHOW?sub_confirmation=1" target="_blank" rel="noopener" class="yt-subscribe-btn">
+              <i class="fa-brands fa-youtube"></i><span>Subscribe</span>
+            </a>
+          </div>
+
+          <div class="yt-filter-bar">
+            <div class="filter-chips-cine" id="ytFilters">
+              <button class="chip-cine active" data-filter="all"><i class="fa-solid fa-layer-group"></i> All</button>
+              <button class="chip-cine" data-filter="latest"><i class="fa-solid fa-clock"></i> Latest</button>
+              <button class="chip-cine" data-filter="popular"><i class="fa-solid fa-fire"></i> Popular</button>
+              <button class="chip-cine" data-filter="long"><i class="fa-solid fa-hourglass"></i> Full Courses</button>
+            </div>
+            <div class="filter-search-cine">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="ytSearch" placeholder="Search channel videos...">
+            </div>
+          </div>
+
+          <div class="yt-videos-grid" id="ytVideosGrid">
+            <div class="loading-cine"><div class="loading-spinner-cine"></div><p>Loading videos from YouTube…</p></div>
+          </div>
+          <div class="yt-load-more-wrap" id="ytLoadMoreWrap" style="display:none;">
+            <button class="btn-hero-ghost" id="ytLoadMoreBtn"><i class="fa-solid fa-rotate"></i><span>Load More Videos</span></button>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1248,6 +1451,232 @@
     </div>
   </div>
 
+  <!-- ─── COURSE ADMIN EDITOR MODAL ─── -->
+  <div class="modal-overlay-cine" id="courseEditorModal">
+    <div class="modal-content-cine" style="max-width: 820px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header-cine">
+        <h3 id="courseEditorModalTitle"><i class="fa-solid fa-wand-magic-sparkles"></i> Course Studio</h3>
+        <button class="close-modal-cine" onclick="closeModal('courseEditorModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine">
+        <form onsubmit="event.preventDefault(); CoursesManager.saveCourseFromForm();">
+          <div class="course-form-grid">
+            <div class="full-col form-group-cine">
+              <label>Course Title *</label>
+              <input type="text" id="cefTitle" placeholder="e.g. Complete Python & DSA Zero to Hero Masterclass" required>
+            </div>
+            <div class="full-col form-group-cine">
+              <label>Tagline / Subtitle</label>
+              <input type="text" id="cefSubtitle" placeholder="Brief high-yield summary for students">
+            </div>
+
+            <div class="form-group-cine">
+              <label>Category</label>
+              <select id="cefCategory">
+                <option value="Coding & Tech">Coding & Tech</option>
+                <option value="NEET & Medical">NEET & Medical</option>
+                <option value="JEE & Engineering">JEE & Engineering</option>
+                <option value="UPSC & Civil Services">UPSC & Civil Services</option>
+                <option value="Class 11 & 12 Boards">Class 11 & 12 Boards</option>
+                <option value="General Mastery">General Mastery</option>
+              </select>
+            </div>
+            <div class="form-group-cine">
+              <label>Target Level</label>
+              <select id="cefLevel">
+                <option value="Beginner to Advanced">Beginner to Advanced</option>
+                <option value="Class 11 & 12">Class 11 & 12</option>
+                <option value="College & Job Ready">College & Job Ready</option>
+                <option value="All Levels">All Levels</option>
+              </select>
+            </div>
+
+            <div class="form-group-cine">
+              <label>Instructor Name</label>
+              <input type="text" id="cefInstructor" placeholder="The Chairman">
+            </div>
+            <div class="form-group-cine">
+              <label>Course Thumbnail (Image URL or Upload)</label>
+              <input type="text" id="cefThumbnail" placeholder="https://images.unsplash.com/...">
+              <input type="file" id="cefThumbFile" accept="image/*" style="margin-top:0.4rem; font-size:0.75rem;">
+              <div class="thumb-preset-bar">
+                <span style="font-size:0.72rem; color:var(--text-muted); align-self:center;">Presets:</span>
+                <button type="button" class="btn-thumb-preset" onclick="CoursesManager.setThumbnailPreset('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800')">Python Tech</button>
+                <button type="button" class="btn-thumb-preset" onclick="CoursesManager.setThumbnailPreset('https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800')">Science Lab</button>
+                <button type="button" class="btn-thumb-preset" onclick="CoursesManager.setThumbnailPreset('https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800')">AI Fullstack</button>
+                <button type="button" class="btn-thumb-preset" onclick="CoursesManager.setThumbnailPreset('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800')">Study Desk</button>
+              </div>
+            </div>
+
+            <div class="full-col" style="text-align:center;">
+              <img id="cefThumbPreview" src="" alt="Thumbnail Preview" style="max-height:140px; border-radius:8px; display:none; margin:0 auto; border:1px solid var(--border-gold);">
+            </div>
+
+            <div class="full-col form-group-cine">
+              <label>Course Detailed Description</label>
+              <textarea id="cefDescription" rows="3" placeholder="Explain what students will achieve in this masterclass..."></textarea>
+            </div>
+
+            <!-- Pricing Options -->
+            <div class="full-col" style="background:var(--bg-surface-2); border:1px solid var(--border-mid); border-radius:12px; padding:1rem;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                <label style="font-weight:700; color:var(--gold-light); display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                  <input type="checkbox" id="cefIsPaid" style="width:18px; height:18px; accent-color:var(--gold-primary);">
+                  <span>Make Course PAID (Premium Masterclass)</span>
+                </label>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Unchecked = 100% Free Open Course</span>
+              </div>
+
+              <div id="cefPaidFields" class="course-form-grid" style="display:none;">
+                <div class="form-group-cine">
+                  <label>Price (₹ INR)</label>
+                  <input type="number" id="cefPrice" placeholder="499" min="0">
+                </div>
+                <div class="form-group-cine">
+                  <label>Original / Strikethrough Price (₹)</label>
+                  <input type="number" id="cefOriginalPrice" placeholder="2499" min="0">
+                </div>
+
+                <div class="form-group-cine">
+                  <label>Admin UPI ID (for QR Code & Direct Pay)</label>
+                  <input type="text" id="cefUpiId" placeholder="chairman@upi">
+                  <span class="form-help-hint">Generates automatic UPI QR Code for instant payment</span>
+                </div>
+                <div class="form-group-cine">
+                  <label>Razorpay Payment Page / Link (Optional)</label>
+                  <input type="url" id="cefRazorpayLink" placeholder="https://pages.razorpay.com/your-course">
+                  <span class="form-help-hint">Add your customized Razorpay payment page URL</span>
+                </div>
+
+                <div class="full-col form-group-cine">
+                  <label>Allowed Selected Students (VIP Allow-List)</label>
+                  <textarea id="cefAllowedStudents" rows="2" placeholder="Enter emails separated by comma or new line (e.g. icreative552@gmail.com, student1@gmail.com)"></textarea>
+                  <span class="form-help-hint">These specific students get instant unlocked access without needing to pay</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- YouTube Live Stream Feature -->
+            <div class="full-col" style="background:linear-gradient(135deg, rgba(239,68,68,0.08), rgba(0,0,0,0.2)); border:1px solid rgba(239,68,68,0.3); border-radius:12px; padding:1rem;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                <label style="font-weight:700; color:#ef4444; display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                  <input type="checkbox" id="cefLiveEnabled" style="width:18px; height:18px; accent-color:#ef4444;">
+                  <span><i class="fa-brands fa-youtube"></i> Enable Live Class via YouTube</span>
+                </label>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Streams directly through YouTube</span>
+              </div>
+
+              <div id="cefLiveFields" style="display:none;">
+                <div class="course-form-grid">
+                  <div class="full-col form-group-cine">
+                    <label>Live Class Topic / Session Title</label>
+                    <input type="text" id="cefLiveTitle" placeholder="e.g. LIVE: Physics Mechanics & Shortcut Problem Solving">
+                  </div>
+                  <div class="full-col form-group-cine">
+                    <label>YouTube Live Stream Link or Video ID</label>
+                    <input type="text" id="cefLiveYoutubeUrl" placeholder="https://www.youtube.com/watch?v=... or https://youtube.com/live/...">
+                    <span class="form-help-hint">Paste your YouTube Live link. The live stream will be embedded directly in the class room.</span>
+                  </div>
+                  <div class="form-group-cine">
+                    <label>Scheduled Start Date & Time</label>
+                    <input type="datetime-local" id="cefLiveStartTime">
+                    <span class="form-help-hint">Automatic countdown will display until stream goes live</span>
+                  </div>
+                  <div class="form-group-cine">
+                    <label>Expected Duration (Minutes)</label>
+                    <input type="number" id="cefLiveDuration" value="90" min="15">
+                  </div>
+                  <div class="full-col form-group-cine">
+                    <label>Session Agenda / Topic Bullet Points</label>
+                    <textarea id="cefLiveAgenda" rows="2" placeholder="Key topics covered, formulas discussed, LeetCode / PYQ questions..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Features list -->
+            <div class="full-col form-group-cine">
+              <label>Course Features & Perks (One per line)</label>
+              <textarea id="cefFeatures" rows="3" placeholder="🔴 Live YouTube Masterclasses directly with Chairman&#10;🧠 Visual High-Yield Mindmaps for rapid PPT revision&#10;💬 Real-time Doubt Support&#10;📜 Certificate of Completion"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.25rem;">
+            <button type="button" class="btn-hero-ghost" onclick="closeModal('courseEditorModal')">Cancel</button>
+            <button type="submit" class="btn-create-course-primary">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish Course
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STUDENT ALLOW-LIST MODAL ─── -->
+  <div class="modal-overlay-cine" id="allowStudentsModal">
+    <div class="modal-content-cine" style="max-width: 580px;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-users-gear"></i> Manage Allowed Students</h3>
+        <button class="close-modal-cine" onclick="closeModal('allowStudentsModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine">
+        <h4 id="allowModalCourseTitle" style="font-size:0.95rem; color:var(--text-primary); margin-bottom:0.75rem;">Course Title</h4>
+        <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1rem;">
+          Students on this allow-list bypass payment and have full VIP access to this paid course.
+        </p>
+
+        <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
+          <input type="email" id="newAllowedStudentEmail" placeholder="student.email@example.com" style="flex:1; padding:0.55rem 0.85rem; border-radius:8px; background:var(--bg-surface); border:1px solid var(--border-mid); color:var(--text-primary); font-size:0.85rem;">
+          <button class="btn-card-primary" onclick="CoursesManager.addAllowedStudent()">
+            <i class="fa-solid fa-user-plus"></i> Grant Access
+          </button>
+        </div>
+
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:0.5rem;">
+          Currently Allowed Students:
+        </label>
+        <div id="allowedStudentsList" style="background:var(--bg-surface-2); border:1px solid var(--border-mid); border-radius:10px; padding:0.85rem; min-height:100px; max-height:220px; overflow-y:auto;"></div>
+
+        <div style="text-align:right; margin-top:1rem;">
+          <button class="btn-hero-ghost" onclick="closeModal('allowStudentsModal')">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── YOUTUBE LIVE CLASSROOM THEATER MODAL ─── -->
+  <div class="modal-overlay-cine" id="liveClassModal">
+    <div class="modal-content-cine live-modal-dialog">
+      <div class="modal-header-cine">
+        <h3><span class="c-live-dot"></span> The Chairman Live Theater</h3>
+        <button class="close-modal-cine" onclick="closeModal('liveClassModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine" id="liveClassModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ─── COURSE PAYMENT CHECKOUT MODAL ─── -->
+  <div class="modal-overlay-cine" id="courseCheckoutModal">
+    <div class="modal-content-cine checkout-modal-dialog">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-shield-halved"></i> Enroll & Secure Checkout</h3>
+        <button class="close-modal-cine" onclick="closeModal('courseCheckoutModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine" id="courseCheckoutModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ─── COURSE DETAILS & SYLLABUS MODAL ─── -->
+  <div class="modal-overlay-cine" id="courseDetailsModal">
+    <div class="modal-content-cine" style="max-width: 860px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header-cine">
+        <h3><i class="fa-solid fa-graduation-cap"></i> Course Overview & Curriculum</h3>
+        <button class="close-modal-cine" onclick="closeModal('courseDetailsModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body-cine" id="courseDetailsModalBody"></div>
+    </div>
+  </div>
+
   <!-- History Drawer for Career Counselor -->
   <div id="historyDrawerOverlay" class="drawer-overlay"></div>
   <aside id="historyDrawer" class="history-drawer">
@@ -1281,17 +1710,16 @@
   </footer>
 </div>
 
-<!-- FIREBASE SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- FIREBASE SDK & FIRESTORE (PROJECT: golden-bruin-t8f9p) -->
+<script src="firebase-init.js"></script>
 
-<!-- APP SCRIPTS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- PYTHON WASM RUNTIME & APP SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
 <script src="problems.js"></script>
 <script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="career.js"></script>
+<script src="courses.js"></script>
 
 <script>
   setTimeout(() => {

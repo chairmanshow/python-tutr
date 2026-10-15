@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email.lower() == 'overactingofficial7@gmail.com' ||
+        request.auth.token.email.lower() == 'icreative552@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Health check rule for connection validation
+    match /_health/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // User profiles & private subcollections
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
+
+      match /studyPlans/{planId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /careerReports/{reportId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /resumes/{resumeId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /emailPreferences/{prefId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Public shared resumes
+    match /publicResumes/{resumeId} {
+      allow get: if true;
+      allow list: if true;
+      allow create, update: if isSignedIn() && (
+        request.resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // Chairman announcements & posts
+    match /posts/{postId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Academy Courses & Live classes
+    match /courses/{courseId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Student enrollment & payment verification requests
+    match /enrollmentRequests/{requestId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn() && (
+        resource.data.studentEmail.lower() == request.auth.token.email.lower() || isAdmin()
+      );
+      allow list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Community Live Chat Rooms & Messages
+    match /chat_rooms/{roomId}/messages/{msgId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    // Community Presence & Typing
+    match /chat_presence/{userId} {
+      allow read, write: if true;
+    }
+
+    match /chat_typing/{roomId}/users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Admins role collection
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

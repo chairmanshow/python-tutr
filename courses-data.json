@@ -1,0 +1,214 @@
+[
+  {
+    "id": "course-python-dsa-mastery",
+    "title": "Complete Python & DSA Zero to Hero Masterclass",
+    "subtitle": "Master core Python, Data Structures & Algorithms from fundamentals to cracking competitive tech interviews",
+    "description": "The ultimate Python bootcamp by The Chairman. Covers memory model, OOPs, linked lists, binary trees, dynamic programming, and live interview question solving. Features interactive YouTube live classes, instant doubt resolution, and visual mindmaps.",
+    "category": "Coding & Tech",
+    "level": "Beginner to Advanced",
+    "instructor": "The Chairman",
+    "thumbnail": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
+    "isPaid": false,
+    "price": 0,
+    "originalPrice": 2499,
+    "payment": {
+      "upiId": "chairman@upi",
+      "razorpayLink": "",
+      "paymentInstructions": "100% Free Open Course sponsored by The Chairman Show community."
+    },
+    "allowedStudents": [
+      "all"
+    ],
+    "features": [
+      "🔴 Live YouTube Masterclasses directly with Chairman",
+      "🧠 Visual High-Yield Mindmaps for every chapter",
+      "💻 150+ Curated Python & DSA Practice Challenges",
+      "💬 Real-time Live Doubts & Community Discussion",
+      "📜 Verified Certificate of Course Completion"
+    ],
+    "liveClass": {
+      "enabled": true,
+      "title": "LIVE: Dynamic Programming & Binary Trees in Python",
+      "youtubeUrl": "https://www.youtube.com/watch?v=kqtD5dpn9C8",
+      "youtubeVideoId": "kqtD5dpn9C8",
+      "startTime": "2026-10-15T18:30:00.000Z",
+      "status": "upcoming",
+      "durationMinutes": 90,
+      "agenda": "Recursion to DP Memoization, Top 5 Tree Traversal patterns, and live problem-solving on LeetCode."
+    },
+    "modules": [
+      {
+        "title": "Module 1: Foundations of Python",
+        "lessons": [
+          {
+            "title": "Variables, Dynamic Typing & Memory Model",
+            "duration": "45 min",
+            "videoId": "kqtD5dpn9C8"
+          },
+          {
+            "title": "Control Structures, Loops & List Comprehensions",
+            "duration": "50 min",
+            "videoId": "8nD73SGS2ig"
+          }
+        ]
+      },
+      {
+        "title": "Module 2: Object-Oriented Programming (OOP)",
+        "lessons": [
+          {
+            "title": "Classes, Inheritance, Dunder Methods & Encapsulation",
+            "duration": "60 min",
+            "videoId": "RBSGKlAvoiM"
+          },
+          {
+            "title": "Polymorphism, Abstract Base Classes & Design Patterns",
+            "duration": "55 min",
+            "videoId": "3_qY0n2yN4A"
+          }
+        ]
+      },
+      {
+        "title": "Module 3: Data Structures Mastery",
+        "lessons": [
+          {
+            "title": "Linked Lists, Stacks & Queues Implementations",
+            "duration": "75 min",
+            "videoId": "kqtD5dpn9C8"
+          },
+          {
+            "title": "Trees, BST & Heaps with Live Coding",
+            "duration": "80 min",
+            "videoId": "8nD73SGS2ig"
+          }
+        ]
+      }
+    ],
+    "enrolledCount": 2840,
+    "rating": 4.95,
+    "createdAt": "2026-10-01T00:00:00.000Z"
+  },
+  {
+    "id": "course-neet-jee-super-revision",
+    "title": "NEET & JEE Super Revision Masterclass 2026",
+    "subtitle": "High-yield visual mindmaps, formula sheets, live problem solving & full exam simulation",
+    "description": "An intensive, high-retention program designed to revise high-yield concepts across Physics, Chemistry, and Mathematics/Biology. Access live classes directly streamed via YouTube, active recall mnemonics, and personal doubt clinics.",
+    "category": "Exam Prep",
+    "level": "Class 11, 12 & Droppers",
+    "instructor": "The Chairman & Lead Mentors",
+    "thumbnail": "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&auto=format&fit=crop&q=80",
+    "isPaid": true,
+    "price": 499,
+    "originalPrice": 2999,
+    "payment": {
+      "upiId": "chairman@upi",
+      "razorpayLink": "https://pages.razorpay.com/chairman-super-revision",
+      "paymentInstructions": "Scan the UPI QR code using any UPI app (GPay, PhonePe, Paytm) or click Razorpay to pay ₹499. Enter your transaction UTR number to verify access. Allowed students get instant unlock."
+    },
+    "allowedStudents": [
+      "icreative552@gmail.com",
+      "overactingofficial7@gmail.com",
+      "student.vip@example.com"
+    ],
+    "features": [
+      "🔴 Exclusive YouTube Live Masterclasses with Live Chat",
+      "🧠 High-Yield Visual Mindmaps for rapid PPT/notes revision",
+      "⚡ 500+ Solved Previous Year Exam Questions (PYQs)",
+      "📋 Curated Formula Sheets & Active Recall Mnemonics",
+      "🎯 Dedicated Mentor Support & Doubt Clearing"
+    ],
+    "liveClass": {
+      "enabled": true,
+      "title": "LIVE: High-Yield Physics Mechanics & Kinematics Shortcuts",
+      "youtubeUrl": "https://www.youtube.com/watch?v=8nD73SGS2ig",
+      "youtubeVideoId": "8nD73SGS2ig",
+      "startTime": "2026-10-14T19:00:00.000Z",
+      "status": "upcoming",
+      "durationMinutes": 120,
+      "agenda": "Newton's Laws of Motion, Friction traps, Rotational dynamics, and 20+ expected NEET/JEE problems."
+    },
+    "modules": [
+      {
+        "title": "Part 1: Physics High-Yield Mechanics",
+        "lessons": [
+          {
+            "title": "Kinematics & Graph-based Question Shortcuts",
+            "duration": "60 min",
+            "videoId": "8nD73SGS2ig"
+          },
+          {
+            "title": "Rotational Motion & Conservation of Angular Momentum",
+            "duration": "70 min",
+            "videoId": "RBSGKlAvoiM"
+          }
+        ]
+      },
+      {
+        "title": "Part 2: Chemistry Reaction Mechanisms",
+        "lessons": [
+          {
+            "title": "Organic Named Reactions & Reagent Mnemonics",
+            "duration": "65 min",
+            "videoId": "3_qY0n2yN4A"
+          }
+        ]
+      }
+    ],
+    "enrolledCount": 1120,
+    "rating": 4.98,
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "course-ai-fullstack-engineer",
+    "title": "AI & Modern Fullstack Web Developer Bootcamp",
+    "subtitle": "Build production web apps with Node.js, Express, Tailwind, and Gemini AI Integrations",
+    "description": "Step-by-step masterclass taking you from foundational web development to crafting real-world AI applications, custom API pipelines, and interactive portals. Taught with live coding sessions streamed on YouTube.",
+    "category": "Web & AI",
+    "level": "Intermediate",
+    "instructor": "The Chairman",
+    "thumbnail": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
+    "isPaid": true,
+    "price": 799,
+    "originalPrice": 3999,
+    "payment": {
+      "upiId": "chairman@upi",
+      "razorpayLink": "https://pages.razorpay.com/chairman-fullstack-ai",
+      "paymentInstructions": "Pay ₹799 via UPI or Razorpay to gain full lifetime access to all project repos, live YouTube classes, and mentoring."
+    },
+    "allowedStudents": [
+      "icreative552@gmail.com",
+      "overactingofficial7@gmail.com"
+    ],
+    "features": [
+      "🔴 Live Interactive Coding Sessions on YouTube",
+      "🤖 Hands-on Gemini AI & LLM Integration Projects",
+      "💼 4 Portfolio Ready Fullstack Web Projects",
+      "💬 1-on-1 Code Review & Resume Guidance",
+      "📜 Professional Verified Certificate"
+    ],
+    "liveClass": {
+      "enabled": true,
+      "title": "LIVE: Building an AI-Powered Agent from Scratch",
+      "youtubeUrl": "https://www.youtube.com/watch?v=RBSGKlAvoiM",
+      "youtubeVideoId": "RBSGKlAvoiM",
+      "startTime": "2026-10-16T20:00:00.000Z",
+      "status": "upcoming",
+      "durationMinutes": 100,
+      "agenda": "Connecting backend APIs, streaming completions, frontend chat UI, and production deployment."
+    },
+    "modules": [
+      {
+        "title": "Module 1: Modern Backend & API Architectures",
+        "lessons": [
+          {
+            "title": "RESTful API Design, Express Middleware & Auth",
+            "duration": "55 min",
+            "videoId": "RBSGKlAvoiM"
+          }
+        ]
+      }
+    ],
+    "enrolledCount": 890,
+    "rating": 4.92,
+    "createdAt": "2026-10-06T00:00:00.000Z"
+  }
+]

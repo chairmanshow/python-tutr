@@ -1,11 +1,36 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 import { GoogleGenAI } from '@google/genai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const COURSES_FILE = path.join(__dirname, 'courses-data.json');
+
+function readCoursesFromFile() {
+  try {
+    if (fs.existsSync(COURSES_FILE)) {
+      const data = fs.readFileSync(COURSES_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.warn('[Courses] Read error, resetting default:', err.message);
+  }
+  return [];
+}
+
+function writeCoursesToFile(courses) {
+  try {
+    fs.writeFileSync(COURSES_FILE, JSON.stringify(courses, null, 2), 'utf-8');
+    return true;
+  } catch (err) {
+    console.error('[Courses] Write error:', err);
+    return false;
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,11 +42,13 @@ app.use(express.static(__dirname));
 // Lazy-initialize Gemini AI
 let genAI = null;
 function getGeminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  if (!apiKey) return null;
   if (!genAI) {
     try {
-      genAI = new GoogleGenAI();
-    } catch (err) {
-      console.warn('[Server] GoogleGenAI init notice:', err.message);
+      genAI = new GoogleGenAI({ apiKey });
+    } catch {
+      genAI = null;
     }
   }
   return genAI;
@@ -39,9 +66,6 @@ app.post('/api/super-revision', async (req, res) => {
     }
 
     const ai = getGeminiClient();
-    if (!ai) {
-      throw new Error('Gemini API client unavailable.');
-    }
 
     const systemInstructions = `You are "Chairman Super Revision" — an elite academic mindmap and visual revision architect for "The Chairman Show" learning platform.
 Your mission is to convert messy study notes, syllabus outlines, handwritten notes photos, or an entire set of PPT lecture slides into a structured, highly aesthetic, high-yield active-recall Mindmap JSON.
@@ -139,26 +163,28 @@ Rules:
 
     let parsedData = null;
 
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents,
-        config: {
-          systemInstruction: systemInstructions,
-          responseMimeType: 'application/json',
-          temperature: 0.2
-        }
-      });
-
-      const responseText = response.text || '';
+    if (ai) {
       try {
-        parsedData = JSON.parse(responseText);
-      } catch (parseErr) {
-        const match = responseText.match(/\{[\s\S]*\}/);
-        if (match) parsedData = JSON.parse(match[0]);
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents,
+          config: {
+            systemInstruction: systemInstructions,
+            responseMimeType: 'application/json',
+            temperature: 0.2
+          }
+        });
+
+        const responseText = response.text || '';
+        try {
+          parsedData = JSON.parse(responseText);
+        } catch {
+          const match = responseText.match(/\{[\s\S]*\}/);
+          if (match) parsedData = JSON.parse(match[0]);
+        }
+      } catch {
+        // Quiet fallback to secondary proxy or heuristic builder
       }
-    } catch (geminiErr) {
-      console.warn('[Server] Gemini API failed, switching to AI proxy worker fallback:', geminiErr.message);
     }
 
     // 2. Fallback to Cloudflare Worker Proxy
@@ -269,6 +295,232 @@ Rules:
       error: error.message || 'Failed to generate mindmap'
     });
   }
+});
+
+// ─── COURSES MANAGEMENT & LIVE SESSIONS API ───
+const ENROLL_REQUESTS_FILE = path.join(__dirname, 'enrollment-requests.json');
+
+function readEnrollRequests() {
+  try {
+    if (fs.existsSync(ENROLL_REQUESTS_FILE)) {
+      return JSON.parse(fs.readFileSync(ENROLL_REQUESTS_FILE, 'utf-8'));
+    }
+  } catch (err) {
+    console.warn('[EnrollRequests] Read error:', err.message);
+  }
+  return [];
+}
+
+function writeEnrollRequests(requests) {
+  try {
+    fs.writeFileSync(ENROLL_REQUESTS_FILE, JSON.stringify(requests, null, 2), 'utf-8');
+    return true;
+  } catch (err) {
+    console.error('[EnrollRequests] Write error:', err);
+    return false;
+  }
+}
+
+// Get all courses
+app.get('/api/courses', (req, res) => {
+  const courses = readCoursesFromFile();
+  res.json({ success: true, courses });
+});
+
+// Create or update a course
+app.post('/api/courses', (req, res) => {
+  try {
+    const courseData = req.body;
+    if (!courseData || !courseData.title) {
+      return res.status(400).json({ error: 'Course title is required' });
+    }
+
+    let courses = readCoursesFromFile();
+    const id = courseData.id || ('course-' + Date.now());
+
+    // Normalize youtube video ID
+    let ytVid = courseData.liveClass?.youtubeVideoId || '';
+    const ytUrl = courseData.liveClass?.youtubeUrl || '';
+    if (!ytVid && ytUrl) {
+      const match = ytUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|live\/|shorts\/))([\w-]{11})/);
+      if (match) ytVid = match[1];
+    }
+
+    const newOrUpdatedCourse = {
+      id,
+      title: courseData.title.trim(),
+      subtitle: courseData.subtitle ? courseData.subtitle.trim() : '',
+      description: courseData.description ? courseData.description.trim() : '',
+      category: courseData.category || 'General',
+      level: courseData.level || 'All Levels',
+      instructor: courseData.instructor || 'The Chairman',
+      thumbnail: courseData.thumbnail || 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
+      isPaid: Boolean(courseData.isPaid),
+      price: Number(courseData.price || 0),
+      originalPrice: Number(courseData.originalPrice || 0),
+      payment: {
+        upiId: courseData.payment?.upiId || 'chairman@upi',
+        razorpayLink: courseData.payment?.razorpayLink || '',
+        paymentInstructions: courseData.payment?.paymentInstructions || ''
+      },
+      allowedStudents: Array.isArray(courseData.allowedStudents)
+        ? courseData.allowedStudents.map(s => String(s).trim().toLowerCase()).filter(Boolean)
+        : (courseData.isPaid ? [] : ['all']),
+      features: Array.isArray(courseData.features) ? courseData.features : [
+        '🔴 Live YouTube Interactive Classes',
+        '🧠 Chairman Super Revision Mindmaps',
+        '💬 Real-time Doubt Support',
+        '📜 Certificate of Completion'
+      ],
+      liveClass: {
+        enabled: Boolean(courseData.liveClass?.enabled),
+        title: courseData.liveClass?.title || 'Live Class Session',
+        youtubeUrl: ytUrl,
+        youtubeVideoId: ytVid,
+        startTime: courseData.liveClass?.startTime || new Date(Date.now() + 86400000).toISOString(),
+        status: courseData.liveClass?.status || 'upcoming',
+        durationMinutes: Number(courseData.liveClass?.durationMinutes || 90),
+        agenda: courseData.liveClass?.agenda || 'Interactive lecture & live doubt solving'
+      },
+      modules: Array.isArray(courseData.modules) ? courseData.modules : [],
+      enrolledCount: Number(courseData.enrolledCount || 1),
+      rating: Number(courseData.rating || 4.9),
+      updatedAt: new Date().toISOString(),
+      createdAt: courseData.createdAt || new Date().toISOString()
+    };
+
+    const existingIndex = courses.findIndex(c => c.id === id);
+    if (existingIndex >= 0) {
+      courses[existingIndex] = { ...courses[existingIndex], ...newOrUpdatedCourse };
+    } else {
+      courses.unshift(newOrUpdatedCourse);
+    }
+
+    writeCoursesToFile(courses);
+    res.json({ success: true, course: newOrUpdatedCourse, courses });
+  } catch (err) {
+    console.error('[Courses API] Error saving course:', err);
+    res.status(500).json({ error: 'Failed to save course: ' + err.message });
+  }
+});
+
+// Delete a course
+app.delete('/api/courses/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    let courses = readCoursesFromFile();
+    const initialLen = courses.length;
+    courses = courses.filter(c => c.id !== id);
+
+    if (courses.length === initialLen) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    writeCoursesToFile(courses);
+    res.json({ success: true, message: 'Course deleted successfully', courses });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete course' });
+  }
+});
+
+// Allow a student for a paid course
+app.post('/api/courses/:id/allow-student', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    let courses = readCoursesFromFile();
+    const course = courses.find(c => c.id === id);
+    if (!course) return res.status(404).json({ error: 'Course not found' });
+
+    const normalized = email.trim().toLowerCase();
+    if (!course.allowedStudents) course.allowedStudents = [];
+    if (!course.allowedStudents.includes(normalized)) {
+      course.allowedStudents.push(normalized);
+      writeCoursesToFile(courses);
+    }
+
+    res.json({ success: true, allowedStudents: course.allowedStudents });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to allow student' });
+  }
+});
+
+// Submit enrollment / payment proof request
+app.post('/api/courses/:id/enroll-request', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { studentEmail, studentName, paymentMethod, paymentRef, note } = req.body;
+
+    if (!studentEmail) return res.status(400).json({ error: 'Student email is required' });
+
+    const courses = readCoursesFromFile();
+    const course = courses.find(c => c.id === id);
+    if (!course) return res.status(404).json({ error: 'Course not found' });
+
+    const requests = readEnrollRequests();
+    const newRequest = {
+      id: 'req-' + Date.now(),
+      courseId: id,
+      courseTitle: course.title,
+      price: course.price,
+      studentEmail: studentEmail.trim().toLowerCase(),
+      studentName: studentName || 'Student',
+      paymentMethod: paymentMethod || 'upi',
+      paymentRef: paymentRef || '',
+      note: note || '',
+      status: 'pending', // 'pending' | 'approved' | 'rejected'
+      createdAt: new Date().toISOString()
+    };
+
+    requests.unshift(newRequest);
+    writeEnrollRequests(requests);
+
+    res.json({ success: true, request: newRequest });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to submit enrollment request' });
+  }
+});
+
+// Admin get enrollment requests
+app.get('/api/courses/enrollment-requests', (req, res) => {
+  const requests = readEnrollRequests();
+  res.json({ success: true, requests });
+});
+
+// Admin approve enrollment request
+app.post('/api/courses/enrollment-requests/:requestId/approve', (req, res) => {
+  try {
+    const { requestId } = req.params;
+    let requests = readEnrollRequests();
+    const reqItem = requests.find(r => r.id === requestId);
+    if (!reqItem) return res.status(404).json({ error: 'Request not found' });
+
+    reqItem.status = 'approved';
+    reqItem.approvedAt = new Date().toISOString();
+    writeEnrollRequests(requests);
+
+    // Also add to course allowedStudents
+    let courses = readCoursesFromFile();
+    const course = courses.find(c => c.id === reqItem.courseId);
+    if (course) {
+      if (!course.allowedStudents) course.allowedStudents = [];
+      const normEmail = reqItem.studentEmail.toLowerCase();
+      if (!course.allowedStudents.includes(normEmail)) {
+        course.allowedStudents.push(normEmail);
+        writeCoursesToFile(courses);
+      }
+    }
+
+    res.json({ success: true, request: reqItem, courses });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to approve request' });
+  }
+});
+
+app.get('/courses', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/career', (req, res) => {

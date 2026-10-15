@@ -2137,6 +2137,25 @@ main {
   border-color: var(--accent-green);
   box-shadow: 0 0 25px rgba(16,185,129,.5);
 }
+.editor-view-pane {
+  display: block;
+  animation: fadeIn .25s ease-out;
+}
+.badge-solution {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(16,185,129,.12);
+  border: 1px solid rgba(16,185,129,.3);
+  color: #10b981;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.solution-inner-body, .ai-help-body {
+  animation: fadeIn .3s ease-out;
+}
 .solution-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-gold);

@@ -3,21 +3,284 @@
    Fixed AI + Admin Posts + Theme Toggle + Universal Back
    ══════════════════════════════════════════════════════════════ */
 
+(function () {
+  'use strict';
+
 /* ─────────────── SECTION 1: CONFIG ─────────────── */
 const firebaseConfig = {
-  apiKey: "AIzaSyA3T1Yp8nFQuHb-_63bfzbd3L2r2wn-01I",
-  authDomain: "the-chairman-show-7c839.firebaseapp.com",
-  databaseURL: "https://the-chairman-show-7c839-default-rtdb.firebaseio.com",
-  projectId: "the-chairman-show-7c839",
-  storageBucket: "the-chairman-show-7c839.firebasestorage.app",
-  messagingSenderId: "667528459671",
-  appId: "1:667528459671:web:696a5aeda14ba2391fc0d2"
+  projectId: "golden-bruin-t8f9p",
+  appId: "1:136967711261:web:fc321c257eaaf0e66674f4",
+  apiKey: "AIzaSyARBlTKDAEI67aI62WMtiLQyKzR9mQPZO0",
+  authDomain: "golden-bruin-t8f9p.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-pythontutr-56f85dc1-308f-460c-ae88-4fabdc5fb4f8",
+  storageBucket: "golden-bruin-t8f9p.firebasestorage.app",
+  messagingSenderId: "136967711261",
+  measurementId: "",
+  oAuthClientId: "136967711261-e98cknuge80v2c4j6mo986b38vmcrad7.apps.googleusercontent.com"
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const rtdb = firebase.database();
+const auth = window.auth || (typeof firebase !== 'undefined' && firebase.apps?.length ? firebase.auth() : (typeof firebase !== 'undefined' ? firebase.initializeApp(firebaseConfig).auth() : null));
+const db = window.db || (typeof firebase !== 'undefined' ? firebase.firestore() : null);
+const memoryChatStore = new Map();
+const memoryChatEmitters = new Map();
+
+function createMemoryRtdbBridge() {
+  function getRef(path) {
+    if (path === '.info/connected') {
+      return { on: (ev, cb) => { setTimeout(() => cb({ val: () => true }), 50); return cb; }, off: () => {}, onDisconnect: () => ({ remove: () => {} }) };
+    }
+    const cleanPath = String(path || '');
+    return {
+      key: cleanPath.split('/').pop() || '',
+      limitToLast: function() { return this; },
+      push: (data) => {
+        const id = 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+        const map = memoryChatStore.get(cleanPath) || new Map();
+        map.set(id, data);
+        memoryChatStore.set(cleanPath, map);
+        const emit = memoryChatEmitters.get(cleanPath + ':child_added');
+        if (emit) emit({ key: id, val: () => data });
+        return { key: id };
+      },
+      child: (k) => getRef(cleanPath + '/' + k),
+      set: (data) => {
+        memoryChatStore.set(cleanPath, data);
+        const emit = memoryChatEmitters.get(cleanPath + ':value');
+        if (emit) emit({ val: () => data });
+        return Promise.resolve();
+      },
+      update: (data) => {
+        const existing = memoryChatStore.get(cleanPath) || {};
+        const merged = { ...existing, ...data };
+        memoryChatStore.set(cleanPath, merged);
+        const emit = memoryChatEmitters.get(cleanPath + ':value');
+        if (emit) emit({ val: () => merged });
+        return Promise.resolve();
+      },
+      remove: () => {
+        memoryChatStore.delete(cleanPath);
+        const emit = memoryChatEmitters.get(cleanPath + ':value');
+        if (emit) emit({ val: () => null });
+        return Promise.resolve();
+      },
+      on: (ev, cb) => {
+        memoryChatEmitters.set(cleanPath + ':' + ev, cb);
+        return cb;
+      },
+      off: (ev) => {
+        memoryChatEmitters.delete(cleanPath + ':' + ev);
+      },
+      onDisconnect: () => ({ remove: () => {} })
+    };
+  }
+  return { ref: getRef };
+}
+
+function createFirestoreRtdbBridge(firestoreDb) {
+  if (!firestoreDb || typeof firestoreDb.collection !== 'function') {
+    return createMemoryRtdbBridge();
+  }
+
+  const listeners = new Map();
+
+  function getRef(path) {
+    const p = String(path || '');
+    const parts = p.split('/').filter(Boolean);
+
+    // 1. Connection status ref
+    if (p === '.info/connected') {
+      return {
+        on: (ev, cb) => {
+          setTimeout(() => cb({ val: () => true }), 50);
+          return cb;
+        },
+        off: () => {},
+        onDisconnect: () => ({ remove: () => {} })
+      };
+    }
+
+    // 2. Reaction path: chat/{roomId}/messages/{msgKey}/reactions/{emoji}/{uid}
+    if (parts[0] === 'chat' && parts[2] === 'messages' && parts[4] === 'reactions') {
+      const roomId = parts[1];
+      const msgId = parts[3];
+      const emoji = parts[5];
+      const uid = parts[6];
+      const docRef = firestoreDb.collection('chat_rooms').doc(roomId).collection('messages').doc(msgId);
+      const reactionField = `reactions.${emoji}.${uid}`;
+
+      return {
+        once: async () => {
+          const snap = await docRef.get();
+          const data = snap.data() || {};
+          const exists = !!(data.reactions && data.reactions[emoji] && data.reactions[emoji][uid]);
+          return {
+            exists: () => exists,
+            val: () => exists ? true : null
+          };
+        },
+        set: async () => {
+          await docRef.update({ [reactionField]: true }).catch(() => {});
+        },
+        remove: async () => {
+          const delVal = (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue?.delete) ? firebase.firestore.FieldValue.delete() : null;
+          if (delVal) await docRef.update({ [reactionField]: delVal }).catch(() => {});
+        }
+      };
+    }
+
+    // 2b. Chat messages: chat/{roomId}/messages
+    if (parts[0] === 'chat' && parts[2] === 'messages') {
+      const roomId = parts[1] || 'general';
+      const colRef = firestoreDb.collection('chat_rooms').doc(roomId).collection('messages');
+
+      const refObj = {
+        key: 'messages',
+        limitToLast: () => refObj,
+        push: async (data) => {
+          const payload = { ...data, ts: data.ts || Date.now() };
+          const docRes = await colRef.add(payload);
+          return { key: docRes.id };
+        },
+        child: (docId) => {
+          const docRef = colRef.doc(docId);
+          return {
+            key: docId,
+            update: (updates) => docRef.update(updates).catch(() => {}),
+            remove: () => docRef.delete().catch(() => {}),
+            child: (sub) => ({
+              update: (updates) => docRef.update(updates).catch(() => {}),
+              set: (val) => docRef.set(val, { merge: true }).catch(() => {})
+            })
+          };
+        },
+        on: (ev, cb) => {
+          if (ev === 'child_added' || ev === 'child_changed' || ev === 'child_removed') {
+            const unsub = colRef.orderBy('ts', 'asc').limit(100).onSnapshot(
+              (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                  const snapObj = {
+                    key: change.doc.id,
+                    val: () => change.doc.data()
+                  };
+                  if (change.type === 'added' && ev === 'child_added') cb(snapObj);
+                  else if (change.type === 'modified' && ev === 'child_changed') cb(snapObj);
+                  else if (change.type === 'removed' && ev === 'child_removed') cb(snapObj);
+                });
+              },
+              (err) => console.warn('[Chat] Firestore onSnapshot note:', err.message)
+            );
+            listeners.set(cb, unsub);
+          }
+          return cb;
+        },
+        off: (ev, cb) => {
+          const unsub = listeners.get(cb);
+          if (unsub) { unsub(); listeners.delete(cb); }
+        }
+      };
+      return refObj;
+    }
+
+    // 3. Presence: chat/presence or chat/presence/{uid}
+    if (parts[0] === 'chat' && parts[1] === 'presence') {
+      const colRef = firestoreDb.collection('chat_presence');
+      const uid = parts[2];
+
+      if (uid) {
+        const docRef = colRef.doc(uid);
+        return {
+          key: uid,
+          set: (data) => docRef.set({ ...data, lastActive: Date.now() }).catch(() => {}),
+          update: (data) => docRef.set({ ...data, lastActive: Date.now() }, { merge: true }).catch(() => {}),
+          remove: () => docRef.delete().catch(() => {}),
+          onDisconnect: () => ({ remove: () => {} })
+        };
+      }
+
+      return {
+        key: 'presence',
+        on: (ev, cb) => {
+          const unsub = colRef.onSnapshot(
+            (snapshot) => {
+              const obj = {};
+              const now = Date.now();
+              snapshot.forEach((doc) => {
+                const data = doc.data();
+                if (!data.lastActive || now - data.lastActive < 120000) {
+                  obj[doc.id] = data;
+                }
+              });
+              cb({ val: () => obj });
+            },
+            () => {}
+          );
+          listeners.set(cb, unsub);
+          return cb;
+        },
+        off: (ev, cb) => {
+          const unsub = listeners.get(cb);
+          if (unsub) { unsub(); listeners.delete(cb); }
+        }
+      };
+    }
+
+    // 4. Typing: chat/typing/{roomId} or chat/typing/{roomId}/{uid}
+    if (parts[0] === 'chat' && parts[1] === 'typing') {
+      const roomId = parts[2] || 'general';
+      const uid = parts[3];
+      const colRef = firestoreDb.collection('chat_typing').doc(roomId).collection('users');
+
+      if (uid) {
+        const docRef = colRef.doc(uid);
+        return {
+          key: uid,
+          set: (data) => docRef.set(data).catch(() => {}),
+          update: (data) => docRef.set(data, { merge: true }).catch(() => {}),
+          remove: () => docRef.delete().catch(() => {}),
+          onDisconnect: () => ({ remove: () => {} })
+        };
+      }
+
+      return {
+        key: roomId,
+        on: (ev, cb) => {
+          const unsub = colRef.onSnapshot(
+            (snapshot) => {
+              const obj = {};
+              snapshot.forEach((doc) => { obj[doc.id] = doc.data(); });
+              cb({ val: () => obj });
+            },
+            () => {}
+          );
+          listeners.set(cb, unsub);
+          return cb;
+        },
+        off: (ev, cb) => {
+          const unsub = listeners.get(cb);
+          if (unsub) { unsub(); listeners.delete(cb); }
+        }
+      };
+    }
+
+    return createMemoryRtdbBridge().ref(p);
+  }
+
+  return { ref: getRef };
+}
+
+let rtdb = null;
+try {
+  if (typeof firebase !== 'undefined' && typeof firebase.database === 'function') {
+    rtdb = firebase.database();
+  }
+} catch (e) {}
+if (!rtdb) {
+  rtdb = createFirestoreRtdbBridge(db);
+}
+if (typeof firebase !== 'undefined') {
+  if (!firebase.database) firebase.database = () => rtdb;
+  if (!firebase.database.ServerValue) firebase.database.ServerValue = { TIMESTAMP: Date.now() };
+}
 
 const CONFIG = {
   UPI_ID: "chairman@upi",
@@ -32,8 +295,10 @@ let currentUser = null;
 let userProfile = null;
 let currentProblem = null;
 
-const $ = (id) => document.getElementById(id);
-const $$ = (sel) => document.querySelectorAll(sel);
+var $ = (id) => document.getElementById(id);
+var $$ = (sel) => document.querySelectorAll(sel);
+window.$ = $;
+window.$$ = $$;
 
 /* ─────────────── SECTION 2: UTILITIES ─────────────── */
 function escapeHtml(s) {
@@ -83,7 +348,9 @@ function debounce(fn, wait) {
 }
 
 function isAdmin() {
-  return currentUser?.email === CONFIG.ADMIN_EMAIL;
+  const email = currentUser?.email?.toLowerCase();
+  const ADMIN_EMAILS = [CONFIG.ADMIN_EMAIL?.toLowerCase(), "icreative552@gmail.com"];
+  return ADMIN_EMAILS.includes(email) || userProfile?.role === 'admin' || localStorage.getItem('tcs_admin_mode') === 'true';
 }
 
 /* ─────────────── SECTION 3: IMGBB UPLOAD ─────────────── */
@@ -173,19 +440,31 @@ async function uploadToImgBB(file) {
 })();
 
 /* ─────────────── SECTION 5: AUTH ─────────────── */
+let isAuthPopupPending = false;
 $('googleSignInBtn')?.addEventListener('click', async () => {
+  if (isAuthPopupPending) return;
+  isAuthPopupPending = true;
+  const btn = $('googleSignInBtn');
+  if (btn) btn.disabled = true;
+
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   try {
-    $('loginError').style.display = 'none';
+    if ($('loginError')) $('loginError').style.display = 'none';
     await auth.signInWithPopup(provider);
   } catch (err) {
-    console.error('Sign in error:', err);
-    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
+    // Gracefully handle user cancellation or concurrent popup without noisy errors
+    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+      return;
+    }
+    console.warn('Sign in notice:', err.message || err.code);
     if ($('loginError')) {
-      $('loginError').textContent = err.message;
+      $('loginError').textContent = err.message || 'Sign in failed. Please try again.';
       $('loginError').style.display = 'block';
     }
+  } finally {
+    isAuthPopupPending = false;
+    if (btn) btn.disabled = false;
   }
 });
 
@@ -378,7 +657,10 @@ window.switchToTab = function(tabId) {
   // Chairman chat handle karta hai apna load
 }
   if (tabId === 'chairmanPosts') loadChairmanPosts();
-  if (tabId === 'freeCourses') YouTube.ensureLoaded();
+  if (tabId === 'freeCourses') {
+    YouTube.ensureLoaded();
+    if (window.CoursesManager) window.CoursesManager.init();
+  }
   if (tabId === 'donate') {
     if ($('upiIdDisplay')) $('upiIdDisplay').textContent = CONFIG.UPI_ID;
   }
@@ -418,7 +700,10 @@ function switchToTabWithoutHistory(tabId) {
   if (tabId === 'python') renderLevelsGrid();
   if (tabId === 'chatWithChairman') loadDoubts();
   if (tabId === 'chairmanPosts') loadChairmanPosts();
-  if (tabId === 'freeCourses') YouTube.ensureLoaded();
+  if (tabId === 'freeCourses') {
+    YouTube.ensureLoaded();
+    if (window.CoursesManager) window.CoursesManager.init();
+  }
 }
 
 function updateBackButton() {
@@ -626,16 +911,89 @@ window.openProblem = function(id) {
   }
 
   updateMarkSolvedBtn();
-  if ($('solutionCard')) $('solutionCard').style.display = 'none';
-  if ($('codeEditor') && $('codeEditor').parentElement) $('codeEditor').parentElement.style.display = 'flex';
 
-  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
-  $('tabCode')?.classList.add('active');
+  // Reset tab to code view without hiding any footer buttons
+  switchEditorTab('code');
+
+  // Populate solution pane
+  if ($('solutionCode')) $('solutionCode').textContent = prob.solution || '# Solution not available';
+  if ($('solutionLevelBadge')) $('solutionLevelBadge').textContent = `Level ${prob.level || 1}`;
+  if ($('solutionExplanation')) {
+    const exp = prob.explanation || 'No explanation available for this problem.';
+    $('solutionExplanation').innerHTML = `
+      <div style="margin-bottom:.6rem; font-weight:700; color:var(--gold-primary); display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-lightbulb"></i> Solution Breakdown & Concept
+      </div>
+      <div>${escapeHtml(exp).replace(/\n/g, '<br>')}</div>
+    `;
+  }
+
+  // Reset AI output
+  if ($('aiHelpOutput')) {
+    $('aiHelpOutput').textContent = `Ready to help you master "${prob.title}" (Level ${prob.level})!\nClick "Progressive Hint" if you're stuck, or "Review My Code" after writing your solution.`;
+  }
 
   setTimeout(updateProblemNavigation, 50);
 };
 
-/* Code editor */
+/* ─────────────── TAB SWITCHER (CODE / SOLUTION / AI) ─────────────── */
+function switchEditorTab(tab) {
+  const tabCode = $('tabCode');
+  const tabSolution = $('tabSolution');
+  const tabAiHelp = $('tabAiHelp');
+  const paneCode = $('paneCode');
+  const paneSolution = $('paneSolution');
+  const paneAiHelp = $('paneAiHelp');
+  const showBtnText = $('showSolutionBtnText');
+  const showBtn = $('showSolutionBtn');
+
+  // Deactivate all
+  [tabCode, tabSolution, tabAiHelp].forEach(t => t?.classList.remove('active'));
+  if (paneCode) paneCode.style.display = 'none';
+  if (paneSolution) paneSolution.style.display = 'none';
+  if (paneAiHelp) paneAiHelp.style.display = 'none';
+
+  if (tab === 'solution') {
+    tabSolution?.classList.add('active');
+    if (paneSolution) paneSolution.style.display = 'block';
+    if (showBtnText) showBtnText.textContent = 'Back to Code';
+    if (showBtn) showBtn.title = 'Switch back to your code editor';
+
+    // Populate solution fresh
+    if (currentProblem) {
+      if ($('solutionCode')) $('solutionCode').textContent = currentProblem.solution || '# Solution not available';
+      if ($('solutionLevelBadge')) $('solutionLevelBadge').textContent = `Level ${currentProblem.level || 1}`;
+      if ($('solutionExplanation')) {
+        const exp = currentProblem.explanation || 'No explanation available for this problem.';
+        $('solutionExplanation').innerHTML = `
+          <div style="margin-bottom:.6rem; font-weight:700; color:var(--gold-primary); display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-lightbulb"></i> Solution Breakdown & Concept
+          </div>
+          <div>${escapeHtml(exp).replace(/\n/g, '<br>')}</div>
+        `;
+      }
+    }
+  } else if (tab === 'ai') {
+    tabAiHelp?.classList.add('active');
+    if (paneAiHelp) paneAiHelp.style.display = 'block';
+    if (showBtnText) showBtnText.textContent = 'Solution';
+    if (showBtn) showBtn.title = 'View official verified solution';
+  } else {
+    // Default: 'code'
+    tabCode?.classList.add('active');
+    if (paneCode) paneCode.style.display = 'block';
+    if (showBtnText) showBtnText.textContent = 'Solution';
+    if (showBtn) showBtn.title = 'View official verified solution';
+    updateLineNumbers();
+  }
+}
+
+// Tab click listeners
+$('tabCode')?.addEventListener('click', () => switchEditorTab('code'));
+$('tabSolution')?.addEventListener('click', () => switchEditorTab('solution'));
+$('tabAiHelp')?.addEventListener('click', () => switchEditorTab('ai'));
+
+/* Code editor setup */
 const codeEditor = $('codeEditor');
 const editorLineNumbers = $('editorLineNumbers');
 
@@ -652,6 +1010,7 @@ codeEditor?.addEventListener('scroll', () => {
   if (editorLineNumbers) editorLineNumbers.scrollTop = codeEditor.scrollTop;
 });
 codeEditor?.addEventListener('keydown', (e) => {
+  // Indent on Tab
   if (e.key === 'Tab') {
     e.preventDefault();
     const start = codeEditor.selectionStart;
@@ -660,14 +1019,18 @@ codeEditor?.addEventListener('keydown', (e) => {
     codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
     updateLineNumbers();
   }
+  // Run code on Ctrl+Enter or Cmd+Enter
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    $('runCodeBtn')?.click();
+  }
 });
 
 $('resetCodeBtn')?.addEventListener('click', () => {
   if (!currentProblem) return;
-  if (!confirm('Reset code to starter template?')) return;
   codeEditor.value = currentProblem.starter || '# Write your Python code here\n';
   updateLineNumbers();
-  toast('info', 'Code reset');
+  toast('info', 'Code reset to starter template');
 });
 
 $('copyCodeBtn')?.addEventListener('click', () => {
@@ -677,92 +1040,90 @@ $('copyCodeBtn')?.addEventListener('click', () => {
   }).catch(() => toast('warn', 'Copy failed'));
 });
 
-/* Show Solution */
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('#showSolutionBtn');
-  if (!btn) return;
+/* Toggle Solution Button in Footer */
+$('showSolutionBtn')?.addEventListener('click', (e) => {
   e.preventDefault();
   if (!currentProblem) { toast('warn', 'No problem loaded'); return; }
-
-  const solutionCard = $('solutionCard');
-  const codeBody = document.querySelector('.editor-body');
-  const editorFooter = document.querySelector('.editor-footer');
-
-  if ($('solutionCode')) $('solutionCode').textContent = currentProblem.solution || '# Solution not available';
-  if ($('solutionExplanation')) {
-    const exp = currentProblem.explanation || 'No explanation available for this problem.';
-    $('solutionExplanation').innerHTML = `
-      <div style="margin-bottom:.6rem; font-weight:700; color:var(--gold-primary);">
-        <i class="fa-solid fa-lightbulb"></i> Explanation
-      </div>
-      <div>${escapeHtml(exp).replace(/\n/g, '<br>')}</div>
-    `;
+  const isSolutionActive = $('tabSolution')?.classList.contains('active');
+  if (isSolutionActive) {
+    switchEditorTab('code');
+    toast('info', 'Switched to Code Editor');
+  } else {
+    switchEditorTab('solution');
+    toast('success', 'Official Solution', 'Study the logic and try running it!');
   }
-
-  if (codeBody) codeBody.style.display = 'none';
-  if (editorFooter) editorFooter.style.display = 'none';
-  if (solutionCard) solutionCard.style.display = 'block';
-
-  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
-  $('tabSolution')?.classList.add('active');
-
-  setTimeout(() => solutionCard?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-  toast('success', 'Solution revealed!', 'Study it, then try on your own 💪');
-  setTimeout(syncSolutionNav, 100);
 });
 
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('#copySolutionBtn');
-  if (!btn) return;
-  if (!currentProblem) return;
-  const text = currentProblem.solution || '';
-  if (!text) { toast('warn', 'Nothing to copy'); return; }
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--accent-green)"></i>';
-    toast('success', 'Solution copied!');
-    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+/* Insert solution into editor */
+$('insertSolutionToEditorBtn')?.addEventListener('click', () => {
+  if (!currentProblem || !currentProblem.solution) return;
+  if (codeEditor) {
+    codeEditor.value = currentProblem.solution;
+    updateLineNumbers();
+  }
+  switchEditorTab('code');
+  toast('success', 'Solution Copied to Editor', 'You can now run, tweak, and test it!');
+});
+
+/* Copy solution to clipboard */
+$('copySolutionBtn')?.addEventListener('click', () => {
+  if (!currentProblem || !currentProblem.solution) return;
+  navigator.clipboard.writeText(currentProblem.solution).then(() => {
+    toast('success', 'Copied!', 'Solution copied to clipboard');
   });
 });
 
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('#backToCodeBtn');
-  if (!btn) return;
-  const solutionCard = $('solutionCard');
-  const codeBody = document.querySelector('.editor-body');
-  const editorFooter = document.querySelector('.editor-footer');
-  if (solutionCard) solutionCard.style.display = 'none';
-  if (codeBody) codeBody.style.display = 'flex';
-  if (editorFooter) editorFooter.style.display = 'flex';
-  document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
-  $('tabCode')?.classList.add('active');
-  setTimeout(updateProblemNavigation, 100);
-});
+/* ─────────────── PYTHON PYODIDE & WASM EXECUTION ENGINE ─────────────── */
+let pyodideInstance = null;
+let pyodideLoading = false;
 
-/* ─────────────── PYTHON CODE RUNNER & AI TUTOR REVIEW ─────────────── */
+async function getPyodide() {
+  if (pyodideInstance) return pyodideInstance;
+  if (typeof window.loadPyodide === 'function' && !pyodideLoading) {
+    pyodideLoading = true;
+    try {
+      pyodideInstance = await window.loadPyodide({
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
+      });
+      const pill = $('pyEngineStatus');
+      if (pill) {
+        pill.textContent = 'Python 3.12 (Wasm Ready)';
+        pill.style.background = 'rgba(16,185,129,.15)';
+        pill.style.color = '#10b981';
+      }
+      console.log('🐍 Pyodide Python 3.12 initialized');
+    } catch (e) {
+      console.warn('Pyodide load note:', e.message);
+    } finally {
+      pyodideLoading = false;
+    }
+  }
+  return pyodideInstance;
+}
+
+// Proactively initiate Pyodide in background
+setTimeout(getPyodide, 800);
+
+/* Client simulation engine (instant fallback) */
 function simulatePythonExecution(code, examples) {
   const output = [];
-  const trimmed = code.trim();
+  const trimmed = (code || '').trim();
 
   if (!trimmed || trimmed === '# Write your Python code here') {
     return '⚠️ No code written yet. Type your Python code above and click Run Code!';
   }
 
-  // Safe client-side execution simulation
   try {
-    // 1. Basic print statements capture
     const printRegex = /print\s*\((.*?)\)/g;
     let match;
     let foundPrint = false;
 
-    // Check syntax errors like unclosed quotes
     const openQuotes = (code.match(/"/g) || []).length;
     const singleQuotes = (code.match(/'/g) || []).length;
     if (openQuotes % 2 !== 0 || singleQuotes % 2 !== 0) {
       return 'SyntaxError: EOL while scanning string literal';
     }
 
-    // Check basic indentation error
     const lines = code.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -774,7 +1135,6 @@ function simulatePythonExecution(code, examples) {
       }
     }
 
-    // Try mock evaluation of print values
     while ((match = printRegex.exec(code)) !== null) {
       foundPrint = true;
       const expr = match[1].trim();
@@ -784,7 +1144,6 @@ function simulatePythonExecution(code, examples) {
         output.push(expr);
       } else if (expr.includes('+') || expr.includes('*') || expr.includes('-')) {
         try {
-          // evaluate purely numeric math
           if (/^[0-9+\-*/().\s]+$/.test(expr)) {
             output.push(String(Function(`'use strict'; return (${expr})`)()));
           } else {
@@ -812,7 +1171,6 @@ function simulatePythonExecution(code, examples) {
       return res;
     }
 
-    // If algorithmic function without print
     return `>>> python3 solution.py\n[Process completed with return code 0]\nCode compiled without syntax errors. Add print(...) statements or test cases to inspect variable outputs!`;
 
   } catch (err) {
@@ -820,8 +1178,99 @@ function simulatePythonExecution(code, examples) {
   }
 }
 
+/* Master execution handler using Pyodide Wasm with instant fallback */
+async function executePythonCode(code, sampleInput = '') {
+  const startTime = performance.now();
+  const trimmed = (code || '').trim();
+
+  if (!trimmed || trimmed === '# Write your Python code here') {
+    return {
+      output: '⚠️ No code written yet. Write your Python code in the editor and click "Run Code"!',
+      raw: '',
+      success: false
+    };
+  }
+
+  // 1. Try Pyodide
+  try {
+    const py = await getPyodide();
+    if (py) {
+      const rawInputs = sampleInput ? String(sampleInput).split('\n') : [];
+      py.globals.set('__script_inputs', rawInputs);
+
+      const harness = `
+import sys, io
+
+class OutCapture(io.StringIO):
+    pass
+
+sys.stdout = OutCapture()
+sys.stderr = OutCapture()
+
+__inp_i = 0
+__inps = list(__script_inputs) if '__script_inputs' in globals() else []
+
+def __tcs_input(prompt=""):
+    global __inp_i
+    if prompt:
+        sys.stdout.write(str(prompt))
+    if __inp_i < len(__inps):
+        val = str(__inps[__inp_i])
+        __inp_i += 1
+        return val
+    return ""
+
+input = __tcs_input
+`;
+      await py.runPythonAsync(harness);
+      await py.runPythonAsync(code);
+
+      const stdout = py.runPython("sys.stdout.getvalue()");
+      const stderr = py.runPython("sys.stderr.getvalue()");
+      const elapsed = Math.round(performance.now() - startTime);
+
+      let out = stdout || '';
+      if (stderr) out += (out ? '\n' : '') + stderr;
+      if (!out.trim()) {
+        out = `[Process completed with return code 0]\nCode compiled without syntax errors. Add print(...) statements to view variable outputs!`;
+      }
+
+      return {
+        output: `>>> python3 solution.py\n${out}\n\n⚡ Executed in ${elapsed}ms via Python 3.12 (Pyodide Wasm)`,
+        raw: (stdout || '').trim(),
+        success: true,
+        engine: 'pyodide',
+        elapsed
+      };
+    }
+  } catch (err) {
+    let stderr = '';
+    try {
+      if (pyodideInstance) stderr = pyodideInstance.runPython("sys.stderr.getvalue()");
+    } catch (_) {}
+    const elapsed = Math.round(performance.now() - startTime);
+    return {
+      output: `>>> python3 solution.py\n${stderr ? stderr + '\n' : ''}Traceback (most recent call last):\n${err.message}\n\n⏱️ Terminated with error in ${elapsed}ms`,
+      raw: '',
+      success: false,
+      error: err.message,
+      engine: 'pyodide'
+    };
+  }
+
+  // 2. Fallback
+  const sim = simulatePythonExecution(code, currentProblem?.examples);
+  return {
+    output: sim,
+    raw: sim,
+    success: sim.includes('Passed') || sim.includes('return code 0'),
+    engine: 'simulator'
+  };
+}
+
+/* ─────────────── RUNNER BUTTONS & ACTIONS ─────────────── */
 document.addEventListener('click', async (e) => {
-  // 1. Run Code
+  // 1. Run User's Code
   const runBtn = e.target.closest('#runCodeBtn');
   if (runBtn) {
     const code = $('codeEditor')?.value || '';
@@ -832,20 +1281,46 @@ document.addEventListener('click', async (e) => {
     panel.style.display = 'block';
     pre.innerHTML = '<span style="color:var(--gold-primary);"><i class="fa-solid fa-spinner fa-spin"></i> Executing Python script...</span>';
 
-    setTimeout(() => {
-      const result = simulatePythonExecution(code, currentProblem?.examples);
-      pre.textContent = result;
-      if (result.includes('Passed')) {
-        toast('success', 'Execution Passed!', 'Sample test case succeeded');
-      } else {
-        toast('info', 'Code Executed', 'Check output terminal below');
-      }
-    }, 400);
+    // If on solution or AI tab, switch back to code tab so user sees code running
+    if (!$('tabCode')?.classList.contains('active')) {
+      switchEditorTab('code');
+    }
+
+    const firstExampleInput = currentProblem?.examples?.[0]?.input || '';
+    const cleanInput = (firstExampleInput === '(no input)' || firstExampleInput.includes('(none)')) ? '' : firstExampleInput;
+
+    const res = await executePythonCode(code, cleanInput);
+    pre.textContent = res.output;
+
+    if (res.success) {
+      toast('success', 'Execution Complete!', 'Checked output in terminal below');
+    } else {
+      toast('info', 'Executed with notice', 'Check terminal output');
+    }
   }
 
-  // 2. AI Code Review
-  const reviewBtn = e.target.closest('#aiReviewCodeBtn');
-  if (reviewBtn) {
+  // 2. Run Solution Directly (both inside solution pane and in main footer)
+  const runSolBtn = e.target.closest('#runSolutionInTerminalBtn, #quickRunSolutionBtn');
+  if (runSolBtn) {
+    if (!currentProblem || !currentProblem.solution) return;
+    const panel = $('pythonOutputPanel');
+    const pre = $('pythonOutputPre');
+    if (!panel || !pre) return;
+
+    panel.style.display = 'block';
+    pre.innerHTML = '<span style="color:var(--accent-green);"><i class="fa-solid fa-circle-play fa-spin"></i> Running official verified solution...</span>';
+
+    const firstExampleInput = currentProblem?.examples?.[0]?.input || '';
+    const cleanInput = (firstExampleInput === '(no input)' || firstExampleInput.includes('(none)')) ? '' : firstExampleInput;
+
+    const res = await executePythonCode(currentProblem.solution, cleanInput);
+    pre.textContent = `════════ OFFICIAL SOLUTION RUN ════════\n${res.output}`;
+    toast('success', 'Solution Executed!', 'Verified official output displayed below');
+  }
+
+  // 3. Run Test Suite
+  const testBtn = e.target.closest('#runTestsBtn');
+  if (testBtn) {
     if (!currentProblem) return;
     const code = $('codeEditor')?.value || '';
     const panel = $('pythonOutputPanel');
@@ -853,8 +1328,93 @@ document.addEventListener('click', async (e) => {
     if (!panel || !pre) return;
 
     panel.style.display = 'block';
+    pre.innerHTML = '<span style="color:var(--accent-green);"><i class="fa-solid fa-flask fa-spin"></i> Running comprehensive test suite...</span>';
+
+    const examples = currentProblem.examples || [];
+    if (!examples.length) {
+      pre.textContent = 'ℹ️ No predefined test cases for this level. Use print(...) statements to verify your solution.';
+      return;
+    }
+
+    let report = `════════ TEST SUITE REPORT: ${currentProblem.title} (Level ${currentProblem.level}) ════════\n`;
+    let passedCount = 0;
+
+    for (let idx = 0; idx < examples.length; idx++) {
+      const ex = examples[idx];
+      const cleanInput = (ex.input === '(no input)' || ex.input.includes('(none)')) ? '' : (ex.input || '');
+      const res = await executePythonCode(code, cleanInput);
+      const expected = (ex.output || '').trim();
+      const passed = res.raw && (res.raw === expected || res.raw.includes(expected));
+      if (passed) passedCount++;
+
+      report += `Test Case ${idx + 1}: ${passed ? '✅ PASSED' : '⚠️ MISMATCH / CHECK'}\n`;
+      if (cleanInput) report += `  Input:    ${cleanInput}\n`;
+      report += `  Expected: ${expected}\n`;
+      report += `  Received: ${res.raw || '(no output)'}\n\n`;
+    }
+
+    report += `Summary: ${passedCount}/${examples.length} Sample Tests Passed.\n`;
+    pre.textContent = report;
+
+    if (passedCount === examples.length) {
+      toast('success', 'All Tests Passed! 🎉', 'Perfect solution! Ready to mark solved.');
+    } else if (passedCount > 0) {
+      toast('info', 'Partial Match', `${passedCount}/${examples.length} tests passed`);
+    } else {
+      toast('warn', 'Tests Failed', 'Review output and check edge cases');
+    }
+  }
+
+  // 4. AI Hint
+  const hintBtn = e.target.closest('#aiHintBtn, #aiTabHintBtn');
+  if (hintBtn) {
+    if (!currentProblem) return;
+    switchEditorTab('ai');
+    const outputBox = $('aiHelpOutput');
+    if (!outputBox) return;
+
+    hintBtn.disabled = true;
+    outputBox.innerHTML = '<span style="color:#f59e0b;"><i class="fa-solid fa-lightbulb fa-spin"></i> Chairman AI is crafting a progressive hint...</span>';
+
+    try {
+      const resp = await fetch(CONFIG.AI_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: `Give a progressive, non-spoiling hint for this Python problem:
+Problem: "${currentProblem.title}" (Level ${currentProblem.level})
+Description: ${currentProblem.description}
+Provide 2 progressive hints:
+1. Conceptual guidance (what formula, algorithm, or data structure to think about)
+2. A small step-by-step pseudo logic without giving the full code.`,
+          subject: 'Python Coding Hint',
+          mode: 'study-buddy'
+        })
+      });
+      if (!resp.ok) throw new Error('AI hint service error');
+      const data = await resp.json();
+      const answer = data.answer || data.response || data.text || '';
+      outputBox.textContent = `💡 Progressive Hint for "${currentProblem.title}":\n\n${answer}`;
+      toast('info', 'Hint Loaded', 'Think it through step-by-step!');
+    } catch (err) {
+      outputBox.textContent = `💡 Progressive Hint for "${currentProblem.title}":\n\n${currentProblem.explanation || 'Think about the simplest case first, and write down variables on paper before coding!'}`;
+      toast('info', 'Hint Loaded');
+    } finally {
+      hintBtn.disabled = false;
+    }
+  }
+
+  // 5. AI Review
+  const reviewBtn = e.target.closest('#aiReviewCodeBtn, #aiTabReviewBtn');
+  if (reviewBtn) {
+    if (!currentProblem) return;
+    switchEditorTab('ai');
+    const code = $('codeEditor')?.value || '';
+    const outputBox = $('aiHelpOutput');
+    if (!outputBox) return;
+
     reviewBtn.disabled = true;
-    pre.innerHTML = '<span style="color:var(--gold-primary);"><i class="fa-solid fa-wand-magic-sparkles fa-spin"></i> Chairman AI Tutor is reviewing your code...</span>';
+    outputBox.innerHTML = '<span style="color:var(--gold-primary);"><i class="fa-solid fa-wand-magic-sparkles fa-spin"></i> Chairman AI Tutor is reviewing your code...</span>';
 
     try {
       const resp = await fetch(CONFIG.AI_PROXY, {
@@ -875,101 +1435,105 @@ Keep it encouraging, mentor-like, and concise!`,
           mode: 'study-buddy'
         })
       });
-
       if (!resp.ok) throw new Error('AI service error');
       const data = await resp.json();
       const answer = data.answer || data.response || data.text || '';
-      pre.textContent = answer || 'Great effort! Clean indentation and structure. Test with edge cases like 0 and negative numbers.';
+      outputBox.textContent = answer || 'Great effort! Clean indentation and structure. Test with edge cases like 0 and negative numbers.';
       toast('success', 'Review Ready', 'Chairman feedback generated!');
     } catch (err) {
-      pre.textContent = `💡 Chairman Quick Tip for "${currentProblem.title}":\n\n1. Ensure you handle base cases (empty inputs, zero, single element).\n2. Optimize loops: Avoid nested loops if a hash map or two-pointer approach can achieve O(N) time.\n3. Keep variable names descriptive and follow PEP 8!`;
+      outputBox.textContent = `💡 Chairman Quick Tip for "${currentProblem.title}":\n\n1. Ensure you handle base cases (empty inputs, zero, single element).\n2. Optimize loops: Avoid nested loops if a hash map or two-pointer approach can achieve O(N) time.\n3. Keep variable names descriptive and follow PEP 8!`;
       toast('info', 'Quick Guidance', 'Applied core heuristic tips.');
     } finally {
       reviewBtn.disabled = false;
     }
   }
 
-  // 2b. AI Hint Button
-  const hintBtn = e.target.closest('#aiHintBtn');
-  if (hintBtn) {
+  // 6. AI Complexity Breakdown
+  const compBtn = e.target.closest('#aiTabComplexityBtn');
+  if (compBtn) {
     if (!currentProblem) return;
-    const panel = $('pythonOutputPanel');
-    const pre = $('pythonOutputPre');
-    if (!panel || !pre) return;
+    const outputBox = $('aiHelpOutput');
+    if (!outputBox) return;
 
-    panel.style.display = 'block';
-    hintBtn.disabled = true;
-    pre.innerHTML = '<span style="color:#f59e0b;"><i class="fa-solid fa-lightbulb fa-spin"></i> Generating smart hint...</span>';
+    outputBox.innerHTML = '<span style="color:var(--accent-blue);"><i class="fa-solid fa-chart-line fa-spin"></i> Analyzing time and space complexity...</span>';
+    compBtn.disabled = true;
 
     try {
       const resp = await fetch(CONFIG.AI_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          question: `Give a gentle, non-spoiling progressive hint for this Python problem:
-Problem: "${currentProblem.title}"
+          question: `Explain the optimal Time and Space Complexity for this Python problem:
+Title: "${currentProblem.title}" (Level ${currentProblem.level})
 Description: ${currentProblem.description}
-Do NOT give away the complete code. Guide the student on data structures, formula, or algorithmic pattern to use.`,
-          subject: 'Python Coding Hint',
+Official Solution:
+${currentProblem.solution}
+
+Break down:
+- Optimal Time Complexity (Big-O) and why
+- Space Complexity (Auxiliary memory)
+- How to achieve it in Python`,
+          subject: 'Big-O Complexity Analysis',
           mode: 'study-buddy'
         })
       });
-      if (!resp.ok) throw new Error('AI hint service error');
+      if (!resp.ok) throw new Error('Complexity service error');
       const data = await resp.json();
       const answer = data.answer || data.response || data.text || '';
-      pre.textContent = `💡 Hint for "${currentProblem.title}":\n\n${answer}`;
-      toast('info', 'Hint Loaded', 'Think it through step-by-step!');
+      outputBox.textContent = `📊 Complexity Analysis for "${currentProblem.title}":\n\n${answer}`;
     } catch (err) {
-      pre.textContent = `💡 Hint for "${currentProblem.title}":\n\n${currentProblem.explanation || 'Think about the simplest case first, and write down variables on paper before coding!'}`;
-      toast('info', 'Hint Loaded');
+      outputBox.textContent = `📊 Complexity Analysis for "${currentProblem.title}":\n\nOptimal Time Complexity: O(N) or O(1) depending on operations.\nAuxiliary Space: O(1) in-place whenever possible.\nEnsure you avoid quadratic loops O(N^2) for large inputs!`;
     } finally {
-      hintBtn.disabled = false;
+      compBtn.disabled = false;
     }
   }
 
-  // 2c. Run Test Cases Button
-  const testBtn = e.target.closest('#runTestsBtn');
-  if (testBtn) {
-    if (!currentProblem) return;
-    const code = $('codeEditor')?.value || '';
-    const panel = $('pythonOutputPanel');
+  // 7. Clear Terminal Output
+  const clearBtn = e.target.closest('#clearOutputBtn');
+  if (clearBtn) {
     const pre = $('pythonOutputPre');
-    if (!panel || !pre) return;
-
-    panel.style.display = 'block';
-    pre.innerHTML = '<span style="color:var(--accent-green);"><i class="fa-solid fa-flask fa-spin"></i> Running test suite...</span>';
-
-    setTimeout(() => {
-      const examples = currentProblem.examples || [];
-      if (!examples.length) {
-        pre.textContent = 'ℹ️ No predefined test cases for this level. Use print(...) statements to verify your solution.';
-        return;
-      }
-      let report = `════════ TEST SUITE REPORT: ${currentProblem.title} ════════\n`;
-      let passedCount = 0;
-      examples.forEach((ex, idx) => {
-        const sim = simulatePythonExecution(code, [ex]);
-        const passed = sim.includes('Passed');
-        if (passed) passedCount++;
-        report += `Test Case ${idx + 1}: ${passed ? '✅ PASSED' : '⚠️ CHECK OUTPUT'}\n`;
-        report += `  Input:    ${ex.input || '(none)'}\n`;
-        report += `  Expected: ${ex.output}\n\n`;
-      });
-      report += `Summary: ${passedCount}/${examples.length} Sample Tests Passed.\n`;
-      pre.textContent = report;
-      if (passedCount > 0) {
-        toast('success', 'Tests Passed!', `${passedCount}/${examples.length} cases verified`);
-      } else {
-        toast('info', 'Test Suite Executed', 'Check output breakdown above');
-      }
-    }, 350);
+    if (pre) pre.textContent = 'Terminal cleared. Click "Run Code" or "Run Solution" to execute.';
   }
 
-  // 3. Close Output
+  // 8. Close Terminal Output
   const closeBtn = e.target.closest('#closeOutputBtn');
   if (closeBtn) {
     const panel = $('pythonOutputPanel');
     if (panel) panel.style.display = 'none';
+  }
+});
+
+/* AI Practice Doubt Form */
+$('aiPracticeDoubtForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = $('aiPracticeDoubtInput');
+  const doubt = input?.value?.trim();
+  if (!doubt || !currentProblem) return;
+
+  const outputBox = $('aiHelpOutput');
+  if (!outputBox) return;
+
+  outputBox.innerHTML = `<span style="color:var(--gold-primary);"><i class="fa-solid fa-wand-magic-sparkles fa-spin"></i> Answering your doubt: "${escapeHtml(doubt)}"...</span>`;
+  input.value = '';
+
+  try {
+    const resp = await fetch(CONFIG.AI_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: `The student is working on Python problem "${currentProblem.title}" (Level ${currentProblem.level}).
+Problem description: ${currentProblem.description}
+Student Question: ${doubt}
+Provide a clear, patient, educational answer with an example.`,
+        subject: 'Python Practice Help',
+        mode: 'study-buddy'
+      })
+    });
+    if (!resp.ok) throw new Error('Service error');
+    const data = await resp.json();
+    outputBox.textContent = data.answer || data.response || data.text || 'I could not generate an answer right now. Please try again.';
+  } catch (err) {
+    outputBox.textContent = `💡 Response to "${doubt}":\nRemember that in Python, data types, indentation, and variable scope are key. Break the problem into inputs, processing, and output steps!`;
   }
 });
 
@@ -2509,6 +3073,11 @@ const Chat = (function() {
     renderMessages();
     renderTyping();
 
+    if (!rtdb || typeof rtdb.ref !== 'function') {
+      setTimeout(() => { state.firstLoadDone = true; scrollToBottom(false); }, 700);
+      return;
+    }
+
     const msgRef = rtdb.ref('chat/' + roomId + '/messages').limitToLast(MAX_MESSAGES);
 
     const onAdded = msgRef.on('child_added', (snap) => {
@@ -2558,12 +3127,14 @@ const Chat = (function() {
   function compareMessages(a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : 0; }
 
   function attachPresence() {
+    if (!rtdb || typeof rtdb.ref !== 'function') return;
     const connRef = rtdb.ref('.info/connected');
     connRef.on('value', (snap) => {
       if (snap.val() !== true) return;
       const myRef = rtdb.ref('chat/presence/' + state.uid);
       myRef.onDisconnect().remove();
-      myRef.set({ name: state.name || 'Anonymous', color: state.color || '#D4AF37', ts: firebase.database.ServerValue.TIMESTAMP });
+      const sVal = (typeof firebase !== 'undefined' && firebase.database?.ServerValue?.TIMESTAMP) ? firebase.database.ServerValue.TIMESTAMP : Date.now();
+      myRef.set({ name: state.name || 'Anonymous', color: state.color || '#D4AF37', ts: sVal });
     });
     const presRef = rtdb.ref('chat/presence');
     const handler = presRef.on('value', (snap) => { state.online = snap.val() || {}; renderOnlineUsers(); });
@@ -2571,12 +3142,15 @@ const Chat = (function() {
   }
 
   function refreshPresence() {
-    rtdb.ref('chat/presence/' + state.uid).update({ name: state.name, color: state.color, ts: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
+    if (!rtdb || typeof rtdb.ref !== 'function') return;
+    const sVal = (typeof firebase !== 'undefined' && firebase.database?.ServerValue?.TIMESTAMP) ? firebase.database.ServerValue.TIMESTAMP : Date.now();
+    rtdb.ref('chat/presence/' + state.uid).update({ name: state.name, color: state.color, ts: sVal }).catch(() => {});
   }
 
   let typingRef = null, typingStopTimer = null, amTyping = false;
 
   function attachTypingListener(roomId) {
+    if (!rtdb || typeof rtdb.ref !== 'function') return;
     const ref = rtdb.ref('chat/typing/' + roomId);
     const handler = ref.on('value', (snap) => {
       const val = snap.val() || {};
@@ -2636,13 +3210,14 @@ const Chat = (function() {
       return;
     }
 
-    const payload = { uid: state.uid, name: state.name, color: state.color, text: text || '', ts: firebase.database.ServerValue.TIMESTAMP };
+    const sVal = (typeof firebase !== 'undefined' && firebase.database?.ServerValue?.TIMESTAMP) ? firebase.database.ServerValue.TIMESTAMP : Date.now();
+    const payload = { uid: state.uid, name: state.name, color: state.color, text: text || '', ts: sVal };
     if (hasImage) payload.imageUrl = pendingImageUrl;
     if (state.replyTarget) {
       payload.reply = { key: state.replyTarget.key, name: state.replyTarget.name, text: String(state.replyTarget.text || '[image]').slice(0, 140) };
     }
 
-    msgRef.push(payload).catch(err => { console.error('Send failed:', err); alert('Could not send message. Check connection.'); });
+    msgRef.push(payload).catch(err => { console.error('Send failed:', err); toast('warn', 'Chat Notice', 'Could not send message. Check connection.'); });
 
     el.input.value = '';
     pendingImageUrl = '';
@@ -2928,4 +3503,9 @@ window.addEventListener('load', () => {
   }, 4000);
 });
 
+window.toast = toast;
+window.escapeHtml = escapeHtml;
+
 console.log('🚀 The Chairman Show — v3 Loaded');
+
+})();

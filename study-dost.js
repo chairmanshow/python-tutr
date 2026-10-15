@@ -28,17 +28,19 @@
     appId: "1:667528459671:web:696a5aeda14ba2391fc0d2"
   };
 
-  let auth = null;
-  let db = null;
+  let auth = window.auth || null;
+  let db = window.db || null;
   let currentUser = null;
 
   try {
-    if (window.firebase && !firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    if (window.firebase) {
-      auth = firebase.auth();
-      db = firebase.firestore();
+    if (!auth || !db) {
+      if (window.firebase && !firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      if (window.firebase) {
+        auth = firebase.auth();
+        db = firebase.firestore();
+      }
     }
   } catch (err) {
     console.warn('[Study Dost] Firebase initialization notice:', err.message);

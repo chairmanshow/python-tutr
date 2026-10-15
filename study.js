@@ -17,16 +17,18 @@
     appId: "1:667528459671:web:696a5aeda14ba2391fc0d2"
   };
 
-  let auth = null;
-  let db = null;
+  let auth = window.auth || null;
+  let db = window.db || null;
   let currentUser = null;
 
   try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+    if (!auth || !db) {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      auth = firebase.auth();
+      db = firebase.firestore();
     }
-    auth = firebase.auth();
-    db = firebase.firestore();
   } catch (err) {
     console.warn('[Study Dost] Firebase note:', err.message);
   }
